@@ -1,7 +1,1 @@
-.DS_Store
-Thumbs.db
-.vscode/
-*.swp
-*.swo
-.claude/
-drafts/
+# Project-specific ignores only (see ~/.gitignore_global for common patterns)
