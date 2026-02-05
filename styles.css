@@ -1,0 +1,112 @@
+html {
+    height: 100%;
+}
+
+body {
+    font-family: 'Courier New', Courier, monospace;
+    background: #0d0d0d;
+    color: #aaa;
+    padding: 20px;
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100%;
+    -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
+}
+
+@supports (-webkit-touch-callout: none) {
+    /* iOS specific: prevent zoom on focus */
+    body {
+        position: fixed;
+        width: 100%;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+.terminal {
+    max-width: 800px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.prompt {
+    color: #5f5;
+}
+
+.command {
+    color: #fff;
+}
+
+.output {
+    color: #aaa;
+    margin: 10px 0 20px 0;
+}
+
+a {
+    color: #5af;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+
+.disabled {
+    color: #555;
+}
+
+.cursor {
+    display: inline-block;
+    width: 10px;
+    height: 16px;
+    background: #5f5;
+    animation: blink 1s step-end infinite;
+    vertical-align: middle;
+}
+
+@keyframes blink {
+    50% { opacity: 0; }
+}
+
+.dir {
+    color: #5af;
+}
+
+.file {
+    color: #aaa;
+}
+
+.input-line {
+    display: flex;
+    align-items: center;
+    margin-top: 20px;
+}
+
+#input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    outline: none;
+    margin-left: 8px;
+    caret-color: #5f5;
+    min-width: 0;
+    resize: none;
+    overflow: hidden;
+    line-height: 1.5;
+    padding: 0;
+    field-sizing: content;
+}
+
+.clickable {
+    cursor: pointer;
+}
+
+.clickable:hover {
+    text-decoration: underline;
+}

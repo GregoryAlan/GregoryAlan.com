@@ -1,0 +1,11 @@
+{
+  "games": {
+    "beary-time.html": "file",
+    "ice-runner.html": "file",
+    "taipei-climber.html": "file"
+  },
+  "drafts": {
+    "game-of-life.html": "file",
+    "sound-pad.html": "file"
+  }
+}

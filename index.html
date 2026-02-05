@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gregory Alan</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="terminal" id="terminal">
+    <div>
+        <span class="prompt">guest@gregoryalan.com:~$</span>
+        <span class="command"> cat welcome.txt</span>
+    </div>
+    <div class="output">
+Welcome to Gregory Alan's personal site.<br>
+Developer & Creator.
+    </div>
+
+    <div>
+        <span class="prompt">guest@gregoryalan.com:~$</span>
+        <span class="command"> cat version.txt</span>
+    </div>
+    <div class="output">
+Last updated: 1.22.2026
+    </div>
+
+    <div id="output"></div>
+
+    <div class="input-line">
+        <span class="prompt" id="prompt">guest@gregoryalan.com:~$</span>
+        <textarea id="input" autocomplete="off" autofocus spellcheck="false" rows="1"></textarea>
+    </div>
+</div>
+
+<script>
+const terminal = document.getElementById('terminal');
+const output = document.getElementById('output');
+const input = document.getElementById('input');
+const promptEl = document.getElementById('prompt');
+const history = [];
+let historyIndex = -1;
+let currentPath = [];
+// Default file tree (fallback if files.json fails to load)
+// Use "file" as value for files, {} for folders
+let fileTree = {
+    "games": {
+        "beary-time.html": "file",
+        "ice-runner.html": "file",
+        "taipei-climber.html": "file"
+    },
+    "drafts": {
+        "game-of-life.html": "file",
+        "sound-pad.html": "file"
+    }
+};
+
+// Try to load from JSON (works on server, may fail locally)
+fetch('files.json')
+    .then(r => r.json())
+    .then(data => { fileTree = data; })
+    .catch(() => {});
+
+const textFiles = {
+    'welcome.txt': 'Welcome to Gregory Alan\'s personal site.\nDeveloper & Creator.',
+    'version.txt': 'Last updated: 1.22.2026',
+    'contact.txt': 'Email: your@email.com',
+    'about.txt': 'Gregory Alan - Developer & Creator\nBuilding games and experiments.',
+};
+
+function getPrompt() {
+    const path = currentPath.length ? '~/' + currentPath.join('/') : '~';
+    return `guest@gregoryalan.com:${path}$`;
+}
+
+function updatePrompt() {
+    promptEl.textContent = getPrompt();
+}
+
+function getCurrentDir() {
+    let dir = fileTree;
+    for (const p of currentPath) {
+        if (dir && typeof dir === 'object' && p in dir) {
+            dir = dir[p];
+        } else {
+            return null;
+        }
+    }
+    return dir;
+}
+
+function isOpenable() {
+    // Can open if we're inside a folder (not at root)
+    return currentPath.length > 0;
+}
+
+const commands = {
+    help: () => `Available commands:
+  help           - Show this help message
+  ls             - List directory contents
+  cd DIR         - Change directory (use .. to go up)
+  pwd            - Print working directory
+  cat FILE       - Display file contents
+  open [FILE]    - Open file or current folder in browser
+  whoami         - Display system info
+  clear          - Clear terminal
+
+Text files: ${Object.keys(textFiles).join(', ')}`,
+
+    ls: (args) => {
+        let dir = getCurrentDir();
+        if (dir === null) return 'ls: cannot access directory';
+
+        let items = [];
+
+        // If at root, show text files (tappable for cat)
+        if (currentPath.length === 0) {
+            items = Object.keys(textFiles).map(f =>
+                `<span class="file clickable" data-action="cat" data-target="${f}">${f}</span>`
+            );
+        }
+
+        if (typeof dir === 'object') {
+            for (const [name, value] of Object.entries(dir)) {
+                if (value === 'file') {
+                    items.push(`<span class="file clickable" data-action="open" data-target="${name}">${name}</span>`);
+                } else {
+                    items.push(`<span class="dir clickable" data-action="cd" data-target="${name}">${name}/</span>`);
+                }
+            }
+        }
+
+        return items.length ? items.join('\n') : '<span class="disabled">(empty)</span>';
+    },
+
+    cd: (args) => {
+        if (!args || args === '~' || args === '/') {
+            currentPath = [];
+            updatePrompt();
+            return '';
+        }
+
+        if (args === '..') {
+            if (currentPath.length > 0) {
+                currentPath.pop();
+                updatePrompt();
+            }
+            return '';
+        }
+
+        if (args === '.') return '';
+
+        // Handle path with slashes
+        const parts = args.replace(/^\//, '').replace(/\/$/, '').split('/');
+        let testPath = [...currentPath];
+        let dir = getCurrentDir();
+
+        for (const part of parts) {
+            if (part === '..') {
+                if (testPath.length > 0) testPath.pop();
+                continue;
+            }
+            if (part === '.' || part === '') continue;
+
+            // Get dir at testPath
+            let checkDir = fileTree;
+            for (const p of testPath) {
+                checkDir = checkDir[p];
+            }
+
+            if (checkDir && typeof checkDir === 'object' && part in checkDir) {
+                testPath.push(part);
+            } else {
+                return `cd: ${args}: No such directory`;
+            }
+        }
+
+        currentPath = testPath;
+        updatePrompt();
+        return '';
+    },
+
+    pwd: () => {
+        return '/' + (currentPath.length ? currentPath.join('/') : '');
+    },
+
+    cat: (args) => {
+        if (!args) return 'cat: missing file operand';
+        if (textFiles[args]) return textFiles[args].replace(/\n/g, '<br>');
+        return `cat: ${args}: No such file or directory`;
+    },
+
+    open: (args) => {
+        let targetPath;
+        let targetName;
+
+        if (args) {
+            // Open a specific file
+            const dir = getCurrentDir();
+            if (dir && typeof dir === 'object' && args in dir && dir[args] === 'file') {
+                // File exists in current directory
+                targetPath = '/' + [...currentPath, args].join('/').replace(/^\/+/, '/');
+                targetName = args;
+            } else if (currentPath.length === 0 && args.endsWith('.html')) {
+                // At root, try to open .html file directly
+                targetPath = '/' + args;
+                targetName = args;
+            } else {
+                return `open: ${args}: No such file`;
+            }
+        } else {
+            // No args - open current folder
+            if (currentPath.length === 0) {
+                return 'open: specify a file to open, or cd into a folder first';
+            }
+            targetPath = '/' + currentPath.join('/') + '/';
+            targetName = currentPath[currentPath.length - 1];
+        }
+
+        setTimeout(() => {
+            window.location.href = targetPath;
+        }, 500);
+        return `Opening ${targetName}...`;
+    },
+
+    whoami: () => {
+        const ua = navigator.userAgent;
+        let browser = 'Unknown';
+        let os = 'Unknown';
+
+        if (ua.includes('Firefox/')) browser = 'Firefox ' + ua.split('Firefox/')[1].split(' ')[0];
+        else if (ua.includes('Edg/')) browser = 'Edge ' + ua.split('Edg/')[1].split(' ')[0];
+        else if (ua.includes('Chrome/')) browser = 'Chrome ' + ua.split('Chrome/')[1].split(' ')[0];
+        else if (ua.includes('Safari/') && !ua.includes('Chrome')) browser = 'Safari';
+
+        if (ua.includes('Windows NT 10')) os = 'Windows 10/11';
+        else if (ua.includes('Windows')) os = 'Windows';
+        else if (ua.includes('Mac OS X')) os = 'macOS ' + (ua.split('Mac OS X ')[1]?.split(')')[0].replace(/_/g, '.') || '');
+        else if (ua.includes('Linux')) os = 'Linux';
+        else if (ua.includes('Android')) os = 'Android';
+        else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
+
+        return `OS: ${os}
+Browser: ${browser}
+Language: ${navigator.language || 'Unknown'}
+Resolution: ${screen.width}x${screen.height}
+Local Time: ${new Date().toLocaleString()}`;
+    },
+
+    clear: () => null
+};
+
+function processCommand(cmd) {
+    const parts = cmd.trim().split(/\s+/);
+    const command = parts[0].toLowerCase();
+    const args = parts.slice(1).join(' ');
+
+    if (!command) return '';
+    if (commands[command]) return commands[command](args);
+    return `${command}: command not found. Type 'help' for available commands.`;
+}
+
+function addOutput(cmd, result) {
+    const cmdHtml = `<div><span class="prompt">${getPrompt()}</span> <span class="command">${cmd}</span></div>`;
+    const resultHtml = result ? `<div class="output">${result.replace(/\n/g, '<br>')}</div>` : '';
+    output.innerHTML += cmdHtml + resultHtml;
+    // Scroll to bottom - works on both desktop and iOS (position: fixed body)
+    requestAnimationFrame(() => {
+        input.scrollIntoView({ block: 'end' });
+    });
+}
+
+input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        const cmd = input.value;
+        if (cmd.trim()) {
+            history.unshift(cmd);
+            historyIndex = -1;
+        }
+        if (cmd.trim().toLowerCase() === 'clear') {
+            output.innerHTML = '';
+        } else {
+            const result = processCommand(cmd);
+            addOutput(cmd, result);
+        }
+        input.value = '';
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (historyIndex < history.length - 1) {
+            historyIndex++;
+            input.value = history[historyIndex];
+        }
+    } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (historyIndex > 0) {
+            historyIndex--;
+            input.value = history[historyIndex];
+        } else {
+            historyIndex = -1;
+            input.value = '';
+        }
+    }
+});
+
+// Handle clicks on clickable items (directories/files)
+terminal.addEventListener('click', (e) => {
+    const clickable = e.target.closest('.clickable');
+    if (clickable) {
+        const action = clickable.dataset.action;
+        const target = clickable.dataset.target;
+        const cmd = action === 'cat' ? `cat ${target}` : action === 'cd' ? `cd ${target}` : `open ${target}`;
+        const result = processCommand(cmd);
+        addOutput(cmd, result);
+        return;
+    }
+    input.focus();
+});
+
+</script>
+</body>
+</html>
