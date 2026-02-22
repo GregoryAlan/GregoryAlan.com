@@ -186,11 +186,10 @@ function getNextVersion(force) {
     const ver = huntState.getVersion();
 
     if (ver < 1.1) {
-        // v1.0 → v1.1: any exploration (cat a file, ran status, or 3+ unique commands)
-        const explored = huntState.has('ran-status')
-            || Object.keys(huntState.discoveries).length > 0
-            || history.length >= 3;
-        return explored ? 1.1 : null;
+        // v1.0 → v1.1: any reboot advances. The v1.0 ROM screen
+        // is the breadcrumb — status.txt hints at it, but seeing
+        // the screen is enough.
+        return 1.1;
     }
 
     if (ver < 2.0) {
