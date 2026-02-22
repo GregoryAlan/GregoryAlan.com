@@ -110,3 +110,33 @@ a:hover {
 .clickable:hover {
     text-decoration: underline;
 }
+
+.hidden-file {
+    color: #666;
+}
+
+.tab-hint {
+    color: #555;
+    margin: 4px 0;
+}
+
+.motd {
+    color: #aaa;
+    line-height: 1.5;
+}
+
+.ascii-art {
+    color: #5f5;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 10px;
+    line-height: 1.1;
+    margin: 0;
+    overflow-x: auto;
+}
+
+#boot-screen {
+    max-width: 800px;
+    color: #aaa;
+    line-height: 1.8;
+    transition: opacity 0.4s ease;
+}
