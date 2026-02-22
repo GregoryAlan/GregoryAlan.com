@@ -102,17 +102,17 @@ const myHunt = {
 - Cold, clinical text with cracks showing through
 
 ### Story Rules
-- **Hint strongly, never confirm.** Every answer raises two questions.
-- **No conclusions.** Branches cross-reference but never converge.
+- **No exposition.** Don't tell the user what to think. Let terminal output speak for itself.
+- **Terminal-authentic only.** Every line should be something you'd genuinely see on a screen: system messages, kernel logs, user input, file contents.
 - **No fourth wall breaks.** Stay in character as a real system.
 - **Escalate unease, not horror.** Creepy, not scary.
 
 ### Text Styling (HTML spans in output)
-- `<span class="redacted">████████</span>` — blacked-out text
-- `<span class="timestamp-anomaly">Jan 0 00:00</span>` — red with wavy underline
-- `<span style="color:#444">dim whisper text</span>` — barely visible messages
-- `<span style="color:#333">almost invisible</span>` — requires squinting
-- `<span style="color:#222">ghost text</span>` — nearly hidden
+- `<span class="redacted">████████</span>` — blacked-out text (corrupted/classified)
+- `<span class="timestamp-anomaly">Jan 0 00:00</span>` — red with wavy underline (anomalous data)
+- `<span style="color:#f55">error text</span>` — red for system errors/warnings
+- `<span style="color:#5f5">green text</span>` — green for user input from other sessions
+- **No exposition** — avoid colored `<span>` hints that editorialize ("who did this?", "something is wrong"). Only use styling for text that would genuinely appear on a terminal.
 
 ### Corruption Characters
 Use for garbled/corrupted data: `░▒▓█▄▀■□▪▫◊○●◘◙`
@@ -132,6 +132,26 @@ Use for garbled/corrupted data: `░▒▓█▄▀■□▪▫◊○●◘◙`
 | `textCorruption` | Corrupting what the user just read |
 | `screenTear` | Horizontal displacement glitch |
 | `majorGlitch` | Combo of multiple effects for major moments |
+
+---
+
+## Engine API
+
+These globals are available to hunt scripts:
+
+| Function | Purpose |
+|----------|---------|
+| `registerHunt(hunt)` | Merge a hunt definition into the runtime |
+| `huntState.discover(id)` | Record a discovery, fire triggers |
+| `huntState.has(id)` | Check if a discovery was made |
+| `huntState.count()` | Total discoveries |
+| `huntState.setFlag(k, v)` | Set arbitrary persistent state (survives refresh) |
+| `huntState.flags` | Read flags set by `setFlag` |
+| `runGlitchEffect(name, opts)` | Trigger a visual effect |
+| `corruptString(str, intensity)` | Garble text with corruption characters |
+| `appendSystemLine(html)` | Append a persistent line to terminal output (for delayed system messages) |
+
+Hunt scripts should **not** directly reference engine internals (`terminal`, `output`, `input`, `promptEl`, `commands`, `textFiles`, `hiddenFiles`, `fileTree`). Use `registerHunt()` to inject content into them.
 
 ---
 

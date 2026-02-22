@@ -1,0 +1,275 @@
+# The Signal — Storyline Document
+
+## Premise
+
+A stale RF buffer dump sits on the system — an rx ring overrun that was never consumed. The user investigates, confirms they're alone, and accidentally executes the embedded payload by trying to decode the hex. A relay activates. A remote node connects. Someone types "hello?" The user is no longer alone.
+
+Inspired by *The Cuckoo's Egg* — the horror isn't in the supernatural, it's in realizing someone else is in your system.
+
+## Five Acts
+
+### Act 1: Discovery
+- `ls -a` reveals `.rf0.buf` — a stale RF device buffer dump
+- `cat .rf0.buf` shows `rf0: rx ring overrun (847 bytes not consumed)` with a hex dump containing ELF markers and a relay target
+- The hex `4e4f524d` is visible in the dump — a natural thing to try decoding
+- `.bash_history` includes `man decode` as a breadcrumb — the user learns what `decode` does
+- Effect: screenFlicker
+
+### Act 2: Alone
+- `.bash_history` includes `w` as a breadcrumb
+- `w` shows 1 user: just guest on tty1
+- This establishes the "before" state — you're alone on this machine
+- No effect (everything appears normal)
+
+### Act 3: Accidental Execution
+- User tries `decode --hex 4e4f524d` thinking they're converting hex to ASCII
+- The decode command detects an ELF header — this isn't text data, it's a program
+- Output: `ELF binary detected in input`, `mapped segment at 0x847`, `segfault at 0x847: unexpected exec in rx buffer`
+- The user just accidentally executed the embedded relay program
+- Effect: heavyFlicker
+
+### Act 4: The Connection
+- System messages begin appearing in the terminal on timed delays (like kernel output):
+  - `rf0: connecting to 0.0.0.0:4119`
+  - `rf0: SYN sent ................ ACK`
+  - `rf0: connection pending`
+  - `rf0: connection established from 0.0.0.0`
+  - `rf0: session opened on tty0`
+- Silence. Then: `hello?`
+- This is the climax — someone connected through the relay you just activated
+- Effect: scanlines (persistent) + dark background
+
+### Act 5: Not Alone
+- `w` now shows 2 users — guest on tty1, ??? on tty0 from 0.0.0.0
+- Investigation commands reveal details about the intruder:
+  - `finger root` — mystery user with redacted name, /dev/null shell
+  - `last` — login history showing the remote connection
+  - `dmesg` — kernel logs showing rf0 device registration, `audit: pid=0`, and PID 0 running with no controlling tty
+  - `.node` file appears — netstat-style connection status report
+  - `strings .rf0.buf` — extracts readable strings including `NORMAL SYSTEM OPERATION IS A LIE` and `relay --target=0.0.0.0:4119 --persist`
+- Effects: crtBand, promptCorruption, screenTear, textCorruption (tied to investigation moments)
+
+## Discovery Chain
+
+| # | ID | Trigger | Effect |
+|---|-----|---------|--------|
+| 1 | `rf-found` | `cat .rf0.buf` | screenFlicker |
+| 2 | `checked-alone` | `w` (before contact) | none |
+| 3 | `rf-executed` | `decode --hex 4e4f524d` | heavyFlicker + connection sequence |
+| 4 | `contact-made` | auto (end of sequence) | scanlines + dark bg |
+| 5 | `not-alone` | `w` (after contact) | crtBand |
+| 6 | `intruder-finger` | `finger root` (after contact) | promptCorruption |
+| 7 | `intruder-last` | `last` (after contact) | screenTear |
+| 8 | `rf-strings` | `strings .rf0.buf` | textCorruption |
+
+## Design Principles
+
+- **No exposition text** — no colored `<span>` hints telling the user what to think
+- **Terminal-authentic only** — system messages, kernel logs, user input, log entries
+- **Let the user connect the dots** — the creepiness comes from *their own realization*
+- **State changes tell the story** — `w` showing 1 user then 2 users is the entire narrative arc
+- **Redacted data is atmosphere** — ████ blocks suggest classified/corrupted info without explaining it
+- **Authentic UNIX vocabulary** — all kernel messages, device names, and command output use real conventions (`rf0`, `rx ring overrun`, `audit: pid=0`, `tx N bytes to`)
+
+---
+
+## Test Script
+
+### Setup
+1. Open `index.html` in a browser
+2. Open DevTools console to watch for errors
+3. Clear state first: `sessionStorage.clear()` in console, then refresh
+
+---
+
+### Phase 1: v1.0 ROM (Fresh Visit)
+
+**Boot sequence** — device banner only. You're connecting to a running device, not watching it POST:
+
+| Line | Expected |
+|------|----------|
+| 1 | `RF0 Broadcast Repeater v1.0` |
+| 2 | `S/N RF0-4119-0847` |
+
+No hardware checks (those happened at power-on). No ASCII art. No "GregBIOS".
+
+**MOTD** — single line: `Type 'help' for diagnostics.` — the boot already identified the device.
+
+**Prompt** — should be `rf0>` (bare ROM monitor, no path)
+
+**Commands:**
+
+| Command | Expected Output |
+|---------|----------------|
+| `help` | Lists exactly 7 commands: `cat`, `clear`, `help`, `ls`, `reboot`, `rm`, `status` (sorted). No `cd`, `pwd`, `open`, `whoami`, `history`, `sudo`, `man`. No "Text files:" line. |
+| `ls` | Shows only `broadcast.log` and `status.txt`. No directories. |
+| `cat broadcast.log` | Terse device log: `init from ROM`, `ant0: ACTIVE`, `rx0: 847 bytes buffered (unconsumed)`, `rx0: checksum FAIL`. |
+| `cat status.txt` | Register-dump style: `firmware: 1.0-ROM`, `signal: NOMINAL`, `update: AVAILABLE`. |
+| `status` | Live diagnostics: `RF0 DIAGNOSTICS`, `rf: 847.0MHz LOCK`, `rx buf: 847 bytes (unconsumed)`, `uptime: 847h 14m`. |
+| `cd games` | `cd: command not found. Type 'help' for available commands.` |
+| `whoami` | `whoami: command not found...` |
+| `history` | `history: command not found...` |
+| `man decode` | `man: command not found...` |
+
+**Tab completion** — typing `c` then Tab should cycle `cat`/`clear` only. Typing `s` then Tab should complete `status`. No `cd`, `sudo`.
+
+**Reboot without exploration:**
+
+| Command | Expected Output |
+|---------|----------------|
+| `reboot` | Should reboot into v1.0 again (no update). Same ROM boot, same prompt. No update animation. |
+
+### Phase 2: v1.0 → v1.1 Update
+
+From v1.0, do some exploration first:
+
+| Command | Expected Output |
+|---------|----------------|
+| `cat broadcast.log` | *(station log)* |
+| `reboot` | **Update animation** appears: `Current version: 1`, `Update available: v1.1`, downloading/verifying/installing with dots, `System updated to v1.1`, `Rebooting into new firmware...`. Then v1.1 boot sequence. |
+
+**v1.1 boot sequence** — brief with branding:
+
+| Line | Expected |
+|------|----------|
+| 1 | `GregBIOS (C) 2026 Gregory Alan Computing` |
+| 2 | *(blank)* |
+| 3 | `Loading GregOS v1.1 ...` |
+| 4 | *(blank)* |
+| 5 | `Starting terminal ...` |
+
+**MOTD** — should show `GregOS 1.1 (tty1)`, login info, ASCII art "GREGORY ALAN", "Developer & Creator", and `Type 'help'`.
+
+**Prompt** — should be `guest@gregoryalan.com:~$`
+
+**Commands:**
+
+| Command | Expected Output |
+|---------|----------------|
+| `help` | Full command list including `cd`, `pwd`, `open`, `whoami`, `history`, `sudo`, `man`. Also shows `Text files:` line. No `status` command. No bin tools (`decode`, `rot13`, etc.). |
+| `ls` | Text files (`welcome.txt`, `version.txt`, `contact.txt`, `about.txt`) + directories (`games/`, `drafts/`). No `bin/`. No `broadcast.log` or `status.txt`. |
+| `cat welcome.txt` | `Welcome to GregOS 1.1...` |
+| `cd games` | Works — prompt changes to `guest@gregoryalan.com:~/games$` |
+| `ls` | Game HTML files |
+| `cd ..` | Back to root |
+| `whoami` | OS, browser, resolution info |
+| `status` | `status: command not found...` |
+| `decode --hex 48656c6c6f` | `decode: command not found...` |
+| `dmesg` | `dmesg: command not found...` |
+
+**The breadcrumb trail to v2.0:**
+
+| Command | Expected Output |
+|---------|----------------|
+| `history` | Shows `.bash_history` entries from previous user. Last two entries: `cat version.txt`, `reboot -f`. |
+| `cat version.txt` | Normal header (`GregOS v1.1`, `Build: 2026.01.22`, `Kernel: 4.19.0-gregos`, `Update: available`) followed by an anomalous update manifest: `timestamp: 2091-11-15T03:14:00Z`, `checksum: a7 3f ?? ??`, `source: rf0`. The 2091 date is impossible — this system was built in 2026. |
+| `reboot` | Just reboots into v1.1 again. No update. Plain reboot doesn't advance. |
+| `reboot -f` | **Update animation**: `Current version: 1.1`, `Update available: v2.0`, download/verify/install, then **full v2.0 boot** with hardware detection, `/dev/creativity mounted`, etc. |
+
+### Phase 3: v2.0 Verification
+
+**MOTD** — should show `GregOS 2.0 (tty1)`, ASCII art, login info.
+
+**Commands:**
+
+| Command | Expected Output |
+|---------|----------------|
+| `help` | Full command list. `Text files:` line. |
+| `ls` | Text files + `games/`, `drafts/`, `bin/` directories. |
+| `cat welcome.txt` | `Welcome to GregOS 2.0...` (updated text) |
+| `cd bin` | Works |
+| `ls` | Bin tools: `decode`, `rot13`, `freq`, `entropy`, `crc`, `strings` |
+| `cd ..` | Back to root |
+| `man decode` | Full man page |
+| `decode --hex 48656c6c6f` | `Decoding hex...` → `> Hello` |
+
+### Phase 4: Signal Hunt at v2.0
+
+#### Act 1: Discovery
+
+| Command | Expected Output |
+|---------|----------------|
+| `ls -a` | Hidden files including `.rf0.buf`. No `.node` yet. |
+| `cat .rf0.buf` | `rf0: rx ring overrun (847 bytes not consumed)`, hex dump with ELF header, `4e4f524d` at offset 0020, `[354 bytes dropped]`, relay target at 0190–01a0, timestamp `-12` (red), `origin: unknown`. **screenFlicker** fires. |
+
+#### Act 2: Alone
+
+| Command | Expected Output |
+|---------|----------------|
+| `w` | 1 user — `guest` on `tty1`. No mystery user. |
+| `finger guest` | Normal finger output. |
+| `finger root` | `finger: root: no such user` |
+| `last` | Only `guest` on `tty1`, `still logged in`. |
+| `dmesg` | 5 boot lines only. No rf0 entries. |
+
+#### Act 3: Learn the Tool → Accidental Execution
+
+| Command | Expected Output |
+|---------|----------------|
+| `decode --hex 48656c6c6f` | `Decoding hex...` then `> Hello` |
+| `decode --hex 4e4f524d` | `ELF binary detected`, `mapped segment at 0x847`, red `segfault`. **heavyFlicker** fires. |
+
+**Wait ~16 seconds** for timed system messages:
+
+| Delay | Message |
+|-------|---------|
+| ~2s | `rf0: connecting to 0.0.0.0:4119` |
+| ~4.5s | `rf0: SYN sent ................ ACK` |
+| ~7s | `rf0: connection pending` |
+| ~10s | `rf0: connection established from 0.0.0.0` |
+| ~12s | `rf0: session opened on tty0` |
+| ~16s | green `hello?` — **scanlines** begin (persistent), background darkens to `#0a0d0a` |
+
+#### Act 5: Not Alone
+
+| Command | Expected Output |
+|---------|----------------|
+| `w` | **2 users** — `guest` on `tty1` and `???` on `tty0` from `0.0.0.0` running `/dev/rf0`. **crtBand** fires. |
+| `finger root` | Redacted name (█ blocks), `/dev/null` shell, last login `Jan  0 00:00` from `0.0.0.0` (red). **promptCorruption** fires. |
+| `last` | `guest` still logged in, plus red anomalous line: `???` on tty0 from `Jan  0 00:00`. **screenTear** fires. |
+| `dmesg` | Original 5 boot lines plus rf0 entries: `device registered`, `rx ring overrun`, `audit: pid=0`, red `connection from 0.0.0.0`, red `PID 0: state=running`. |
+| `ls -a` | `.node` now visible. |
+| `cat .node` | Netstat-style table — rf0 protocol, `guest@tty1` local, redacted `████████@tty0` foreign, ESTABLISHED, PID 0. rtt `-3ms` (red). |
+| `strings .rf0.buf` | `NORMAL SYSTEM OPERATION IS A LIE`, `relay --target=0.0.0.0:4119 --persist`, etc. **textCorruption** fires. |
+
+### Phase 5: Persistence
+
+1. **Page refresh at v2.0** — boot sequence should skip (`sessionStorage.bootDone`). Loads directly into v2.0 with all content, correct prompt, correct MOTD.
+2. Scanlines and dark background should persist if contact was made.
+3. `w` should still show 2 users.
+4. Glitch triggers with `once: true` should **not** re-fire.
+5. **Page refresh at v1.0** — if version is 1.0 in sessionStorage and bootDone is set, should skip boot and load v1.0 ROM with correct prompt and MOTD.
+
+### Phase 6: Factory Reset (`rm -rf /`)
+
+From any version (preferably v2.0 with Signal contact active):
+
+| Step | Expected |
+|------|----------|
+| `rm -rf /` | Kernel panic animation plays (file removal lines, red errors, panic message). |
+| *(after panic)* | Screen goes black. Garbled characters appear, flicker, disappear. |
+| *(after garble)* | Boots into **v1.0 ROM**. Full reset — device banner (2 lines), `rf0>` prompt, single-line MOTD. |
+| `help` | Only 7 commands. No bin tools, no Signal commands. |
+| `ls` | Only `broadcast.log` and `status.txt`. |
+| `w` | `w: command not found...` |
+| *(DevTools)* | `sessionStorage` should be nearly empty (only version=1 flag). All discoveries and trigger flags cleared. |
+| *(visual)* | No scanlines. No dark background. Clean terminal. |
+
+### Phase 7: Edge Cases
+
+| Test | Expected |
+|------|----------|
+| `reboot` at v1.1 | No update animation. Reboots into v1.1 again. Plain reboot never advances from v1.1. |
+| `reboot -f` at v1.1 | Update animation, advances to v2.0. |
+| `reboot` at v2.0 | No update animation. Reboots with v2.0 boot sequence. All content preserved. |
+| `reboot -f` at v2.0 | Same as plain reboot — no v2.1 yet, `-f` has no effect. |
+| `reboot -f` at v1.0 | Same as plain reboot — `-f` only matters at v1.1. Exploration gate still applies. |
+| Skip boot (keypress) | Boot animation stops immediately, terminal appears. Works at all versions. |
+| Skip update animation | Update text stops, proceeds to boot. Version still advances correctly. |
+| `rm -rf /*` | Same as `rm -rf /` — triggers factory reset. |
+| `rm anything-else` | `rm: Permission denied` |
+| Tab at v1.0 | Only completes v1.0 commands. No `cd`, `decode`, etc. |
+| `cat` at v1.0 | Only tab-completes `broadcast.log` and `status.txt`. |
+| Multiple reboot from v1.0 without exploration | Should not advance — stays at v1.0 each time. |
+| Reboot from v1.0 after running `status` | Should advance to v1.1 (exploration detected via `ran-status` discovery). |
+| Reboot from v1.0 after 3+ commands | Should advance to v1.1 (history.length >= 3). |

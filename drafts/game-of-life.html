@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Game of Life</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      font-weight: 300;
+    }
+
+    #canvas {
+      border: 2px solid #4a4a6a;
+      cursor: crosshair;
+      background: #0f0f1a;
+      max-width: 100%;
+      touch-action: none;
+    }
+
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      min-height: 44px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background: #4a4a6a;
+      color: #eee;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #6a6a8a;
+    }
+
+    button.active {
+      background: #e94560;
+    }
+
+    .info {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #888;
+    }
+
+    .stats {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <h1>Conway's Game of Life</h1>
+  <canvas id="canvas"></canvas>
+  <div class="controls">
+    <button id="startStop">Start</button>
+    <button id="step">Step</button>
+    <button id="clear">Clear</button>
+    <button id="random">Random</button>
+  </div>
+  <div class="stats">
+    Generation: <span id="generation">0</span> |
+    Population: <span id="population">0</span>
+  </div>
+  <div class="info">Tap or drag on the grid to toggle cells</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Configuration - responsive sizing
+    const MAX_WIDTH = 600;
+    const TARGET_COLS = 60;
+    const CELL_SIZE = Math.max(8, Math.floor(Math.min(window.innerWidth - 44, MAX_WIDTH) / TARGET_COLS));
+    const COLS = Math.floor(Math.min(window.innerWidth - 44, MAX_WIDTH) / CELL_SIZE);
+    const ROWS = Math.floor(COLS * 0.67);
+    const ALIVE_COLOR = '#e94560';
+    const DEAD_COLOR = '#0f0f1a';
+    const GRID_COLOR = '#2a2a3a';
+
+    // State
+    let grid = createGrid();
+    let running = false;
+    let generation = 0;
+    let animationId = null;
+    let lastUpdate = 0;
+    const UPDATE_INTERVAL = 100; // ms between generations
+
+    // Set canvas size
+    canvas.width = COLS * CELL_SIZE;
+    canvas.height = ROWS * CELL_SIZE;
+
+    // Create empty grid
+    function createGrid() {
+      return Array(ROWS).fill(null).map(() => Array(COLS).fill(false));
+    }
+
+    // Count live neighbors (with wrapping)
+    function countNeighbors(grid, row, col) {
+      let count = 0;
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          if (dr === 0 && dc === 0) continue;
+          const r = (row + dr + ROWS) % ROWS;
+          const c = (col + dc + COLS) % COLS;
+          if (grid[r][c]) count++;
+        }
+      }
+      return count;
+    }
+
+    // Compute next generation
+    function nextGeneration() {
+      const newGrid = createGrid();
+      for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+          const neighbors = countNeighbors(grid, row, col);
+          const alive = grid[row][col];
+          // Rules: survive with 2-3 neighbors, born with exactly 3
+          newGrid[row][col] = alive
+            ? (neighbors === 2 || neighbors === 3)
+            : (neighbors === 3);
+        }
+      }
+      grid = newGrid;
+      generation++;
+      updateStats();
+    }
+
+    // Draw the grid
+    function draw() {
+      ctx.fillStyle = DEAD_COLOR;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw grid lines
+      ctx.strokeStyle = GRID_COLOR;
+      ctx.lineWidth = 0.5;
+      for (let x = 0; x <= canvas.width; x += CELL_SIZE) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= canvas.height; y += CELL_SIZE) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+
+      // Draw live cells
+      ctx.fillStyle = ALIVE_COLOR;
+      for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+          if (grid[row][col]) {
+            ctx.fillRect(
+              col * CELL_SIZE + 1,
+              row * CELL_SIZE + 1,
+              CELL_SIZE - 2,
+              CELL_SIZE - 2
+            );
+          }
+        }
+      }
+    }
+
+    // Animation loop
+    function animate(timestamp) {
+      if (running) {
+        if (timestamp - lastUpdate >= UPDATE_INTERVAL) {
+          nextGeneration();
+          draw();
+          lastUpdate = timestamp;
+        }
+        animationId = requestAnimationFrame(animate);
+      }
+    }
+
+    // Update statistics display
+    function updateStats() {
+      document.getElementById('generation').textContent = generation;
+      const population = grid.flat().filter(cell => cell).length;
+      document.getElementById('population').textContent = population;
+    }
+
+    // Toggle cell at position
+    function toggleCell(x, y) {
+      const col = Math.floor(x / CELL_SIZE);
+      const row = Math.floor(y / CELL_SIZE);
+      if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
+        grid[row][col] = !grid[row][col];
+        draw();
+        updateStats();
+      }
+    }
+
+    // Set cell alive at position (for dragging)
+    function setCell(x, y, alive) {
+      const col = Math.floor(x / CELL_SIZE);
+      const row = Math.floor(y / CELL_SIZE);
+      if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
+        grid[row][col] = alive;
+        draw();
+        updateStats();
+      }
+    }
+
+    // Mouse handling
+    let isDrawing = false;
+    let drawMode = true; // true = draw alive, false = erase
+
+    canvas.addEventListener('mousedown', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const col = Math.floor(x / CELL_SIZE);
+      const row = Math.floor(y / CELL_SIZE);
+
+      isDrawing = true;
+      drawMode = !grid[row][col]; // If cell is dead, draw; if alive, erase
+      setCell(x, y, drawMode);
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (!isDrawing) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      setCell(x, y, drawMode);
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      isDrawing = false;
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      isDrawing = false;
+    });
+
+    // Touch handling for mobile
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const x = (touch.clientX - rect.left) * scaleX;
+      const y = (touch.clientY - rect.top) * scaleY;
+      const col = Math.floor(x / CELL_SIZE);
+      const row = Math.floor(y / CELL_SIZE);
+      isDrawing = true;
+      drawMode = !grid[row]?.[col];
+      setCell(x, y, drawMode);
+    }, {passive: false});
+
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (!isDrawing) return;
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const x = (touch.clientX - rect.left) * scaleX;
+      const y = (touch.clientY - rect.top) * scaleY;
+      setCell(x, y, drawMode);
+    }, {passive: false});
+
+    canvas.addEventListener('touchend', () => {
+      isDrawing = false;
+    });
+
+    // Button handlers
+    document.getElementById('startStop').addEventListener('click', function() {
+      running = !running;
+      this.textContent = running ? 'Pause' : 'Start';
+      this.classList.toggle('active', running);
+      if (running) {
+        lastUpdate = performance.now();
+        animationId = requestAnimationFrame(animate);
+      }
+    });
+
+    document.getElementById('step').addEventListener('click', () => {
+      if (!running) {
+        nextGeneration();
+        draw();
+      }
+    });
+
+    document.getElementById('clear').addEventListener('click', () => {
+      grid = createGrid();
+      generation = 0;
+      draw();
+      updateStats();
+    });
+
+    document.getElementById('random').addEventListener('click', () => {
+      grid = Array(ROWS).fill(null).map(() =>
+        Array(COLS).fill(null).map(() => Math.random() < 0.3)
+      );
+      generation = 0;
+      draw();
+      updateStats();
+    });
+
+    // Initial draw
+    draw();
+    updateStats();
+  </script>
+</body>
+</html>

@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Sound Pad</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+      background: #000000;
+      color: #f5f5f7;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    h1 {
+      margin-bottom: 15px;
+      font-weight: 300;
+      font-size: clamp(1.5rem, 5vw, 2rem);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      width: min(90vw, 70vh, 360px);
+      aspect-ratio: 1;
+      touch-action: none;
+    }
+
+    .pad {
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.05s, filter 0.05s;
+      min-height: 44px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pad::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0);
+      transition: background 0.1s;
+    }
+
+    .pad.active {
+      transform: scale(0.95);
+      filter: brightness(1.3);
+    }
+
+    .pad.active::after {
+      background: rgba(255,255,255,0.2);
+    }
+
+    button {
+      padding: 10px 0;
+      font-size: 13px;
+      font-weight: 500;
+      height: 44px;
+      width: 70px;
+      min-height: 44px;
+      max-height: 44px;
+      min-width: 70px;
+      max-width: 70px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      background: #1c1c1e;
+      color: #f5f5f7;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      flex-grow: 0;
+      box-sizing: border-box;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    button:hover { background: #2c2c2e; }
+    button:active { background: #3a3a3c; }
+    button.active { background: #0a84ff; color: #fff; }
+    button:disabled { opacity: 0.4; cursor: default; }
+    button:focus { outline: none; }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      margin-top: 15px;
+    }
+
+    .overdub-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: center;
+    }
+
+    #clearOd {
+      height: 24px;
+      min-height: 24px;
+      max-height: 24px;
+      width: 70px;
+      min-width: 70px;
+      max-width: 70px;
+      padding: 0;
+      font-size: 11px;
+      border-radius: 4px;
+    }
+
+    .drum-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      width: min(90vw, 70vh, 360px);
+      justify-content: center;
+    }
+
+    .drum-btn {
+      flex: 1;
+      height: 11px;
+      min-height: 11px;
+      max-height: 11px;
+      width: auto;
+      min-width: 0;
+      max-width: none;
+      padding: 0;
+      font-size: 0;
+      border-radius: 4px;
+      transition: transform 0.05s, filter 0.05s;
+    }
+
+    .drum-btn.active {
+      transform: scale(0.95);
+      filter: brightness(1.3);
+    }
+
+    /* Rhythm buttons - warm metallic tones */
+    #kick { background: linear-gradient(135deg, #8e8e93, #636366); }
+    #hihat { background: linear-gradient(135deg, #aeaeb2, #8e8e93); }
+    #snare { background: linear-gradient(135deg, #c7c7cc, #aeaeb2); }
+    #crash { background: linear-gradient(135deg, #d1d1d6, #c7c7cc); }
+
+    .bpm-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #1c1c1e;
+      padding: 8px 12px;
+      border-radius: 10px;
+    }
+
+    .bpm-control input {
+      width: 60px;
+      padding: 6px;
+      border: none;
+      border-radius: 6px;
+      background: #2c2c2e;
+      color: #f5f5f7;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .progress-bar {
+      width: min(90vw, 70vh, 360px);
+      height: 4px;
+      background: #2c2c2e;
+      border-radius: 2px;
+      margin-top: 15px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #0a84ff, #5e5ce6);
+      width: 0%;
+      transition: width 0.05s linear;
+    }
+
+    .beat-dots {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .beat-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #3a3a3c;
+      transition: background 0.15s ease;
+    }
+
+    .beat-dot.active {
+      background: #0a84ff;
+    }
+
+    .info {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #888;
+      text-align: center;
+    }
+
+    .toggle-row {
+      display: flex;
+      gap: 15px;
+      margin-top: 10px;
+    }
+
+    .toggle-row label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #aaa;
+      cursor: pointer;
+    }
+
+    .toggle-row input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    /* Pad colors - modern vibrant scheme */
+    .pad:nth-child(1)  { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+    .pad:nth-child(2)  { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+    .pad:nth-child(3)  { background: linear-gradient(135deg, #a855f7, #9333ea); }
+    .pad:nth-child(4)  { background: linear-gradient(135deg, #d946ef, #c026d3); }
+    .pad:nth-child(5)  { background: linear-gradient(135deg, #ec4899, #db2777); }
+    .pad:nth-child(6)  { background: linear-gradient(135deg, #f43f5e, #e11d48); }
+    .pad:nth-child(7)  { background: linear-gradient(135deg, #f97316, #ea580c); }
+    .pad:nth-child(8)  { background: linear-gradient(135deg, #eab308, #ca8a04); }
+    .pad:nth-child(9)  { background: linear-gradient(135deg, #84cc16, #65a30d); }
+    .pad:nth-child(10) { background: linear-gradient(135deg, #22c55e, #16a34a); }
+    .pad:nth-child(11) { background: linear-gradient(135deg, #10b981, #059669); }
+    .pad:nth-child(12) { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+    .pad:nth-child(13) { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+    .pad:nth-child(14) { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+    .pad:nth-child(15) { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+    .pad:nth-child(16) { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+  </style>
+</head>
+<body>
+  <div class="drum-row" id="drumRow">
+    <button class="drum-btn" id="kick"></button>
+    <button class="drum-btn" id="hihat"></button>
+    <button class="drum-btn" id="snare"></button>
+    <button class="drum-btn" id="crash"></button>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+  <div class="beat-dots" id="beats"></div>
+  <div class="controls">
+    <button id="record">Record</button>
+    <div class="overdub-group">
+      <button id="overdub">Overdub</button>
+      <button id="clearOd">Clear OD</button>
+    </div>
+    <button id="play">Play</button>
+    <button id="stop">Stop</button>
+    <button id="clear">Clear</button>
+    <div class="bpm-control">
+      <span>BPM</span>
+      <input type="number" id="bpm" value="120" min="60" max="200">
+    </div>
+  </div>
+  <div class="toggle-row">
+    <label><input type="checkbox" id="quantize" checked> Quantize</label>
+  </div>
+  <div class="info" id="info">Tap pads to play. Record a 4-bar loop.</div>
+
+  <script>
+    // Audio
+    let audioCtx = null;
+    const frequencies = [
+      261.63, 293.66, 329.63, 392.00,
+      440.00, 523.25, 587.33, 659.25,
+      783.99, 880.00, 1046.50, 1174.66,
+      1318.51, 1567.98, 1760.00, 2093.00
+    ];
+    const activeOscillators = new Map();
+
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playTone(index, duration = null) {
+      initAudio();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = frequencies[index];
+
+      const now = audioCtx.currentTime;
+      const attackTime = 0.01;
+      const releaseTime = 0.08;
+
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.25, now + attackTime);
+
+      if (duration) {
+        const releaseStart = now + Math.max(duration - releaseTime, attackTime);
+        gain.gain.setValueAtTime(0.25, releaseStart);
+        gain.gain.linearRampToValueAtTime(0, releaseStart + releaseTime);
+        osc.stop(releaseStart + releaseTime);
+      }
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+
+      if (!duration) activeOscillators.set(index, { osc, gain });
+      return { osc, gain };
+    }
+
+    function stopTone(index) {
+      const active = activeOscillators.get(index);
+      if (active) {
+        active.gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
+        active.osc.stop(audioCtx.currentTime + 0.1);
+        activeOscillators.delete(index);
+      }
+    }
+
+    // Drum synthesis functions
+    function playKick() {
+      initAudio();
+      const now = audioCtx.currentTime;
+
+      // Kick uses a sine wave with rapid pitch drop
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(150, now);
+      osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+
+      gain.gain.setValueAtTime(1, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.3);
+    }
+
+    function playHihat() {
+      initAudio();
+      const now = audioCtx.currentTime;
+
+      // Hi-hat uses filtered noise (multiple high-freq oscillators)
+      const fundamental = 40;
+      const ratios = [2, 3, 4.16, 5.43, 6.79, 8.21];
+
+      const gainNode = audioCtx.createGain();
+      gainNode.gain.setValueAtTime(0.3, now);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+      gainNode.connect(audioCtx.destination);
+
+      // Bandpass filter for metallic sound
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 7000;
+      filter.connect(gainNode);
+
+      ratios.forEach(ratio => {
+        const osc = audioCtx.createOscillator();
+        osc.type = 'square';
+        osc.frequency.value = fundamental * ratio;
+        osc.connect(filter);
+        osc.start(now);
+        osc.stop(now + 0.08);
+      });
+    }
+
+    function playSnare() {
+      initAudio();
+      const now = audioCtx.currentTime;
+
+      // Snare body (triangle wave with pitch drop)
+      const bodyOsc = audioCtx.createOscillator();
+      const bodyGain = audioCtx.createGain();
+      bodyOsc.type = 'triangle';
+      bodyOsc.frequency.setValueAtTime(180, now);
+      bodyOsc.frequency.exponentialRampToValueAtTime(80, now + 0.1);
+      bodyGain.gain.setValueAtTime(0.7, now);
+      bodyGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+      bodyOsc.connect(bodyGain);
+      bodyGain.connect(audioCtx.destination);
+      bodyOsc.start(now);
+      bodyOsc.stop(now + 0.15);
+
+      // Snare noise (white noise burst)
+      const bufferSize = audioCtx.sampleRate * 0.15;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+
+      const noiseFilter = audioCtx.createBiquadFilter();
+      noiseFilter.type = 'highpass';
+      noiseFilter.frequency.value = 1000;
+
+      const noiseGain = audioCtx.createGain();
+      noiseGain.gain.setValueAtTime(0.5, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+      noise.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(audioCtx.destination);
+      noise.start(now);
+    }
+
+    function playCrash() {
+      initAudio();
+      const now = audioCtx.currentTime;
+
+      // Crash cymbal - multiple detuned oscillators with long decay
+      const fundamental = 300;
+      const ratios = [1, 1.47, 1.89, 2.67, 3.14, 4.15, 5.12];
+
+      const gainNode = audioCtx.createGain();
+      gainNode.gain.setValueAtTime(0.4, now);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, now + 1.0);
+      gainNode.connect(audioCtx.destination);
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 4000;
+      filter.connect(gainNode);
+
+      ratios.forEach(ratio => {
+        const osc = audioCtx.createOscillator();
+        osc.type = 'square';
+        osc.frequency.value = fundamental * ratio;
+        osc.connect(filter);
+        osc.start(now);
+        osc.stop(now + 1.0);
+      });
+    }
+
+    const drumFunctions = {
+      kick: playKick,
+      hihat: playHihat,
+      snare: playSnare,
+      crash: playCrash
+    };
+
+    // Grid setup
+    const grid = document.getElementById('grid');
+    for (let i = 0; i < 16; i++) {
+      const pad = document.createElement('div');
+      pad.className = 'pad';
+      pad.dataset.index = i;
+      grid.appendChild(pad);
+    }
+
+    // Beat dots (4 bars × 4 beats)
+    const beatsContainer = document.getElementById('beats');
+    for (let i = 0; i < 16; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'beat-dot';
+      beatsContainer.appendChild(dot);
+    }
+
+    // State
+    let baseLayer = [];
+    let overdubLayer = [];
+    let isRecording = false;
+    let isOverdubbing = false;
+    let isPlaying = false;
+    let isCountingIn = false;
+    let loopStart = 0;
+    let loopLength = 0;
+    let playbackTimeouts = [];
+    let animationFrame = null;
+    let countInTimeouts = [];
+
+    const bpmInput = document.getElementById('bpm');
+    const quantizeCheck = document.getElementById('quantize');
+    const progressFill = document.getElementById('progress');
+    const recordBtn = document.getElementById('record');
+    const overdubBtn = document.getElementById('overdub');
+    const clearOdBtn = document.getElementById('clearOd');
+    const playBtn = document.getElementById('play');
+    const stopBtn = document.getElementById('stop');
+    const clearBtn = document.getElementById('clear');
+    const infoEl = document.getElementById('info');
+
+    // Overdub controls are only available during playback
+    overdubBtn.disabled = true;
+    clearOdBtn.disabled = true;
+
+    function getTotalHits() {
+      return baseLayer.length + overdubLayer.length;
+    }
+
+    function updateInfo() {
+      if (isCountingIn) {
+        infoEl.textContent = 'Count-in...';
+      } else if (isRecording) {
+        infoEl.textContent = `Recording... (${baseLayer.length} hits)`;
+      } else if (isOverdubbing) {
+        infoEl.textContent = `Overdubbing... (${overdubLayer.length} new)`;
+      } else if (isPlaying) {
+        infoEl.textContent = `Playing ${getTotalHits()} hits`;
+      } else if (getTotalHits() > 0) {
+        infoEl.textContent = `${getTotalHits()} hits recorded. Press Play.`;
+      } else {
+        infoEl.textContent = 'Tap pads to play. Record a 4-bar loop.';
+      }
+    }
+
+    function getBPM() { return parseInt(bpmInput.value) || 120; }
+    function getLoopDuration() { return (60 / getBPM()) * 16 * 1000; } // 4 bars of 4 beats
+    function getBeatDuration() { return (60 / getBPM()) * 1000; }
+
+    function quantizeTime(t) {
+      if (!quantizeCheck.checked) return t;
+      const beatMs = getBeatDuration() / 4; // 16th note quantization
+      return Math.round(t / beatMs) * beatMs;
+    }
+
+    // Track start times for recording duration
+    const noteStartTimes = new Map();
+
+    function recordNoteStart(index) {
+      if (!isRecording && !isOverdubbing) return;
+      const t = quantizeTime(Date.now() - loopStart);
+      noteStartTimes.set(index, { t: t % getLoopDuration(), raw: Date.now() });
+    }
+
+    function recordNoteEnd(index) {
+      if (!isRecording && !isOverdubbing) return;
+      const startInfo = noteStartTimes.get(index);
+      if (!startInfo) return;
+
+      const duration = Math.max(50, Date.now() - startInfo.raw); // Min 50ms
+      const note = { t: startInfo.t, pad: index, dur: duration };
+
+      if (isRecording) {
+        baseLayer.push(note);
+      } else if (isOverdubbing) {
+        overdubLayer.push(note);
+      }
+
+      noteStartTimes.delete(index);
+      updateInfo();
+    }
+
+    // Play a click sound for count-in
+    function playClick(accent = false) {
+      initAudio();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = accent ? 1000 : 800;
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.05);
+    }
+
+    function startCountIn() {
+      isCountingIn = true;
+      recordBtn.classList.add('active');
+      updateInfo();
+      const beatMs = getBeatDuration();
+
+      // Play 4 beats of count-in
+      for (let i = 0; i < 4; i++) {
+        const timeout = setTimeout(() => {
+          playClick(i === 0); // First beat is accented (higher tone)
+        }, i * beatMs);
+        countInTimeouts.push(timeout);
+      }
+
+      // Start actual recording after 4 beats
+      const startTimeout = setTimeout(() => {
+        isCountingIn = false;
+        actuallyStartRecording();
+      }, 4 * beatMs);
+      countInTimeouts.push(startTimeout);
+    }
+
+    function actuallyStartRecording() {
+      baseLayer = [];
+      overdubLayer = [];
+      isRecording = true;
+      loopStart = Date.now();
+      loopLength = getLoopDuration();
+      updateInfo();
+      startProgressAnimation();
+
+      // Auto-stop after one loop
+      setTimeout(() => {
+        if (isRecording) {
+          stopRecording();
+          startPlayback();
+        }
+      }, loopLength);
+    }
+
+    function stopRecording() {
+      // Finalize any notes still being held
+      for (const [index, startInfo] of noteStartTimes) {
+        const duration = Math.max(50, Date.now() - startInfo.raw);
+        baseLayer.push({ t: startInfo.t, pad: index, dur: duration });
+      }
+      noteStartTimes.clear();
+
+      isRecording = false;
+      isCountingIn = false;
+      countInTimeouts.forEach(clearTimeout);
+      countInTimeouts = [];
+      recordBtn.classList.remove('active');
+      updateInfo();
+    }
+
+    // Overdub function - starts immediately during playback
+    function startOverdub() {
+      if (baseLayer.length === 0 || !isPlaying) return;
+      overdubLayer = []; // Clear previous overdub
+      isOverdubbing = true;
+      overdubBtn.classList.add('active');
+      updateInfo();
+      // Playback continues - no separate scheduling needed
+    }
+
+    function stopOverdub() {
+      // Finalize any notes still being held
+      for (const [index, startInfo] of noteStartTimes) {
+        const duration = Math.max(50, Date.now() - startInfo.raw);
+        overdubLayer.push({ t: startInfo.t, pad: index, dur: duration });
+      }
+      noteStartTimes.clear();
+
+      isOverdubbing = false;
+      overdubBtn.classList.remove('active');
+      updateInfo();
+
+      // Re-schedule playback to include new overdub notes
+      if (isPlaying) {
+        scheduleLoop();
+      }
+    }
+
+    function startPlayback() {
+      if (getTotalHits() === 0) return;
+      isPlaying = true;
+      playBtn.classList.add('active');
+      overdubBtn.disabled = false; // Enable overdub when playing
+      clearOdBtn.disabled = false; // Enable clear overdub when playing
+      loopStart = Date.now();
+      loopLength = getLoopDuration();
+      updateInfo();
+      scheduleLoop();
+      startProgressAnimation();
+    }
+
+    function scheduleLoop() {
+      // Clear previous timeouts before scheduling new ones
+      playbackTimeouts.forEach(clearTimeout);
+      playbackTimeouts = [];
+
+      const now = Date.now();
+      const loopTime = (now - loopStart) % loopLength;
+
+      // Play both layers
+      const allNotes = [...baseLayer, ...overdubLayer];
+      allNotes.forEach((note) => {
+        let delay = note.t - loopTime;
+        if (delay < 0) delay += loopLength;
+        const timeout = setTimeout(() => {
+          if (isPlaying) {
+            if (note.drum) {
+              triggerDrum(note.drum);
+            } else {
+              triggerPad(note.pad, note.dur || 150);
+            }
+          }
+        }, delay);
+        playbackTimeouts.push(timeout);
+      });
+
+      // Schedule next loop
+      const nextLoopDelay = loopLength - loopTime;
+      const loopTimeout = setTimeout(() => {
+        if (isPlaying) scheduleLoop();
+      }, nextLoopDelay);
+      playbackTimeouts.push(loopTimeout);
+    }
+
+    function stopPlayback() {
+      isPlaying = false;
+      playBtn.classList.remove('active');
+      overdubBtn.disabled = true; // Disable overdub when not playing
+      clearOdBtn.disabled = true; // Disable clear overdub when not playing
+      playbackTimeouts.forEach(clearTimeout);
+      playbackTimeouts = [];
+      cancelAnimationFrame(animationFrame);
+      progressFill.style.width = '0%';
+      document.querySelectorAll('.beat-dot').forEach(d => d.classList.remove('active'));
+      updateInfo();
+    }
+
+    function stopAll() {
+      stopRecording();
+      // Stop overdub first but skip rescheduling since we're stopping playback too
+      if (isOverdubbing) {
+        for (const [index, startInfo] of noteStartTimes) {
+          const duration = Math.max(50, Date.now() - startInfo.raw);
+          overdubLayer.push({ t: startInfo.t, pad: index, dur: duration });
+        }
+        noteStartTimes.clear();
+        isOverdubbing = false;
+        overdubBtn.classList.remove('active');
+      }
+      stopPlayback();
+    }
+
+    function clearRecording() {
+      stopAll();
+      baseLayer = [];
+      overdubLayer = [];
+      updateInfo();
+    }
+
+    function startProgressAnimation() {
+      function animate() {
+        if (!isRecording && !isPlaying && !isOverdubbing) return;
+        const elapsed = (Date.now() - loopStart) % loopLength;
+        const pct = (elapsed / loopLength) * 100;
+        progressFill.style.width = pct + '%';
+
+        // Update beat dots
+        const beatIndex = Math.floor((elapsed / loopLength) * 16);
+        document.querySelectorAll('.beat-dot').forEach((d, i) => {
+          d.classList.toggle('active', i === beatIndex);
+        });
+
+        animationFrame = requestAnimationFrame(animate);
+      }
+      animate();
+    }
+
+    function triggerPad(index, duration = 150, volume = 0.25) {
+      const pad = grid.children[index];
+      if (!pad) return;
+      pad.classList.add('active');
+
+      // Create a fresh oscillator for playback
+      initAudio();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = frequencies[index];
+
+      const now = audioCtx.currentTime;
+      gain.gain.setValueAtTime(volume, now);
+      gain.gain.setValueAtTime(volume, now + (duration / 1000) - 0.05);
+      gain.gain.linearRampToValueAtTime(0, now + (duration / 1000));
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + (duration / 1000));
+
+      setTimeout(() => pad.classList.remove('active'), duration);
+    }
+
+    // Drum trigger for playback
+    function triggerDrum(drumType) {
+      const btn = document.getElementById(drumType);
+      if (!btn) return;
+      btn.classList.add('active');
+      drumFunctions[drumType]();
+      setTimeout(() => btn.classList.remove('active'), 100);
+    }
+
+    // Record a drum hit (drums are instant, no duration tracking needed)
+    function recordDrumHit(drumType) {
+      if (!isRecording && !isOverdubbing) return;
+      const t = quantizeTime(Date.now() - loopStart) % getLoopDuration();
+      const note = { t, drum: drumType };
+
+      if (isRecording) {
+        baseLayer.push(note);
+      } else if (isOverdubbing) {
+        overdubLayer.push(note);
+      }
+      updateInfo();
+    }
+
+    // Pad interaction
+    function getPadIndex(el) {
+      const pad = el?.closest('.pad');
+      return pad ? parseInt(pad.dataset.index, 10) : -1;
+    }
+
+    function activatePad(index) {
+      const pad = grid.children[index];
+      if (pad && !pad.classList.contains('active')) {
+        pad.classList.add('active');
+        playTone(index);
+        recordNoteStart(index);
+      }
+    }
+
+    function deactivatePad(index) {
+      const pad = grid.children[index];
+      if (pad) {
+        pad.classList.remove('active');
+        stopTone(index);
+        recordNoteEnd(index);
+      }
+    }
+
+    const activePads = new Set();
+
+    // Mouse events
+    grid.addEventListener('mousedown', (e) => {
+      const index = getPadIndex(e.target);
+      if (index >= 0) { activePads.add(index); activatePad(index); }
+    });
+
+    grid.addEventListener('mouseenter', (e) => {
+      if (e.buttons === 1) {
+        const index = getPadIndex(e.target);
+        if (index >= 0) { activePads.add(index); activatePad(index); }
+      }
+    }, true);
+
+    grid.addEventListener('mouseleave', (e) => {
+      const index = getPadIndex(e.target);
+      if (index >= 0 && activePads.has(index)) {
+        activePads.delete(index);
+        deactivatePad(index);
+      }
+    }, true);
+
+    document.addEventListener('mouseup', () => {
+      activePads.forEach(index => deactivatePad(index));
+      activePads.clear();
+    });
+
+    // Touch events
+    function handleTouches(e) {
+      e.preventDefault();
+      const currentTouches = new Set();
+      for (const touch of e.touches) {
+        const el = document.elementFromPoint(touch.clientX, touch.clientY);
+        const index = getPadIndex(el);
+        if (index >= 0) {
+          currentTouches.add(index);
+          if (!activePads.has(index)) { activePads.add(index); activatePad(index); }
+        }
+      }
+      for (const index of activePads) {
+        if (!currentTouches.has(index)) { activePads.delete(index); deactivatePad(index); }
+      }
+    }
+
+    grid.addEventListener('touchstart', handleTouches, { passive: false });
+    grid.addEventListener('touchmove', handleTouches, { passive: false });
+    grid.addEventListener('touchend', handleTouches, { passive: false });
+    grid.addEventListener('touchcancel', handleTouches, { passive: false });
+
+    // Drum button handlers
+    const drumRow = document.getElementById('drumRow');
+    drumRow.addEventListener('mousedown', (e) => {
+      const btn = e.target.closest('.drum-btn');
+      if (btn) {
+        btn.classList.add('active');
+        drumFunctions[btn.id]();
+        recordDrumHit(btn.id);
+      }
+    });
+
+    drumRow.addEventListener('mouseup', (e) => {
+      const btn = e.target.closest('.drum-btn');
+      if (btn) btn.classList.remove('active');
+    });
+
+    drumRow.addEventListener('mouseleave', (e) => {
+      const btn = e.target.closest('.drum-btn');
+      if (btn) btn.classList.remove('active');
+    }, true);
+
+    drumRow.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      for (const touch of e.changedTouches) {
+        const el = document.elementFromPoint(touch.clientX, touch.clientY);
+        const btn = el?.closest('.drum-btn');
+        if (btn) {
+          btn.classList.add('active');
+          drumFunctions[btn.id]();
+          recordDrumHit(btn.id);
+        }
+      }
+    }, { passive: false });
+
+    drumRow.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      document.querySelectorAll('.drum-btn.active').forEach(b => b.classList.remove('active'));
+    }, { passive: false });
+
+    // Button handlers
+    recordBtn.addEventListener('click', () => {
+      if (isRecording || isCountingIn) stopRecording();
+      else { stopAll(); startCountIn(); }
+    });
+
+    overdubBtn.addEventListener('click', () => {
+      if (isOverdubbing) stopOverdub();
+      else if (isPlaying && baseLayer.length > 0) startOverdub();
+    });
+
+    clearOdBtn.addEventListener('click', () => {
+      if (isPlaying) {
+        overdubLayer = [];
+        scheduleLoop(); // Re-schedule without overdub notes
+        updateInfo();
+      }
+    });
+
+    playBtn.addEventListener('click', () => {
+      if (isPlaying) stopPlayback();
+      else { stopAll(); startPlayback(); }
+    });
+
+    stopBtn.addEventListener('click', stopAll);
+    clearBtn.addEventListener('click', clearRecording);
+  </script>
+</body>
+</html>
