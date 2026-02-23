@@ -127,6 +127,17 @@ const v1_1Seeds = {
     '/proc/version':
         'gresos-kernel 0.9.847-greg (gcc 12.2.0) #847 SMP Jan 22 2026 00:00:00',
 
+    '/sys/firmware/bios':
+        'GregBIOS 1.2\n'
+        + 'Vendor:       Gregory Alan Computing, Inc.\n'
+        + 'Release Date: 01/22/1987\n'
+        + 'ROM Size:     64 KB\n'
+        + '\n'
+        + 'Revision History:\n'
+        + '  1.0  1985-03-14  Initial POST, 8-bit bus, 640K memory test\n'
+        + '  1.1  1986-08-22  rf0 antenna controller, extended memory detect\n'
+        + '  1.2  1987-01-22  Boot device priority, shipped with GregOS 1.1',
+
     '/proc/cpuinfo':
         'processor       : 0\n'
         + 'vendor_id       : GenuineIntel\n'
@@ -153,6 +164,26 @@ const v1_1Seeds = {
 // state and return dynamic content.
 
 const narrativeSeeds = {
+
+    // ── System Overrides ──────────────────────────────────────
+
+    '/proc/version':
+        'gresos-kernel 0.9.851-greg (gcc 14.1.0) #851 SMP Feb 15 2026 00:00:00',
+
+    '/sys/firmware/bios':
+        'GregBIOS 1.4\n'
+        + 'Vendor:       Gregory Alan Computing, Inc.\n'
+        + 'Release Date: 10/15/2025\n'
+        + 'ROM Size:     256 KB\n'
+        + 'ACPI:         2.0\n'
+        + 'SMBIOS:       3.3.0\n'
+        + '\n'
+        + 'Revision History:\n'
+        + '  1.0  1985-03-14  Initial POST, 8-bit bus, 640K memory test\n'
+        + '  1.1  1986-08-22  rf0 antenna controller, extended memory detect\n'
+        + '  1.2  1987-01-22  Boot device priority, shipped with GregOS 1.1\n'
+        + '  1.3  2025-06-01  ACPI table support, PCI bus enumeration\n'
+        + '  1.4  2025-10-15  Entropy source init, extended POST, 64-bit',
 
     // ── Thread 1: The Daemon Pipeline ────────────────────────
 
@@ -317,7 +348,7 @@ const narrativeSeeds = {
 
     '/var/log/syslog':
         'Jan 22 00:00:01 gregoryalan syslogd: started\n'
-        + 'Jan 22 00:00:01 gregoryalan kernel: gresos-kernel 0.9.847 boot complete\n'
+        + 'Jan 22 00:00:01 gregoryalan kernel: gresos-kernel 0.9.851 boot complete\n'
         + 'Jan 22 00:00:02 gregoryalan sshd[47]: Server listening on 0.0.0.0 port 22\n'
         + 'Jan 22 00:00:02 gregoryalan cron[63]: (CRON) INFO (pidfile fd = 3)\n'
         + 'Jan 22 00:00:03 gregoryalan gregd[847]: daemon chain started (4 workers)\n'
@@ -334,25 +365,25 @@ const narrativeSeeds = {
         '# /etc/modules.conf - module load order\n'
         + '#\n'
         + '# Core devices\n'
-        + 'rf0         /lib/modules/0.9.847/rf0.ko         # SDR hardware entropy source\n'
+        + 'rf0         /lib/modules/0.9.851/rf0.ko         # SDR hardware entropy source\n'
         + 'entropy     (built-in)                           # entropy pool management\n'
         + '\n'
         + '# Extended pipeline (added 0.9.2)\n'
         + 'transform   (built-in)                           # sys_transform(), sys_chain_exec()\n'
         + '\n'
         + '# Post-pipeline (added 0.9.3)\n'
-        + 'signal      /lib/modules/0.9.847/signal.ko       # depends: transform, entropy',
+        + 'signal      /lib/modules/0.9.851/signal.ko       # depends: transform, entropy',
 
     '/etc/gregos-release':
         'GregOS 2.0.1-dev\n'
         + 'BUILD: 2026-01-22\n'
-        + 'KERNEL: 0.9.847-greg\n'
+        + 'KERNEL: 0.9.851-greg\n'
         + 'ARCH: x86_64\n'
         + 'CODENAME: rf0\n'
         + 'CHANNEL: unstable',
 
     '/var/log/kern.log': (state) => {
-        let out = '[    0.000000] gresos-kernel 0.9.847 #847 SMP\n'
+        let out = '[    0.000000] gresos-kernel 0.9.851 #851 SMP\n'
             + '[    0.001203] CPU: x86_64 detected\n'
             + '[    0.012847] Memory: 512MB available\n'
             + '[    0.024100] gregfs: mounted / (rw)\n'
@@ -396,7 +427,9 @@ const VERSION_MANIFEST = [
     {
         version: 1.0,
         apply() {
-            // v1.0 ROM: minimal command set + two files
+            // v1.0 ROM: no kernel, no BIOS — bare firmware
+            Kernel.kernelVersion.set(null);
+            Kernel.biosVersion.set(null);
             const v1Set = ['help', 'ls', 'cat', 'clear', 'reboot', 'rm', 'debug'];
             for (const name of v1Set) {
                 if (coreCommands[name]) Shell.register(name, coreCommands[name]);
@@ -414,6 +447,8 @@ const VERSION_MANIFEST = [
     {
         version: 1.1,
         apply() {
+            Kernel.kernelVersion.set('0.9.847-greg');
+            Kernel.biosVersion.set('1.2');
             // Restore core UNIX commands
             const v1_1Set = ['cd', 'pwd', 'open', 'whoami', 'history', 'sudo', 'man'];
             for (const name of v1_1Set) {
@@ -453,6 +488,8 @@ const VERSION_MANIFEST = [
     {
         version: 2.0,
         apply() {
+            Kernel.kernelVersion.set('0.9.851-greg');
+            Kernel.biosVersion.set('1.4');
             // Update welcome text and version
             Kernel.fs.addTextFile('welcome.txt',
                 'Welcome to GregOS 2.0-dev\n'
@@ -461,7 +498,7 @@ const VERSION_MANIFEST = [
             Kernel.fs.addTextFile('version.txt',
                 'GregOS v2.0-dev\n'
                 + 'Build:  2026.02.15\n'
-                + 'Kernel: 0.9.847-greg\n'
+                + 'Kernel: 0.9.851-greg\n'
                 + 'Branch: dev/transform-pipeline\n'
                 + 'Status: unstable');
 
@@ -588,7 +625,7 @@ function renderMOTD() {
             `<span class="v2-title">GregOS 2.0-dev</span>`,
             `<span class="v2-rule">─────────────────────────────</span>`,
             '',
-            `<span class="v2-label">kernel    </span>0.9.847-greg`,
+            `<span class="v2-label">kernel    </span>0.9.851-greg`,
             `<span class="v2-label">branch    </span>dev/transform-pipeline`,
             `<span class="v2-label">channel   </span>unstable`,
             `<span class="v2-label">daemons   </span>4 active`,

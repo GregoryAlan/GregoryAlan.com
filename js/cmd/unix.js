@@ -43,11 +43,13 @@ const v1_1CommandsPack = {
         },
 
         uname: (args) => {
+            const kv = Kernel.kernelVersion.get() || '0.9.847-greg';
+            const build = kv.match(/\.(\d+)-/)?.[1] || '847';
             const info = {
                 s: 'GregOS',
                 n: Shell.env.HOSTNAME,
-                r: '0.9.847-greg',
-                v: '#847 SMP ' + new Date().toDateString(),
+                r: kv,
+                v: '#' + build + ' SMP ' + new Date().toDateString(),
                 m: 'x86_64',
             };
             if (!args) return info.s;
@@ -268,14 +270,15 @@ const v1_1CommandsPack = {
 
         // ─── System Overview ────────────────────────────────
 
-        gregos: 'GREGOS(7)                    GregOS Manual                    GREGOS(7)\n\n'
+        gregos: () =>
+            'GREGOS(7)                    GregOS Manual                    GREGOS(7)\n\n'
             + 'NAME\n'
             + '       GregOS - Gregory Alan Computing operating system\n\n'
             + 'DESCRIPTION\n'
-            + '       GregOS is a custom operating system built on the gregos-kernel.\n'
+            + '       GregOS is a custom operating system built on the gresos-kernel.\n'
             + '       The system provides a standard UNIX interface for navigating\n'
             + '       projects, games, and experiments by its creator.\n\n'
-            + '       The current kernel version is 0.9.847-greg, build #847.\n\n'
+            + '       The current kernel version is ' + (Kernel.kernelVersion.get() || '0.9.847-greg') + '.\n\n'
             + 'GETTING STARTED\n'
             + '       cat welcome.txt    Read the welcome message\n'
             + '       help               List available commands\n'

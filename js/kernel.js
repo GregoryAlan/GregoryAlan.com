@@ -180,7 +180,9 @@ const Kernel = {
         },
 
         getManPage(name) {
-            return this._manPages[name] || null;
+            const page = this._manPages[name];
+            if (typeof page === 'function') return page();
+            return page || null;
         },
 
         addTextFile(name, content) { this._textFiles[name] = content; },
@@ -390,6 +392,22 @@ const Kernel = {
         reset() {
             this._triggers.length = 0;
         },
+    },
+
+    // ─── Version Accessors ────────────────────────────────────
+
+    kernelVersion: {
+        get() { return Kernel.session.get('kernelVersion') || null; },
+        set(v) { Kernel.session.set('kernelVersion', v); },
+        getBuild() {
+            const v = this.get();
+            return v ? (v.match(/\.(\d+)-/)?.[1] || null) : null;
+        },
+    },
+
+    biosVersion: {
+        get() { return Kernel.session.get('biosVersion') || null; },
+        set(v) { Kernel.session.set('biosVersion', v); },
     },
 
     // ─── Session Storage ────────────────────────────────────
