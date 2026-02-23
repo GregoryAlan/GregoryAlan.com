@@ -10,9 +10,13 @@
 //             cmd/bin-tools.js (binTools),
 //             cmd/v2.js (v2CommandsPack, pkgRegistry, restoreInstalledPackages,
 //                        getInstalledPackages),
-//             hunts/the-signal.js (theSignalHunt)
+//             hunts/the-signal.js (theSignalHunt),
+//             hunts/greg-corp.js (gregCorpProfiles, gregCorpHomeFiles,
+//                                 gregCorpCommands, gregCorpManPages,
+//                                 gregCorpTriggers)
 
 // ─── v1.0 Content ───────────────────────────────────────────
+// spec: the-signal-storyline.md > Phase 1: v1.0 ROM
 
 const v1Files = {
     'broadcast.log':
@@ -37,6 +41,7 @@ const v1Files = {
 };
 
 // ─── v1.1 Content ───────────────────────────────────────────
+// spec: the-signal-storyline.md > Phase 2: v1.0 → v1.1 Update
 
 const v1_1Files = {
     'welcome.txt': 'GregOS 1.1 \u2014 Guest Terminal\n'
@@ -102,6 +107,7 @@ const v1_1Dirs = {
 };
 
 // ─── v1.1 Ambient System Files ───────────────────────────────
+// spec: NONE — structural atmosphere, developer discretion
 
 const v1_1Seeds = {
     '/etc/hostname': 'gregoryalan.com',
@@ -166,6 +172,7 @@ const v1_1Seeds = {
 const narrativeSeeds = {
 
     // ── System Overrides ──────────────────────────────────────
+    // spec: NONE — structural atmosphere, v2.0 overrides of v1.1 values
 
     '/proc/version':
         'gresos-kernel 0.9.851-greg (gcc 14.1.0) #851 SMP Feb 15 2026 00:00:00',
@@ -185,7 +192,19 @@ const narrativeSeeds = {
         + '  1.3  2025-06-01  ACPI table support, PCI bus enumeration\n'
         + '  1.4  2025-10-15  Entropy source init, extended POST, 64-bit',
 
+    // ── Extended /etc/passwd with employee accounts ──────────
+    // spec: greg-corp-storyline.md > Setting: GregCorp
+
+    '/etc/passwd':
+        'root:x:0:0:root:/root:/bin/bash\n'
+        + 'greg:x:1000:1000:Gregory Alan:/home/greg:/bin/bash\n'
+        + 'guest:x:1001:1001:Visitor:/home/guest:/bin/bash\n'
+        + 'dhollis:x:1002:1002:Diane Hollis:/home/dhollis:/bin/bash\n'
+        + 'sshd:x:47:47:SSH Daemon:/var/run/sshd:/usr/sbin/nologin\n'
+        + 'nobody:x:65534:65534:Nobody:/nonexistent:/usr/sbin/nologin',
+
     // ── Thread 1: The Daemon Pipeline ────────────────────────
+    // spec: NARRATIVE-SEEDS.md > Thread 1 > /etc/crontab
 
     '/etc/crontab':
         '# /etc/crontab - GregOS system crontab\n'
@@ -203,6 +222,7 @@ const narrativeSeeds = {
         + '\n'
         + '# keep the channel open',
 
+    // spec: NARRATIVE-SEEDS.md > Thread 1 > /proc/daemons
     '/proc/daemons': (state) => {
         const epoch = new Date('2025-10-15T00:00:00Z').getTime();
         const now = Date.now();
@@ -230,6 +250,7 @@ const narrativeSeeds = {
         return out;
     },
 
+    // spec: NARRATIVE-SEEDS.md > Thread 1 > /var/log/daemon.log
     '/var/log/daemon.log': (state) => {
         const epoch = new Date('2025-10-15T00:00:00Z').getTime();
         const cycles = Math.floor((Date.now() - epoch) / 60000);
@@ -266,6 +287,7 @@ const narrativeSeeds = {
         return out.trimEnd();
     },
 
+    // spec: NARRATIVE-SEEDS.md > Thread 1 > /home/greg/bin/ (shift, remap, align, exec)
     '/home/greg/bin/shift':
         '#!/usr/bin/env bash\n'
         + '# shift - Bitwise stream transform\n'
@@ -332,6 +354,7 @@ const narrativeSeeds = {
 
     // ── Thread 2: The Entropy Anomaly ────────────────────────
 
+    // spec: NARRATIVE-SEEDS.md > Thread 2 > /proc/entropy_avail
     '/proc/entropy_avail': (state) => {
         const jitter = Math.floor(Math.random() * 13) - 6;
         const pool = 3847 + jitter;
@@ -346,6 +369,7 @@ const narrativeSeeds = {
         return out;
     },
 
+    // spec: NARRATIVE-SEEDS.md > Thread 2 > /var/log/syslog (entropy thread)
     '/var/log/syslog':
         'Jan 22 00:00:01 gregoryalan syslogd: started\n'
         + 'Jan 22 00:00:01 gregoryalan kernel: gresos-kernel 0.9.851 boot complete\n'
@@ -361,6 +385,7 @@ const narrativeSeeds = {
 
     // ── Thread 3: The Signal Infrastructure ──────────────────
 
+    // spec: NARRATIVE-SEEDS.md > Thread 3 > /etc/modules.conf
     '/etc/modules.conf':
         '# /etc/modules.conf - module load order\n'
         + '#\n'
@@ -374,6 +399,7 @@ const narrativeSeeds = {
         + '# Post-pipeline (added 0.9.3)\n'
         + 'signal      /lib/modules/0.9.851/signal.ko       # depends: transform, entropy',
 
+    // spec: NARRATIVE-SEEDS.md > Thread 3 > /etc/gregos-release (drift: code adds -dev suffix and CHANNEL)
     '/etc/gregos-release':
         'GregOS 2.0.1-dev\n'
         + 'BUILD: 2026-01-22\n'
@@ -382,6 +408,7 @@ const narrativeSeeds = {
         + 'CODENAME: rf0\n'
         + 'CHANNEL: unstable',
 
+    // spec: NARRATIVE-SEEDS.md > Thread 3 > /var/log/kern.log
     '/var/log/kern.log': (state) => {
         let out = '[    0.000000] gresos-kernel 0.9.851 #851 SMP\n'
             + '[    0.001203] CPU: x86_64 detected\n'
@@ -409,6 +436,7 @@ const narrativeSeeds = {
 
     // ── Thread 4: Gregory's Presence ─────────────────────────
 
+    // spec: NARRATIVE-SEEDS.md > Thread 4 > /home/greg/.bashrc
     '/home/greg/.bashrc':
         '# ~/.bashrc - Gregory Alan\n'
         + 'export PATH="$HOME/bin:$PATH"\n'
@@ -525,6 +553,18 @@ const VERSION_MANIFEST = [
             // Must come after v2CommandsPack so Signal's decode/strings win
             Kernel.hunt.registerHunt(theSignalHunt);
 
+            // Register Greg Corp commands directly (su, finger override)
+            for (const [name, fn] of Object.entries(gregCorpCommands)) {
+                Shell.register(name, fn);
+            }
+            Kernel.fs.mergeManPages(gregCorpManPages);
+            Kernel.hunt._triggers.push(...gregCorpTriggers);
+
+            // Seed employee home directories
+            for (const [path, content] of Object.entries(gregCorpHomeFiles)) {
+                Kernel.fs.addTreeFile(path, content);
+            }
+
             // Restore any previously installed packages
             restoreInstalledPackages();
 
@@ -547,6 +587,16 @@ function applyVersion(targetVersion) {
     Shell.resetCommands();
     Kernel.fs.reset();
     Kernel.hunt.reset();
+    // Reset active profile on version change
+    Terminal._pendingAuth = null;
+    Shell._activeProfile = null;
+    Shell._savedEnv = null;
+    Shell._savedCwd = null;
+    Shell._savedHistory = null;
+    Shell._savedBashHistory = undefined;
+    Shell.env.USER = 'guest';
+    Shell.env.HOME = '/home/guest';
+    Shell.env.HOSTNAME = 'gregoryalan.com';
     for (const layer of VERSION_MANIFEST) {
         if (layer.version > targetVersion) break;
         layer.apply();

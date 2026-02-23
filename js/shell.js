@@ -272,8 +272,10 @@ const Shell = {
         if (Kernel.hunt.getVersion() < 1.1) {
             return 'rf0>';
         }
-        const path = Kernel.fs._cwd.length ? '~/' + Kernel.fs._cwd.join('/') : '~';
-        return `guest@gregoryalan.com:${path}$`;
+        const user = Shell.env.USER;
+        const host = Shell.env.HOSTNAME;
+        const path = Kernel.fs.cwdString();
+        return `${user}@${host}:${path}$`;
     },
 
     // ─── Environment ────────────────────────────────────────
@@ -287,5 +289,59 @@ const Shell = {
         LANG: 'en_US.UTF-8',
         PATH: '/usr/local/bin:/usr/bin:/bin',
         OSTYPE: 'gregos',
+    },
+
+    // ─── User Profiles ───────────────────────────────────────
+
+    _activeProfile: null,
+    _savedEnv: null,
+    _savedCwd: null,
+
+    switchProfile(profile) {
+        this._savedEnv = { ...this.env };
+        this._savedCwd = Kernel.fs.cwd();
+        // Swap hidden .bash_history with the profile's tree version
+        this._savedBashHistory = Kernel.fs._hiddenFiles['.bash_history'];
+        const profileHistory = Kernel.fs._getNode(['home', profile.username, '.bash_history']);
+        if (typeof profileHistory === 'string') {
+            Kernel.fs._hiddenFiles['.bash_history'] = profileHistory;
+        }
+        // Isolate runtime history
+        this._savedHistory = this._history.slice();
+        this._history = [];
+        this._historyIndex = -1;
+        this.env.USER = profile.username;
+        this.env.HOME = '/home/' + profile.username;
+        if (profile.hostname) this.env.HOSTNAME = profile.hostname;
+        this._activeProfile = profile;
+        Kernel.fs.setHome(['home', profile.username]);
+        Kernel.fs.chdir('~');
+        Terminal.updatePrompt();
+    },
+
+    restoreProfile() {
+        if (!this._activeProfile) return false;
+        Object.assign(this.env, this._savedEnv);
+        this._activeProfile = null;
+        this._savedEnv = null;
+        // Restore guest .bash_history
+        if (this._savedBashHistory !== undefined) {
+            Kernel.fs._hiddenFiles['.bash_history'] = this._savedBashHistory;
+            this._savedBashHistory = undefined;
+        }
+        // Restore runtime history
+        if (this._savedHistory) {
+            this._history = this._savedHistory;
+            this._historyIndex = -1;
+            this._savedHistory = null;
+        }
+        Kernel.fs.setHome([]);
+        // Restore working directory
+        const cwd = this._savedCwd;
+        this._savedCwd = null;
+        Kernel.fs._cwd.length = 0;
+        if (cwd) cwd.forEach(p => Kernel.fs._cwd.push(p));
+        Terminal.updatePrompt();
+        return true;
     },
 };

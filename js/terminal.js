@@ -16,6 +16,8 @@ const Terminal = {
         bootScreen: document.getElementById('boot-screen'),
     },
 
+    _pendingAuth: null,
+
     // ─── Rendering ──────────────────────────────────────────
 
     addOutput(cmd, result) {
@@ -52,12 +54,58 @@ const Terminal = {
         if (hint) hint.remove();
     },
 
+    promptPassword(callback) {
+        this._pendingAuth = { callback, buffer: '' };
+        this.el.prompt.textContent = 'Password: ';
+        this.el.input.value = '';
+        this.el.input.focus();
+    },
+
     init() {
         this.el.input.addEventListener('keydown', (e) => this.handleKeydown(e));
         this.el.terminal.addEventListener('click', (e) => this.handleClick(e));
     },
 
     handleKeydown(e) {
+        // ── Password mode: intercept all input ──
+        if (this._pendingAuth) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const pw = this._pendingAuth.buffer;
+                const cb = this._pendingAuth.callback;
+                this._pendingAuth = null;
+                const masked = '•'.repeat(pw.length);
+                this.el.output.innerHTML += '<div><span class="prompt">Password: </span>'
+                    + '<span class="command">' + masked + '</span></div>';
+                this.el.input.value = '';
+                cb(pw);
+                return;
+            }
+            if (e.key === 'Backspace') {
+                e.preventDefault();
+                this._pendingAuth.buffer = this._pendingAuth.buffer.slice(0, -1);
+                this.el.input.value = '•'.repeat(this._pendingAuth.buffer.length);
+                return;
+            }
+            if (e.key === 'c' && e.ctrlKey) {
+                e.preventDefault();
+                this._pendingAuth = null;
+                this.el.output.innerHTML += '<div><span class="prompt">Password: </span>'
+                    + '<span class="command">^C</span></div>';
+                this.el.input.value = '';
+                this.updatePrompt();
+                return;
+            }
+            if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+                e.preventDefault();
+                this._pendingAuth.buffer += e.key;
+                this.el.input.value = '•'.repeat(this._pendingAuth.buffer.length);
+                return;
+            }
+            e.preventDefault();
+            return;
+        }
+
         if (e.key === 'Tab') {
             e.preventDefault();
             const result = Shell.cycleTab(this.el.input.value);

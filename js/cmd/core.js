@@ -57,6 +57,8 @@ const coreCommands = {
             entropy: 'Shannon entropy calculator',
             crc: 'CRC32 checksum',
             strings: 'Extract printable strings',
+            su: 'Switch user',
+            mail: 'Read mail',
         };
         for (const name of names) {
             const d = descs[name] || '';
@@ -183,6 +185,7 @@ const coreCommands = {
     },
 
     whoami: () => {
+        if (Shell._activeProfile) return Shell.env.USER;
         const ua = navigator.userAgent;
         let browser = 'Unknown';
         let os = 'Unknown';
@@ -211,7 +214,7 @@ Local Time: ${new Date().toLocaleString()}`;
         return Shell._history.slice().reverse().map((cmd, i) => `  ${i + 1}  ${cmd}`).join('\n');
     },
 
-    sudo: () => 'guest is not in the sudoers file. This incident will be reported.',
+    sudo: () => Shell.env.USER + ' is not in the sudoers file. This incident will be reported.',
 
     rm: (args) => {
         if (args === '-rf /' || args === '-rf /*') {

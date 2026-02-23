@@ -15,11 +15,16 @@ const Kernel = {
         _hiddenFiles: {},
         _manPages: {},
         _cwd: [],
+        _homePrefix: [],
 
         _resolve(name) {
             if (!name || name === '.') return [...this._cwd];
             let parts;
-            if (name.startsWith('/')) {
+            if (name === '~') {
+                return [...this._homePrefix];
+            } else if (name.startsWith('~/')) {
+                parts = [...this._homePrefix, ...name.slice(2).split('/').filter(Boolean)];
+            } else if (name.startsWith('/')) {
                 parts = name.replace(/^\/+/, '').split('/').filter(Boolean);
             } else {
                 parts = [...this._cwd, ...name.split('/').filter(Boolean)];
@@ -111,17 +116,50 @@ const Kernel = {
         cwd() { return [...this._cwd]; },
 
         cwdString() {
+            const hp = this._homePrefix;
+            if (hp.length && this._cwd.length >= hp.length
+                && hp.every((p, i) => this._cwd[i] === p)) {
+                const rel = this._cwd.slice(hp.length);
+                return rel.length ? '~/' + rel.join('/') : '~';
+            }
             return this._cwd.length ? '~/' + this._cwd.join('/') : '~';
         },
 
+        setHome(pathArray) { this._homePrefix = pathArray; },
+        resetHome() { this._homePrefix = []; },
+
         chdir(path) {
-            if (!path || path === '~' || path === '/') {
+            if (!path || path === '~') {
                 this._cwd.length = 0;
+                this._homePrefix.forEach(p => this._cwd.push(p));
+                return { ok: true };
+            }
+            if (path.startsWith('~/')) {
+                const abs = '/' + this._homePrefix.join('/') + '/' + path.slice(2);
+                return this.chdir(abs);
+            }
+
+            // Profile boundary: clamp to home prefix
+            const hp = this._homePrefix;
+            const clamp = (arr) => {
+                if (Shell._activeProfile && hp.length
+                    && (arr.length < hp.length || !hp.every((p, i) => arr[i] === p))) {
+                    return [...hp];
+                }
+                return arr;
+            };
+
+            if (path === '/') {
+                this._cwd.length = 0;
+                clamp(this._cwd).forEach(p => this._cwd.push(p));
                 return { ok: true };
             }
             if (path === '.') return { ok: true };
             if (path === '..') {
                 if (this._cwd.length > 0) this._cwd.pop();
+                const clamped = clamp([...this._cwd]);
+                this._cwd.length = 0;
+                clamped.forEach(p => this._cwd.push(p));
                 return { ok: true };
             }
 
@@ -149,8 +187,9 @@ const Kernel = {
                 }
             }
 
+            const final = clamp(testPath);
             this._cwd.length = 0;
-            testPath.forEach(p => this._cwd.push(p));
+            final.forEach(p => this._cwd.push(p));
             return { ok: true };
         },
 
@@ -198,6 +237,7 @@ const Kernel = {
             for (const k in this._manPages) delete this._manPages[k];
             for (const k in this._fileTree) delete this._fileTree[k];
             this._cwd.length = 0;
+            this._homePrefix.length = 0;
         },
     },
 

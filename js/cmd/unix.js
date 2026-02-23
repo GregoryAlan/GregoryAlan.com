@@ -197,7 +197,11 @@ const v1_1CommandsPack = {
 
         hostname: () => Shell.env.HOSTNAME,
 
-        id: () => 'uid=1000(guest) gid=1000(guest) groups=1000(guest)',
+        id: () => {
+            const p = Shell._activeProfile;
+            if (p) return `uid=${p.uid}(${p.username}) gid=${p.uid}(${p.username}) groups=${p.uid}(${p.username})`;
+            return 'uid=1001(guest) gid=1001(guest) groups=1001(guest)';
+        },
 
         ps: (args) => {
             const basic =
@@ -207,13 +211,14 @@ const v1_1CommandsPack = {
               + `${String(Math.floor(Math.random()*800)+100).padStart(3)} tty1 00:00:00 ps`;
 
             if (args === 'aux' || args === '-aux') {
+                const u = Shell.env.USER;
                 return 'USER  PID %CPU %MEM    VSZ   RSS TTY  STAT CMD\n'
                      + 'root    1  0.0  0.1   4372  1024 ?    Ss   init\n'
                      + 'root    2  0.0  0.0      0     0 ?    S    [kthreadd]\n'
                      + 'root   47  0.0  0.1   7232  1536 ?    Ss   sshd\n'
                      + 'root   63  0.0  0.0   3024   512 ?    Ss   cron\n'
-                     + 'guest 184  0.0  0.2   5648  2048 tty1 Ss   bash\n'
-                     + 'guest 201  0.0  0.1   3472   768 tty1 R+   ps aux';
+                     + u + ' '.repeat(Math.max(1, 6 - u.length)) + '184  0.0  0.2   5648  2048 tty1 Ss   bash\n'
+                     + u + ' '.repeat(Math.max(1, 6 - u.length)) + '201  0.0  0.1   3472   768 tty1 R+   ps aux';
             }
             return basic;
         },
@@ -262,8 +267,11 @@ const v1_1CommandsPack = {
         chmod: ()     => 'chmod: Operation not permitted',
         chown: ()     => 'chown: Operation not permitted',
         kill:  ()     => 'kill: Operation not permitted',
-        exit:  ()     => 'logout not permitted on tty1',
-        ping:  ()     => 'ping: network access denied for guest',
+        exit:  ()     => {
+            if (Shell.restoreProfile()) return 'logout';
+            return 'bash: exit: cannot exit login shell';
+        },
+        ping:  ()     => 'ping: network access denied for ' + Shell.env.USER,
     },
 
     manPages: {

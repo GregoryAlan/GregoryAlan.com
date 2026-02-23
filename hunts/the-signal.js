@@ -1,10 +1,10 @@
 // ─── The Signal Hunt ─────────────────────────────────────────
 //
+// spec: the-signal-storyline.md
+//
 // A Cuckoo's Egg storyline: discover a stale RF buffer dump,
 // accidentally execute its payload, watch a remote node connect,
 // realize you're no longer alone.
-//
-// See hunts/the-signal-storyline.md for narrative design.
 //
 // Depends on: kernel.js (Kernel), terminal.js (Terminal)
 
@@ -90,26 +90,89 @@ const theSignalHunt = {
         },
     },
 
+    treeFiles: {
+        '/proc/0/status': {
+            gate: 'contact-made',
+            content: 'Name:\t(unknown)\n'
+                + 'Umask:\t0022\n'
+                + 'State:\tR (running)\n'
+                + 'Tgid:\t0\n'
+                + 'Pid:\t0\n'
+                + 'PPid:\t0\n'
+                + 'Uid:\t1002\t1002\t1002\t1002\n'
+                + 'Gid:\t1002\t1002\t1002\t1002\n'
+                + 'FDSize:\t0\n'
+                + 'Threads:\t1\n'
+                + 'voluntary_ctxt_switches:\t0\n'
+                + 'nonvoluntary_ctxt_switches:\t847',
+        },
+        '/proc/0/environ': {
+            gate: 'contact-made',
+            content: 'USER=dhollis\n'
+                + 'HOME=/home/dhollis\n'
+                + 'SHELL=/bin/bash\n'
+                + 'TERM=vt100\n'
+                + 'HOSTNAME=gregcorp.internal\n'
+                + 'DEPT=Human Resources\n'
+                + 'EMPLOYEE_ID=GC-0012\n'
+                + 'LANG=en_US\n'
+                + 'TZ=US/Pacific',
+        },
+        '/proc/0/cmdline': {
+            gate: 'contact-made',
+            content: '/dev/rf0 --listen --persist',
+        },
+    },
+
     directories: {},
 
+    // spec: the-signal-storyline.md > Act 5: Not Alone (ps, w, finger, last, dmesg)
+    // spec: the-signal-storyline.md > Act 3: Accidental Execution (decode)
+    // spec: the-signal-storyline.md > Act 5: Not Alone (strings)
     commands: {
+        ps: (args) => {
+            const basic =
+                'PID TTY      TIME CMD\n'
+              + '  1 tty1 00:00:00 init\n'
+              + `${String(Math.floor(Math.random()*800)+100).padStart(3)} tty1 00:00:00 bash\n`
+              + `${String(Math.floor(Math.random()*800)+100).padStart(3)} tty1 00:00:00 ps`;
+
+            if (args === 'aux' || args === '-aux') {
+                const u = Shell.env.USER;
+                let out = 'USER  PID %CPU %MEM    VSZ   RSS TTY  STAT CMD\n'
+                     + 'root    1  0.0  0.1   4372  1024 ?    Ss   init\n'
+                     + 'root    2  0.0  0.0      0     0 ?    S    [kthreadd]\n'
+                     + 'root   47  0.0  0.1   7232  1536 ?    Ss   sshd\n'
+                     + 'root   63  0.0  0.0   3024   512 ?    Ss   cron\n'
+                     + u + ' '.repeat(Math.max(1, 6 - u.length)) + '184  0.0  0.2   5648  2048 tty1 Ss   bash\n'
+                     + u + ' '.repeat(Math.max(1, 6 - u.length)) + '201  0.0  0.1   3472   768 tty1 R+   ps aux';
+                if (Kernel.hunt.flags.contact) {
+                    out += '\n<span class="timestamp-anomaly">???     0  0.0  0.0      0     0 tty0 R    /dev/rf0</span>';
+                }
+                return out;
+            }
+            return basic;
+        },
+
         w: (args) => {
             const now = new Date();
             const h = now.getHours();
             const m = String(now.getMinutes()).padStart(2, '0');
+            const u = Shell.env.USER;
+            const uPad = u.padEnd(8);
 
             if (Kernel.hunt.flags.contact) {
                 Kernel.hunt.discover('not-alone');
                 return ' ' + h + ':' + m + ' up 1 day, 3:14, 2 users, load average: 0.00, 0.01, 0.05\n'
                     + 'USER     TTY      FROM             LOGIN@   IDLE   WHAT\n'
-                    + 'guest    tty1     -                ' + h + ':' + m + '   0.00s  /bin/bash\n'
+                    + uPad + ' tty1     -                ' + h + ':' + m + '   0.00s  /bin/bash\n'
                     + '???      tty0     0.0.0.0          03:14    0.00s  /dev/rf0';
             }
 
             Kernel.hunt.discover('checked-alone');
             return ' ' + h + ':' + m + ' up 1 day, 3:14, 1 user, load average: 0.00, 0.01, 0.05\n'
                 + 'USER     TTY      FROM             LOGIN@   IDLE   WHAT\n'
-                + 'guest    tty1     -                ' + h + ':' + m + '   0.00s  /bin/bash';
+                + uPad + ' tty1     -                ' + h + ':' + m + '   0.00s  /bin/bash';
         },
 
         finger: (args) => {
@@ -139,15 +202,16 @@ const theSignalHunt = {
             const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
             const d = months[now.getMonth()] + ' ' + String(now.getDate()).padStart(2);
             const t = now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+            const u = Shell.env.USER.padEnd(8);
 
             if (Kernel.hunt.flags.contact) {
                 Kernel.hunt.discover('intruder-last');
-                return 'guest    tty1         ' + d + ' ' + t + '   still logged in\n'
+                return u + ' tty1         ' + d + ' ' + t + '   still logged in\n'
                     + '<span class="timestamp-anomaly">???      tty0         Jan  0 00:00  - still logged in</span>\n\n'
                     + 'wtmp begins ' + d + ' 00:00:00';
             }
 
-            return 'guest    tty1         ' + d + ' ' + t + '   still logged in\n\n'
+            return u + ' tty1         ' + d + ' ' + t + '   still logged in\n\n'
                 + 'wtmp begins ' + d + ' 00:00:00';
         },
 
@@ -224,6 +288,7 @@ const theSignalHunt = {
         },
     },
 
+    // spec: the-signal-storyline.md > Discovery Chain
     triggers: [
         // Act 1 — Discovery
         { type: 'discovery', match: 'rf-found', effect: 'screenFlicker', once: true },
