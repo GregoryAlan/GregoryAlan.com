@@ -9,6 +9,13 @@ Inspired by *The Cuckoo's Egg* — the horror isn't in the supernatural, it's in
 ## Five Acts
 
 ### Act 1: Discovery
+
+<!-- contract
+status: implemented
+impl: hunts/the-signal.js:files.hidden['.rf0.buf'], triggers[0] (rf-found → screenFlicker)
+last-synced: 2026-02-22
+-->
+
 - `ls -a` reveals `.rf0.buf` — a stale RF device buffer dump
 - `cat .rf0.buf` shows `rf0: rx ring overrun (847 bytes not consumed)` with a hex dump containing ELF markers and a relay target
 - The hex `4e4f524d` is visible in the dump — a natural thing to try decoding
@@ -16,12 +23,26 @@ Inspired by *The Cuckoo's Egg* — the horror isn't in the supernatural, it's in
 - Effect: screenFlicker
 
 ### Act 2: Alone
+
+<!-- contract
+status: implemented
+impl: hunts/the-signal.js:commands.w (checked-alone discovery), patches.hiddenFiles['.bash_history']
+last-synced: 2026-02-22
+-->
+
 - `.bash_history` includes `w` as a breadcrumb
 - `w` shows 1 user: just guest on tty1
 - This establishes the "before" state — you're alone on this machine
 - No effect (everything appears normal)
 
 ### Act 3: Accidental Execution
+
+<!-- contract
+status: implemented
+impl: hunts/the-signal.js:commands.decode (rf-executed discovery), triggers[1] (heavyFlicker + connection sequence callback)
+last-synced: 2026-02-22
+-->
+
 - User tries `decode --hex 4e4f524d` thinking they're converting hex to ASCII
 - The decode command detects an ELF header — this isn't text data, it's a program
 - Output: `ELF binary detected in input`, `mapped segment at 0x847`, `segfault at 0x847: unexpected exec in rx buffer`
@@ -29,6 +50,13 @@ Inspired by *The Cuckoo's Egg* — the horror isn't in the supernatural, it's in
 - Effect: heavyFlicker
 
 ### Act 4: The Connection
+
+<!-- contract
+status: implemented
+impl: hunts/the-signal.js:triggers[1].callback (timed messages), triggers[2] (contact-made → scanlines + dark bg)
+last-synced: 2026-02-22
+-->
+
 - System messages begin appearing in the terminal on timed delays (like kernel output):
   - `rf0: connecting to 0.0.0.0:4119`
   - `rf0: SYN sent ................ ACK`
@@ -40,6 +68,14 @@ Inspired by *The Cuckoo's Egg* — the horror isn't in the supernatural, it's in
 - Effect: scanlines (persistent) + dark background
 
 ### Act 5: Not Alone
+
+<!-- contract
+status: drift
+impl: hunts/the-signal.js:commands.w, commands.finger, commands.last, commands.dmesg, commands.strings, files.hidden['.node'], triggers[3-6]
+last-synced: 2026-02-22
+drift-notes: dmesg baseline boot lines in the-signal.js (line 216) differ from kern.log baseline in narrativeSeeds. dmesg shows "gregOS version 2.0" / "Memory: 640K" while kern.log shows "gresos-kernel 0.9.851" / "Memory: 512MB". Both are visible to the visitor.
+-->
+
 - `w` now shows 2 users — guest on tty1, ??? on tty0 from 0.0.0.0
 - Investigation commands reveal details about the intruder:
   - `finger root` — mystery user with redacted name, /dev/null shell
@@ -50,6 +86,13 @@ Inspired by *The Cuckoo's Egg* — the horror isn't in the supernatural, it's in
 - Effects: crtBand, promptCorruption, screenTear, textCorruption (tied to investigation moments)
 
 ## Discovery Chain
+
+<!-- contract
+status: implemented
+impl: hunts/the-signal.js:stateMap, triggers[]
+last-synced: 2026-02-22
+notes: All 8 discoveries implemented. State machine and trigger effects match spec.
+-->
 
 | # | ID | Trigger | Effect |
 |---|-----|---------|--------|

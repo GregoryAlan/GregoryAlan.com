@@ -213,10 +213,13 @@ GregOS is simultaneously a real portfolio site, a container for something else, 
 ### Kernel Identity
 
 - Kernel version: `0.9.x-greg` — never reached 1.0. Gregory kept adding, never shipped.
-- `uname -a` output: `GregOS 2.0.1 gregos-kernel 0.9.847 #847 SMP <timestamp> x86_64`
-- Build number 847 — the recurring motif. Every kernel build since the entropy subsystem was added has been #847. Gregory stopped incrementing. Or the build system did.
+- Version is **layer-dependent**:
+  - v1.1 (workstation): `0.9.847-greg` — the daemon framework build. The one that froze.
+  - v2.0 (dev build): `0.9.851-greg` — Gregory kept iterating. Packages, mount, tools, a transform pipeline. Then silence.
+- `uname -a` output: `GregOS 2.0.1 gregos-kernel 0.9.851 #851 SMP <timestamp> x86_64` (at v2.0)
+- Build number 847 — the recurring motif. The kernel moved past it, but the number haunts the system: daemon PIDs (847–850), buffer sizes (847 bytes), CPU MHz (847.00), entropy pool (~3847), process context switches (847), dmesg timestamps ([847.000000]), exit codes, HR case numbers, personnel IDs. The kernel incremented. Everything else stayed.
 - `/etc/gregos-release`: clean file containing version, build date, kernel version, architecture.
-- `/proc/version`: `gregos-kernel 0.9.847 (greg@localhost) (gcc 11.4.0) #847`
+- `/proc/version`: `gregos-kernel 0.9.851 (greg@localhost) (gcc 11.4.0) #851` (at v2.0)
 
 ---
 
@@ -301,9 +304,13 @@ The kernel changelog IS the descent. Version numbers map to stages:
 | `0.9.1` | rf0 | SDR dongle integration. /dev/entropy. Hardware entropy pool. | `// hardware entropy is better entropy` |
 | `0.9.2` | Transforms | sys_transform() and sys_chain_exec(). Pipeline in kernel space. | `// transforms need kernel-level scheduling` |
 | `0.9.3` | The Devices | /dev/signal. No hardware backing. | `// ████████████` |
-| `0.9.847` | Last Build | Daemon framework. SCHED_TRANSFORM. /proc/daemons. Build #847. | `# okay` |
+| `0.9.847` | Daemons | Daemon framework. SCHED_TRANSFORM. /proc/daemons. Build #847. | `# okay` |
+| `0.9.848` | Packages | Package manager. On-demand tool installation. Analysis toolchain. | `# need better tools` |
+| `0.9.849` | Mount | Block device mount subsystem. `/dev/rf0` accessible as mountpoint. | `# mount it directly` |
+| `0.9.850` | Toolchain | `/home/greg/bin/`: shift, remap, align, exec. Custom analysis pipeline. | `# almost there` |
+| `0.9.851` | Last Build | Transform pipeline. `-dev` suffix. Unstable channel. Branch: `dev/transform-pipeline`. | *(no comment)* |
 
-After 0.9.847, no more kernel commits. Only crontab edits. The kernel is finished — or it finished itself.
+After 0.9.847, Gregory kept building. Four more commits — packages, mount, tools, a transform pipeline. Then silence. The daemon framework at 847 is what's still running. The kernel iterated past it, but the daemons don't care about version numbers.
 
 ---
 
@@ -318,9 +325,9 @@ POST: 512MB OK
 POST: rf0 — LOCK @ 847.0MHz
 POST: sda — gregfs v3 mounted
 
-Loading gregos-kernel 0.9.847 ...
+Loading gregos-kernel 0.9.851 ...
 
-[    0.000000] gregos-kernel 0.9.847 #847 SMP
+[    0.000000] gregos-kernel 0.9.851 #851 SMP
 [    0.001203] CPU: x86_64 detected
 [    0.012847] Memory: 512MB available
 [    0.024100] gregfs: mounted / (rw)
@@ -346,7 +353,7 @@ Every line grounded. Every line real. The only hints: `rf0 — LOCK @ 847.0MHz` 
 ```
 /
 ├── boot/
-│   ├── gregos-kernel-0.9.847
+│   ├── gregos-kernel-0.9.851
 │   └── grub.cfg
 ├── dev/
 │   ├── null
@@ -405,7 +412,7 @@ Files the visitor encounters are gated by phase:
 
 ### Kernel Version Reconciliation
 
-The v1.1 `version.txt` currently references `Kernel: 4.19.0-gregos`. This should be updated to `Kernel: 0.9.847-greg` to match the established kernel identity. The `4.19.0` string was a placeholder — the canonical kernel version is `0.9.847`, build `#847`, as established by this architecture document. This reconciliation is a code-level change for the implementation layer.
+The v1.1 `version.txt` currently references `Kernel: 4.19.0-gregos`. This should be updated to `Kernel: 0.9.847-greg` to match the established kernel identity. The `4.19.0` string was a placeholder. At v2.0, `version.txt` and `/etc/gregos-release` correctly show `Kernel: 0.9.851-greg`. This reconciliation is a code-level change for the implementation layer.
 
 ---
 

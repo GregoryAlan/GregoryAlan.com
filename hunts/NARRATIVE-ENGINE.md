@@ -8,6 +8,12 @@ This document does not describe implementation. It describes the *vocabulary* th
 
 ## Flag Categories
 
+<!-- contract
+status: aspirational
+last-synced: 2026-02-22
+notes: Formal flag system not implemented. Current code uses Kernel.hunt.flags (flat object) and Kernel.hunt.has() for discovery checks. This spec defines the target vocabulary for a future narrative engine.
+-->
+
 Flags are the state of the world. Every observable behavior in GregOS is driven by flags. Flags are organized into four categories: kernel, OS, narrative, and artifact.
 
 ### Kernel Flags
@@ -16,8 +22,8 @@ State of the OS internals. These are the physics of the world.
 
 | Flag | Type | Values | Default | Description |
 |------|------|--------|---------|-------------|
-| `kernel.version` | string | semver | `"0.9.847"` | Kernel version string |
-| `kernel.build` | number | — | `847` | Build number (always 847 post-entropy) |
+| `kernel.version` | string | semver | `"0.9.847"` (v1.1) / `"0.9.851"` (v2.0) | Kernel version string (layer-dependent) |
+| `kernel.build` | number | — | `847` (v1.1) / `851` (v2.0) | Build number (layer-dependent; 847 persists as motif) |
 | `kernel.entropy.source` | enum | `standard`, `rf0`, `overflowing` | `standard` | What feeds the entropy pool |
 | `kernel.entropy.level` | number | 0-100 | `50` | Entropy pool fill level |
 | `kernel.devices` | string[] | device names | `["null","zero","random","tty"]` | Registered /dev/ entries |
@@ -71,6 +77,12 @@ Per-artifact visibility and state. Each artifact is a file, command output, or s
 
 ## Artifact States
 
+<!-- contract
+status: aspirational
+last-synced: 2026-02-22
+notes: Current code uses gate/onRead pattern in hunt definitions, not a formal artifact state machine. Artifacts are either gated (hidden until discovery) or always visible. No corrupted/drifting states exist yet.
+-->
+
 Artifacts are files, command outputs, or system behaviors. Each has a lifecycle stage that determines how it presents to the visitor.
 
 | State | Meaning | Phase |
@@ -88,6 +100,12 @@ Artifacts are files, command outputs, or system behaviors. Each has a lifecycle 
 ---
 
 ## Narrative Beat Definition
+
+<!-- contract
+status: aspirational
+last-synced: 2026-02-22
+notes: Current hunts use a triggers[] array with {type, match, effect, once, callback} objects. This YAML beat format is the target for a future declarative narrative layer. The trigger types and effect actions defined here are the roadmap.
+-->
 
 Each beat in a hunt template describes a story moment and its effects on the flag state. Beats are the atoms of narrative progression.
 
@@ -177,6 +195,12 @@ beat:
 ---
 
 ## Hunt Template (Narrative Engine Format)
+
+<!-- contract
+status: aspirational
+last-synced: 2026-02-22
+notes: Current hunt format is the JS object format documented in HUNT-TEMPLATE.md. This YAML format is the declarative target. See HUNT-TEMPLATE.md for the implemented API.
+-->
 
 A complete hunt definition using the narrative engine. This extends the existing JavaScript hunt definition format (see HUNT-TEMPLATE.md) with a declarative narrative layer.
 
@@ -290,6 +314,12 @@ hunt:
 
 ## Flag-Driven Behaviors
 
+<!-- contract
+status: aspirational
+last-synced: 2026-02-22
+notes: Some behaviors partially exist (e.g., PID 0 visibility via contact flag, prompt corruption via glitch effect, background color change). But the formal flag-condition-to-behavior mapping is not implemented as a general engine.
+-->
+
 These define how flags affect system behavior globally — not per-hunt. The engine evaluates these continuously.
 
 | Flag Condition | System Behavior |
@@ -320,6 +350,12 @@ Cross-hunt flag reads are always permitted. A hunt in Phase II can read flags se
 
 ## Ambient Behaviors
 
+<!-- contract
+status: aspirational
+last-synced: 2026-02-22
+notes: No ambient behavior system exists. Current effects are one-shot triggers only. This spec defines the interval/jitter/condition system for future implementation.
+-->
+
 Ambient behaviors are passive effects that run on intervals while their conditions are met. They create atmosphere without requiring visitor action.
 
 ```yaml
@@ -342,6 +378,12 @@ ambient:
 ---
 
 ## Cross-Hunt Continuity
+
+<!-- contract
+status: aspirational
+last-synced: 2026-02-22
+notes: Basic cross-hunt flag reading exists (greg-corp.js checks Kernel.hunt.has('contact-made') from the-signal.js). Formal flag namespacing and phase transitions are not implemented.
+-->
 
 Hunts exist in a shared flag namespace. This enables narrative continuity across the experience.
 

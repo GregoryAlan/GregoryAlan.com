@@ -20,12 +20,19 @@ Each file entry includes:
 
 ## Established Canon
 
+<!-- contract
+status: implemented
+impl: js/versions.js (v1_1Seeds, narrativeSeeds), hunts/the-signal.js, js/cmd/unix.js, js/cmd/bin-tools.js
+last-synced: 2026-02-22
+notes: Reference table. Values verified against code 2026-02-22. Kernel 847/851 split is correctly implemented per version layer.
+-->
+
 Values already set in the codebase. All content must match these exactly.
 
 | Detail | Value | Source |
 |--------|-------|--------|
-| Kernel version | `0.9.847-greg` | uname, version.txt |
-| Build number | `#847` | version.txt, dmesg |
+| Kernel version | `0.9.847-greg` (v1.1) / `0.9.851-greg` (v2.0) | uname, version.txt |
+| Build number | `#847` (v1.1) / `#851` (v2.0) | version.txt, dmesg |
 | Hostname | `gregoryalan.com` | Shell.env.HOSTNAME |
 | GregOS version | `2.0` | version.txt |
 | Build date | `2026-01-22` | broadcast.log, version.txt |
@@ -48,6 +55,12 @@ Values already set in the codebase. All content must match these exactly.
 The central narrative thread. A visitor who follows it discovers: Gregory built four tools, connected them into a pipeline that transforms hardware entropy, scheduled them to run every minute, and never turned them off. The pipeline is still running.
 
 ### /etc/crontab
+
+<!-- contract
+status: implemented
+impl: js/versions.js:narrativeSeeds['/etc/crontab']
+last-synced: 2026-02-22
+-->
 
 **Type:** Static
 
@@ -79,6 +92,12 @@ The most important file in the system after `.rf0.buf`.
 - The normal system entries above (logrotate, entropy-check) make the daemon entries feel like they belong
 
 ### /proc/daemons
+
+<!-- contract
+status: implemented
+impl: js/versions.js:narrativeSeeds['/proc/daemons']
+last-synced: 2026-02-22
+-->
 
 **Type:** Dynamic. Always visible at v2.0.
 
@@ -116,6 +135,12 @@ NOTE: chain 847 exit code anomaly — see /var/log/daemon.log
 - Post-contact, the system flags an anomaly and points to the daemon log
 
 ### /var/log/daemon.log
+
+<!-- contract
+status: implemented
+impl: js/versions.js:narrativeSeeds['/var/log/daemon.log']
+last-synced: 2026-02-22
+-->
 
 **Type:** Dynamic. Always visible at v2.0. The execution log where the anomaly lives.
 
@@ -161,6 +186,12 @@ NOTE: clustering detected — see /home/greg/bin/exec --analyze
 
 ### /home/greg/bin/ (shift, remap, align, exec)
 
+<!-- contract
+status: implemented
+impl: js/versions.js:narrativeSeeds['/home/greg/bin/shift'], ['/home/greg/bin/remap'], ['/home/greg/bin/align'], ['/home/greg/bin/exec']
+last-synced: 2026-02-22
+-->
+
 **Type:** Static. Four tools, presented as bare usage/help text. No personal comments. No commentary. Tools are tools.
 
 Each follows this format:
@@ -201,6 +232,12 @@ A secondary thread. The hardware entropy pool that feeds the daemon pipeline doe
 
 ### /proc/entropy_avail
 
+<!-- contract
+status: implemented
+impl: js/versions.js:narrativeSeeds['/proc/entropy_avail']
+last-synced: 2026-02-22
+-->
+
 **Type:** Dynamic. Always visible.
 
 The pool value jitters (base 3847, ±6 random per read) but never drops meaningfully.
@@ -226,13 +263,19 @@ WARNING: pool has not reached low watermark in 847+ hours
 
 ### /var/log/syslog (entropy thread)
 
+<!-- contract
+status: implemented
+impl: js/versions.js:narrativeSeeds['/var/log/syslog']
+last-synced: 2026-02-22
+-->
+
 **Type:** Static.
 
 The entropy-check entries (run every 15 minutes per crontab):
 
 ```
 Jan 22 00:00:01 gregoryalan syslogd: started
-Jan 22 00:00:01 gregoryalan kernel: gresos-kernel 0.9.847 boot complete
+Jan 22 00:00:01 gregoryalan kernel: gresos-kernel 0.9.851 boot complete
 Jan 22 00:00:02 gregoryalan sshd[47]: Server listening on 0.0.0.0 port 22
 Jan 22 00:00:02 gregoryalan cron[63]: (CRON) INFO (pidfile fd = 3)
 Jan 22 00:00:03 gregoryalan gregd[847]: daemon chain started (4 workers)
@@ -254,20 +297,26 @@ Files that describe the kernel-level infrastructure Gregory built to support the
 
 ### /etc/modules.conf
 
+<!-- contract
+status: implemented
+impl: js/versions.js:narrativeSeeds['/etc/modules.conf']
+last-synced: 2026-02-22
+-->
+
 **Type:** Static.
 
 ```
 # /etc/modules.conf - module load order
 #
 # Core devices
-rf0         /lib/modules/0.9.847/rf0.ko         # SDR hardware entropy source
+rf0         /lib/modules/0.9.851/rf0.ko         # SDR hardware entropy source
 entropy     (built-in)                           # entropy pool management
 
 # Extended pipeline (added 0.9.2)
 transform   (built-in)                           # sys_transform(), sys_chain_exec()
 
 # Post-pipeline (added 0.9.3)
-signal      /lib/modules/0.9.847/signal.ko       # depends: transform, entropy
+signal      /lib/modules/0.9.851/signal.ko       # depends: transform, entropy
 ```
 
 **What this tells the visitor:**
@@ -278,12 +327,19 @@ signal      /lib/modules/0.9.847/signal.ko       # depends: transform, entropy
 
 ### /etc/gregos-release
 
+<!-- contract
+status: drift
+impl: js/versions.js:narrativeSeeds['/etc/gregos-release']
+last-synced: 2026-02-22
+drift-notes: Spec says "GregOS 2.0.1", code has "GregOS 2.0.1-dev" with extra "CHANNEL: unstable" line. Code is intentionally more detailed for dev build flavor.
+-->
+
 **Type:** Static.
 
 ```
 GregOS 2.0.1
 BUILD: 2026-01-22
-KERNEL: 0.9.847-greg
+KERNEL: 0.9.851-greg
 ARCH: x86_64
 CODENAME: rf0
 ```
@@ -292,12 +348,19 @@ The codename. Most OS releases use words. Gregory named his after the SDR device
 
 ### /var/log/kern.log
 
+<!-- contract
+status: implemented
+impl: js/versions.js:narrativeSeeds['/var/log/kern.log']
+last-synced: 2026-02-22
+notes: Code uses color:var(--error) CSS variable instead of spec's color:#f55. Functionally equivalent.
+-->
+
 **Type:** Dynamic. Boot messages that extend after contact.
 
 **Baseline:**
 
 ```
-[    0.000000] gresos-kernel 0.9.847 #847 SMP
+[    0.000000] gresos-kernel 0.9.851 #851 SMP
 [    0.001203] CPU: x86_64 detected
 [    0.012847] Memory: 512MB available
 [    0.024100] gregfs: mounted / (rw)
@@ -335,6 +398,12 @@ Files that establish Gregory as a real person who lived on this system.
 
 ### /home/greg/.bashrc
 
+<!-- contract
+status: implemented
+impl: js/versions.js:narrativeSeeds['/home/greg/.bashrc']
+last-synced: 2026-02-22
+-->
+
 **Type:** Static.
 
 ```
@@ -359,6 +428,13 @@ alias chaintest='shift < /dev/entropy | remap | align | exec 2>/dev/null; echo $
 
 ## Cross-File Discovery Threads
 
+<!-- contract
+status: implemented
+impl: All thread paths verified against js/versions.js narrativeSeeds and hunts/the-signal.js
+last-synced: 2026-02-22
+notes: Design reference. Individual file implementations tracked in their own contracts above.
+-->
+
 These threads connect files to each other, rewarding visitors who explore systematically:
 
 | Thread | Path |
@@ -366,7 +442,7 @@ These threads connect files to each other, rewarding visitors who explore system
 | **The pipeline** | `/etc/crontab` → `/home/greg/bin/*` → `/proc/daemons` → `/var/log/daemon.log` |
 | **The entropy anomaly** | `/proc/entropy_avail` → `/var/log/syslog` → `/etc/crontab` (consumption rate vs. pool stability) |
 | **Gregory's trail** | `/etc/passwd` → `/home/greg/.bashrc` → `/home/greg/bin/` → `/etc/crontab` |
-| **The 847 motif** | `/proc/version` (#847) → `/proc/daemons` (PID 847) → `/var/log/daemon.log` (exit 847) → `/home/greg/bin/align` (width 847) |
+| **The 847 motif** | `/proc/cpuinfo` (847.00 MHz) → `/proc/daemons` (PID 847) → `/var/log/daemon.log` (exit 847) → `/home/greg/bin/align` (width 847) → `dmesg` ([847.000000] timestamps) |
 | **The signal device** | `/etc/modules.conf` (signal.ko) → `/var/log/kern.log` (/dev/signal registered) |
 | **The contact shift** | `/var/log/kern.log` (post-contact) → `/proc/daemons` (NOTE) → `/var/log/daemon.log` (exit anomaly) → `/proc/entropy_avail` (WARNING) |
 
