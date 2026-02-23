@@ -21,11 +21,11 @@ const binTools = {
     },
 
     commands: {
-        decode: (args) => {
-            if (!args) return 'Usage: decode --hex &lt;data&gt; | decode --b64 &lt;data&gt;';
-            const parts = args.split(/\s+/);
+        decode: (args, stdin) => {
+            if (!args && !stdin) return 'Usage: decode --hex &lt;data&gt; | decode --b64 &lt;data&gt;';
+            const parts = (args || '').split(/\s+/).filter(Boolean);
             const flag = parts[0];
-            const data = parts.slice(1).join('');
+            const data = parts.slice(1).join('') || (stdin ? stdin.trim() : '');
 
             if (flag === '--hex') {
                 try {
@@ -47,20 +47,22 @@ const binTools = {
             return 'decode: unknown flag. Use --hex or --b64';
         },
 
-        rot13: (args) => {
-            if (!args) return 'Usage: rot13 &lt;text&gt;';
-            const result = args.replace(/[a-zA-Z]/g, (c) => {
+        rot13: (args, stdin) => {
+            const text = args || (stdin ? stdin.trim() : '');
+            if (!text) return 'Usage: rot13 &lt;text&gt;';
+            const result = text.replace(/[a-zA-Z]/g, (c) => {
                 const base = c <= 'Z' ? 65 : 97;
                 return String.fromCharCode(((c.charCodeAt(0) - base + 13) % 26) + base);
             });
             return result;
         },
 
-        freq: (args) => {
-            if (!args) return 'Usage: freq &lt;text&gt;';
+        freq: (args, stdin) => {
+            const text = args || (stdin ? stdin.trim() : '');
+            if (!text) return 'Usage: freq &lt;text&gt;';
             const counts = {};
             let total = 0;
-            for (const c of args) {
+            for (const c of text) {
                 if (/[a-zA-Z]/.test(c)) {
                     const lower = c.toLowerCase();
                     counts[lower] = (counts[lower] || 0) + 1;
@@ -83,13 +85,14 @@ const binTools = {
             return `Letter frequency (${total} chars):\n\n` + lines.join('\n');
         },
 
-        entropy: (args) => {
-            if (!args) return 'Usage: entropy &lt;text&gt;';
+        entropy: (args, stdin) => {
+            const text = args || (stdin ? stdin.trim() : '');
+            if (!text) return 'Usage: entropy &lt;text&gt;';
             const counts = {};
-            for (const c of args) {
+            for (const c of text) {
                 counts[c] = (counts[c] || 0) + 1;
             }
-            const len = args.length;
+            const len = text.length;
             let h = 0;
             for (const c in counts) {
                 const p = counts[c] / len;
@@ -103,12 +106,12 @@ const binTools = {
                 + `Max possible: ${maxEntropy.toFixed(4)} bits/symbol`;
         },
 
-        crc: (args) => {
-            if (!args) return 'Usage: crc &lt;text&gt;';
-            // CRC32 implementation
+        crc: (args, stdin) => {
+            const text = args || (stdin ? stdin.trim() : '');
+            if (!text) return 'Usage: crc &lt;text&gt;';
             let crc = 0xFFFFFFFF;
-            for (let i = 0; i < args.length; i++) {
-                crc ^= args.charCodeAt(i);
+            for (let i = 0; i < text.length; i++) {
+                crc ^= text.charCodeAt(i);
                 for (let j = 0; j < 8; j++) {
                     crc = (crc >>> 1) ^ (crc & 1 ? 0xEDB88320 : 0);
                 }
@@ -117,7 +120,11 @@ const binTools = {
             return crc.toString(16).padStart(8, '0');
         },
 
-        strings: (args) => {
+        strings: (args, stdin) => {
+            if (stdin) {
+                const matches = stdin.match(/[\x20-\x7E]{4,}/g);
+                return matches ? matches.join('\n') : '';
+            }
             if (!args) return 'Usage: strings &lt;file&gt;';
             return 'strings: ' + args + ': No such file';
         },
@@ -147,7 +154,7 @@ const binTools = {
             + '       $ decode --hex 4f4b\n'
             + '       OK\n\n'
             + 'AUTHOR\n'
-            + '       Gregory Alan, CS 240 Fall 2009\n\n'
+            + '       Gregory Alan, CS 240 Fall 1980\n\n'
             + 'BUGS\n'
             + '       None known.',
 
@@ -170,7 +177,7 @@ const binTools = {
             + '       $ rot13 Uryyb\n'
             + '       Hello\n\n'
             + 'AUTHOR\n'
-            + '       Gregory Alan, CS 101 Spring 2008\n\n'
+            + '       Gregory Alan, CS 101 Spring 1979\n\n'
             + 'BUGS\n'
             + '       None known.',
 
@@ -190,7 +197,7 @@ const binTools = {
             + '       $ freq the quick brown fox\n'
             + '       (displays histogram)\n\n'
             + 'AUTHOR\n'
-            + '       Gregory Alan, MATH 385 Fall 2010\n\n'
+            + '       Gregory Alan, MATH 385 Fall 1981\n\n'
             + 'SEE ALSO\n'
             + '       entropy(1), rot13(1)',
 
@@ -212,7 +219,7 @@ const binTools = {
             + '       $ entropy abcd\n'
             + '       Shannon entropy: 2.0000 bits/symbol\n\n'
             + 'AUTHOR\n'
-            + '       Gregory Alan, CS 432 Spring 2011\n\n'
+            + '       Gregory Alan, CS 432 Spring 1982\n\n'
             + 'SEE ALSO\n'
             + '       freq(1)',
 
@@ -229,7 +236,7 @@ const binTools = {
             + '       $ crc hello\n'
             + '       3610a686\n\n'
             + 'AUTHOR\n'
-            + '       Gregory Alan, CS 372 Fall 2010\n\n'
+            + '       Gregory Alan, CS 372 Fall 1981\n\n'
             + 'SEE ALSO\n'
             + '       decode(1)',
 
@@ -246,10 +253,8 @@ const binTools = {
             + '       $ strings /usr/bin/ls\n'
             + '       (printable strings from binary)\n\n'
             + 'AUTHOR\n'
-            + '       Gregory Alan, Summer internship 2011\n\n'
+            + '       Gregory Alan, Summer internship 1982\n\n'
             + 'SEE ALSO\n'
             + '       decode(1)',
     },
 };
-
-// Registration deferred to versions.js (applied at v2.0)

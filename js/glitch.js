@@ -2,7 +2,7 @@
 //
 // Visual effects library for GregOS.
 // All effects are triggered via runGlitchEffect(name, opts).
-// DOM globals (terminal, output, promptEl) are provided by terminal.js.
+// DOM elements are accessed via Terminal.el (set up by terminal.js).
 
 const glitchChars = '░▒▓█▄▀■□▪▫◊○●◘◙';
 
@@ -17,12 +17,12 @@ function runGlitchEffect(name, opts) {
     opts = opts || {};
     const effects = {
         screenFlicker() {
-            terminal.classList.add('screen-flicker');
-            setTimeout(() => terminal.classList.remove('screen-flicker'), 300);
+            Terminal.el.terminal.classList.add('screen-flicker');
+            setTimeout(() => Terminal.el.terminal.classList.remove('screen-flicker'), 300);
         },
         heavyFlicker() {
-            terminal.classList.add('heavy-flicker');
-            setTimeout(() => terminal.classList.remove('heavy-flicker'), 500);
+            Terminal.el.terminal.classList.add('heavy-flicker');
+            setTimeout(() => Terminal.el.terminal.classList.remove('heavy-flicker'), 500);
         },
         scanlines() {
             const dur = opts.duration || 10000;
@@ -50,25 +50,25 @@ function runGlitchEffect(name, opts) {
             const line = document.createElement('div');
             line.className = 'phantom-line';
             line.textContent = text;
-            output.appendChild(line);
+            Terminal.el.output.appendChild(line);
             requestAnimationFrame(() => line.classList.add('visible'));
             setTimeout(() => line.classList.remove('visible'), 4000);
             setTimeout(() => line.remove(), 6000);
         },
         promptCorruption() {
-            const original = promptEl.textContent;
+            const original = Terminal.el.prompt.textContent;
             let count = 0;
             const interval = setInterval(() => {
-                promptEl.textContent = corruptString(original, 0.4);
+                Terminal.el.prompt.textContent = corruptString(original, 0.4);
                 count++;
                 if (count > 8) {
                     clearInterval(interval);
-                    promptEl.textContent = original;
+                    Terminal.el.prompt.textContent = original;
                 }
             }, 150);
         },
         textCorruption() {
-            const outputs = output.querySelectorAll('.output');
+            const outputs = Terminal.el.output.querySelectorAll('.output');
             const last = outputs[outputs.length - 1];
             if (!last) return;
             const original = last.innerHTML;
@@ -76,7 +76,7 @@ function runGlitchEffect(name, opts) {
             setTimeout(() => { last.innerHTML = original; }, 2000);
         },
         screenTear() {
-            const outputs = output.querySelectorAll('.output');
+            const outputs = Terminal.el.output.querySelectorAll('.output');
             const items = [];
             outputs.forEach(el => {
                 const offset = (Math.random() - 0.5) * 40;

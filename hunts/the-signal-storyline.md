@@ -164,7 +164,7 @@ From v1.0, do some exploration first:
 | `history` | Shows `.bash_history` entries from previous user. Last two entries: `cat version.txt`, `reboot -f`. |
 | `cat version.txt` | Normal header (`GregOS v1.1`, `Build: 2026.01.22`, `Kernel: 4.19.0-gregos`, `Update: available`) followed by an anomalous update manifest: `timestamp: 2091-11-15T03:14:00Z`, `checksum: a7 3f ?? ??`, `source: rf0`. The 2091 date is impossible — this system was built in 2026. |
 | `reboot` | Just reboots into v1.1 again. No update. Plain reboot doesn't advance. |
-| `reboot -f` | **Update animation**: `Current version: 1.1`, `Update available: v2.0`, download/verify/install, then **full v2.0 boot** with hardware detection, `/dev/creativity mounted`, etc. |
+| `reboot -f` | **Update animation**: `Current version: 1.1`, `Update available: v2.0`, download/verify/install, then **full v2.0 boot** with hardware detection, device registration, etc. |
 
 ### Phase 3: v2.0 Verification
 

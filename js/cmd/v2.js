@@ -3,8 +3,8 @@
 // Adds `pkg` (install bin tools on demand) and `mount`
 // (discover /dev/rf0 → crash → Signal hunt begins).
 //
-// Depends on: terminal.js (huntState, commands, fileTree, etc.)
-//             bin-tools.js (binTools)
+// Depends on: kernel.js (Kernel), shell.js (Shell),
+//             terminal.js (Terminal), bin-tools.js (binTools),
 //             the-signal.js (theSignalHunt)
 
 // ─── Package Metadata ───────────────────────────────────────
@@ -22,36 +22,31 @@ const pkgRegistry = [
 
 function getInstalledPackages() {
     try {
-        return JSON.parse(huntState.flags['pkg-installed'] || '[]');
+        return JSON.parse(Kernel.hunt.flags['pkg-installed'] || '[]');
     } catch(e) {
         return [];
     }
 }
 
 function installPackage(name) {
-    // Determine command source: Signal-aware override wins
     const cmd = (theSignalHunt.commands[name]) || binTools.commands[name];
     if (!cmd) return false;
 
-    // Register command
-    commands[name] = cmd;
+    Shell.register(name, cmd);
 
-    // Register man page (always from binTools)
     if (binTools.manPages[name]) {
-        manPages[name] = binTools.manPages[name];
+        Kernel.fs.addManPage(name, binTools.manPages[name]);
     }
 
-    // Ensure bin/ directory exists and add entry
-    if (!fileTree.bin) {
-        fileTree.bin = {};
+    if (!Kernel.fs._fileTree.bin) {
+        Kernel.fs._fileTree.bin = {};
     }
-    fileTree.bin[name] = 'file';
+    Kernel.fs._fileTree.bin[name] = 'file';
 
-    // Track in persistent state
     const installed = getInstalledPackages();
     if (!installed.includes(name)) {
         installed.push(name);
-        huntState.setFlag('pkg-installed', JSON.stringify(installed));
+        Kernel.hunt.setFlag('pkg-installed', JSON.stringify(installed));
     }
 
     return true;
@@ -61,76 +56,11 @@ function restoreInstalledPackages() {
     const installed = getInstalledPackages();
     for (const name of installed) {
         const cmd = (theSignalHunt.commands[name]) || binTools.commands[name];
-        if (cmd) commands[name] = cmd;
-        if (binTools.manPages[name]) manPages[name] = binTools.manPages[name];
-        if (!fileTree.bin) fileTree.bin = {};
-        fileTree.bin[name] = 'file';
+        if (cmd) Shell.register(name, cmd);
+        if (binTools.manPages[name]) Kernel.fs.addManPage(name, binTools.manPages[name]);
+        if (!Kernel.fs._fileTree.bin) Kernel.fs._fileTree.bin = {};
+        Kernel.fs._fileTree.bin[name] = 'file';
     }
-}
-
-// ─── Mount Crash Sequence ───────────────────────────────────
-
-async function runMountCrash() {
-    input.disabled = true;
-
-    const crashLines = [
-        { text: 'mount: mounting /dev/rf0 ...', delay: 2000 },
-        { text: 'rf0: device probing ...', delay: 1500 },
-        { text: 'rf0: firmware 1.0-ROM detected', delay: 500 },
-        { text: 'rf0: loading driver ... done', delay: 800 },
-        { text: 'rf0: initializing rx buffer ...', delay: 3000 },
-        { text: 'rf0: rx ring overrun detected', delay: 500 },
-        { text: 'rf0: 847 bytes in buffer (unconsumed since v1.0)', delay: 800 },
-        { text: 'rf0: attempting recovery ...', delay: 2000 },
-        { text: 'rf0: buffer checksum: a7 3f ?? ??', delay: 500 },
-        { text: 'rf0: WARN: checksum incomplete', delay: 1500, style: 'color:#ff0' },
-        { text: 'rf0: ERR: buffer contains executable segment (ELF marker at offset 0x00)', delay: 800, style: 'color:#f55' },
-        { text: 'rf0: FATAL: refusing to mount \u2014 unverified executable content', delay: 500, style: 'color:#f55;font-weight:bold' },
-        { text: 'kernel: rf0: device fault \u2014 dumping buffer to .rf0.buf', delay: 800 },
-        { text: 'kernel: rf0: 847 bytes written', delay: 2000 },
-        { text: 'Segmentation fault (core dumped)', delay: 3000, style: 'color:#f55;font-weight:bold' },
-        { text: 'kernel panic - not syncing: device fault in rf0 driver', delay: 0, style: 'color:#ff0;font-weight:bold' },
-    ];
-
-    const crashDiv = document.createElement('div');
-    crashDiv.className = 'output';
-    output.appendChild(crashDiv);
-
-    for (const entry of crashLines) {
-        const line = document.createElement('div');
-        if (entry.style) line.style.cssText = entry.style;
-        line.textContent = entry.text;
-        crashDiv.appendChild(line);
-        input.scrollIntoView({ block: 'end' });
-        await new Promise(r => setTimeout(r, entry.delay));
-    }
-
-    // Freeze on panic
-    await new Promise(r => setTimeout(r, 3000));
-
-    // Record the crash discovery
-    huntState.discover('rf0-mount-failed');
-
-    // Screen goes black
-    terminal.style.display = 'none';
-    await new Promise(r => setTimeout(r, 1500));
-
-    // Auto-reboot into v2.0 (crash recovery, not version advance)
-    sessionStorage.removeItem('bootDone');
-    output.innerHTML = '';
-    bootScreen.innerHTML = '';
-    bootScreen.style.display = '';
-    bootScreen.style.opacity = '1';
-
-    // Re-apply current version (rebuilds everything with crash flag now set)
-    applyVersion(huntState.getVersion());
-    renderMOTD();
-    updatePrompt();
-
-    runBootSequence().then(() => {
-        input.disabled = false;
-        input.focus();
-    });
 }
 
 // ─── v2 Commands Pack ───────────────────────────────────────
@@ -144,7 +74,7 @@ const v2CommandsPack = {
                 + '# Devices carried forward from v1.0 ROM\n'
                 + '#\n'
                 + '# device        type      status\n'
-                + '# ─────────────────────────────────\n'
+                + '# \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n'
                 + '  /dev/tty1     terminal  active\n'
                 + '  /dev/eth0     network   active\n'
                 + '  /dev/sda1     disk      mounted\n'
@@ -170,20 +100,20 @@ const v2CommandsPack = {
             const sub = parts[0];
 
             if (sub === 'update') {
-                huntState.setFlag('pkg-initialized', true);
+                Kernel.hunt.setFlag('pkg-initialized', true);
                 return 'Synchronizing package repository...\n'
                     + 'Reading package lists... done\n'
                     + `${pkgRegistry.length} packages available.`;
             }
 
             if (sub === 'list') {
-                if (!huntState.flags['pkg-initialized']) {
+                if (!Kernel.hunt.flags['pkg-initialized']) {
                     return 'pkg: repository not initialized. Run \'pkg update\' first.';
                 }
                 const installed = getInstalledPackages();
                 let out = 'Available packages:\n\n'
                     + '  NAME        VERSION   SIZE   DESCRIPTION\n'
-                    + '  ─────────────────────────────────────────────────\n';
+                    + '  \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n';
                 for (const pkg of pkgRegistry) {
                     const tag = installed.includes(pkg.name) ? ' [installed]' : '';
                     out += `  ${pkg.name.padEnd(10)}  ${pkg.version.padEnd(8)}  ${pkg.size.padEnd(5)}  ${pkg.desc}${tag}\n`;
@@ -195,7 +125,7 @@ const v2CommandsPack = {
                 const pkgName = parts[1];
                 if (!pkgName) return 'Usage: pkg install <package>';
 
-                if (!huntState.flags['pkg-initialized']) {
+                if (!Kernel.hunt.flags['pkg-initialized']) {
                     return 'pkg: repository not initialized. Run \'pkg update\' first.';
                 }
 
@@ -205,7 +135,6 @@ const v2CommandsPack = {
                 const installed = getInstalledPackages();
                 if (installed.includes(pkgName)) return `pkg: '${pkgName}' is already installed.`;
 
-                // Install the package
                 installPackage(pkgName);
 
                 return `Installing ${pkgName} ${meta.version}...\n`
@@ -232,22 +161,20 @@ const v2CommandsPack = {
                 let out = '/dev/sda1 on / type ext4 (rw,relatime)\n'
                     + 'devfs on /dev type devfs (rw)\n'
                     + 'tmpfs on /tmp type tmpfs (rw,nosuid,nodev)';
-                if (huntState.has('rf0-mount-failed')) {
-                    out += '\n/dev/rf0 on — type — (device fault)';
+                if (Kernel.hunt.has('rf0-mount-failed')) {
+                    out += '\n/dev/rf0 on \u2014 type \u2014 (device fault)';
                 }
                 return out;
             }
 
             if (args === '/dev/rf0') {
-                if (huntState.has('rf0-mount-failed')) {
+                if (Kernel.hunt.has('rf0-mount-failed')) {
                     return 'mount: /dev/rf0: device fault (see dmesg)';
                 }
-                // First time — run crash sequence
-                setTimeout(() => runMountCrash(), 50);
+                setTimeout(() => Terminal.runMountCrash(), 50);
                 return null;
             }
 
-            // Other devices
             const knownDevices = ['/dev/sda1', '/dev/tty1', '/dev/eth0'];
             if (knownDevices.includes(args)) {
                 return `mount: ${args}: already mounted`;
@@ -305,3 +232,5 @@ const v2CommandsPack = {
 
     triggers: [],
 };
+
+Kernel.hunt.declareHunt(v2CommandsPack);

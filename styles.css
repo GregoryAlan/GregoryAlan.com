@@ -2,10 +2,24 @@ html {
     height: 100%;
 }
 
+/* ─── Version Themes ─── */
+
 body {
+    /* v1.1 defaults (white phosphor — NeXT era) */
+    --bg: #0f0e0d;
+    --text: #b0ada6;
+    --text-bright: #e8e4dc;
+    --prompt-color: #c8c4bc;
+    --link: #d0ccc4;
+    --dim: #5a5750;
+    --dim-bright: #6b6860;
+    --phantom: #3d3a35;
+    --warn: #e8e4dc;
+    --error: #e8e4dc;
+
     font-family: 'Courier New', Courier, monospace;
-    background: #0d0d0d;
-    color: #aaa;
+    background: var(--bg);
+    color: var(--text);
     padding: 20px;
     margin: 0;
     font-size: 14px;
@@ -13,6 +27,34 @@ body {
     min-height: 100%;
     -webkit-text-size-adjust: 100%;
     overflow-x: hidden;
+}
+
+body.v1-0 {
+    /* Amber phosphor — monochrome CRT */
+    --bg: #0d0b08;
+    --text: #c49a1a;
+    --text-bright: #ffb000;
+    --prompt-color: #d4a017;
+    --link: #e6a817;
+    --dim: #6b4c00;
+    --dim-bright: #7a5c00;
+    --phantom: #4a3500;
+    --warn: #ffb000;
+    --error: #ffb000;
+}
+
+body.v2-0 {
+    /* Modern terminal — cool tones */
+    --bg: #0a0e14;
+    --text: #abb2bf;
+    --text-bright: #d4dce4;
+    --prompt-color: #56b6c2;
+    --link: #61afef;
+    --dim: #4b5263;
+    --dim-bright: #5c6370;
+    --phantom: #3e4451;
+    --warn: #e5c07b;
+    --error: #e06c75;
 }
 
 @supports (-webkit-touch-callout: none) {
@@ -29,37 +71,37 @@ body {
 }
 
 .prompt {
-    color: #5f5;
+    color: var(--prompt-color);
 }
 
 .command {
-    color: #fff;
+    color: var(--text-bright);
 }
 
 .output {
-    color: #aaa;
+    color: var(--text);
     margin: 10px 0 20px 0;
 }
 
 a {
-    color: #5af;
+    color: var(--link);
     text-decoration: none;
 }
 
 a:hover {
-    color: #fff;
+    color: var(--text-bright);
     text-decoration: underline;
 }
 
 .disabled {
-    color: #555;
+    color: var(--dim);
 }
 
 .cursor {
     display: inline-block;
     width: 10px;
     height: 16px;
-    background: #5f5;
+    background: var(--prompt-color);
     animation: blink 1s step-end infinite;
     vertical-align: middle;
 }
@@ -69,11 +111,11 @@ a:hover {
 }
 
 .dir {
-    color: #5af;
+    color: var(--link);
 }
 
 .file {
-    color: #aaa;
+    color: var(--text);
 }
 
 .input-line {
@@ -86,12 +128,12 @@ a:hover {
     flex: 1;
     background: transparent;
     border: none;
-    color: #fff;
+    color: var(--text-bright);
     font-family: 'Courier New', Courier, monospace;
     font-size: 14px;
     outline: none;
     margin-left: 8px;
-    caret-color: #5f5;
+    caret-color: var(--prompt-color);
     min-width: 0;
     resize: none;
     overflow: hidden;
@@ -109,31 +151,76 @@ a:hover {
 }
 
 .hidden-file {
-    color: #666;
+    color: var(--dim-bright);
 }
 
 .tab-hint {
-    color: #555;
+    color: var(--dim);
     margin: 4px 0;
 }
 
 .motd {
-    color: #aaa;
+    color: var(--text);
     line-height: 1.5;
 }
 
 .ascii-art {
-    color: #5f5;
+    color: var(--prompt-color);
     font-family: 'Courier New', Courier, monospace;
-    font-size: 10px;
-    line-height: 1.1;
+    font-size: 12px;
+    line-height: 1.15;
+    margin: 0;
+    overflow-x: auto;
+    text-shadow:
+        1px 1px 0 var(--dim-bright),
+        2px 2px 0 var(--dim),
+        3px 3px 0 var(--dim);
+}
+
+.art-sub {
+    color: var(--dim-bright);
+    text-shadow: none;
+}
+
+.system-info {
+    color: var(--dim);
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    line-height: 1.5;
     margin: 0;
     overflow-x: auto;
 }
 
+/* ─── v2.0 Header ─── */
+
+.v2-header {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    line-height: 1.2;
+    margin: 0;
+    overflow-x: auto;
+}
+
+.v2-logo {
+    color: var(--prompt-color);
+    text-shadow: 1px 1px 0 var(--dim), 2px 2px 0 var(--dim);
+}
+
+.v2-title {
+    color: var(--text-bright);
+}
+
+.v2-rule {
+    color: var(--dim);
+}
+
+.v2-label {
+    color: var(--prompt-color);
+}
+
 #boot-screen {
     max-width: 800px;
-    color: #aaa;
+    color: var(--text);
     line-height: 1.8;
     transition: opacity 0.4s ease;
 }
@@ -186,10 +273,20 @@ a:hover {
         0deg,
         transparent,
         transparent 2px,
-        rgba(0, 255, 0, 0.03) 2px,
-        rgba(0, 255, 0, 0.03) 4px
+        rgba(200, 196, 188, 0.03) 2px,
+        rgba(200, 196, 188, 0.03) 4px
     );
     animation: scanScroll 8s linear infinite;
+}
+
+body.v1-0 .scanlines {
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(255, 176, 0, 0.03) 2px,
+        rgba(255, 176, 0, 0.03) 4px
+    );
 }
 
 @keyframes scanScroll {
@@ -216,7 +313,7 @@ a:hover {
 }
 
 .phantom-line {
-    color: #444;
+    color: var(--phantom);
     font-style: italic;
     opacity: 0;
     transition: opacity 1.5s ease;
@@ -227,15 +324,7 @@ a:hover {
     opacity: 1;
 }
 
-.redacted {
-    background: #aaa;
-    color: #aaa;
-    user-select: none;
-    -webkit-user-select: none;
-}
-
 .timestamp-anomaly {
-    color: #f55;
-    text-decoration: underline wavy #f55;
-    text-underline-offset: 2px;
+    background: #f55;
+    color: #000;
 }

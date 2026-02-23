@@ -20,34 +20,38 @@
 </div>
 
 <script src="js/glitch.js"></script>
+<script src="js/kernel.js"></script>
+<script src="js/shell.js"></script>
 <script src="js/terminal.js"></script>
-<script src="js/bin-tools.js"></script>
-<script src="js/v2-commands.js"></script>
+<script src="js/cmd/core.js"></script>
+<script src="js/cmd/unix.js"></script>
+<script src="js/cmd/bin-tools.js"></script>
+<script src="js/cmd/v2.js"></script>
 <script src="hunts/the-signal.js"></script>
 <script src="js/versions.js"></script>
 <script>
 // Boot init — apply version, render MOTD, then boot or restore
-const currentVersion = huntState.getVersion();
+const currentVersion = Kernel.hunt.getVersion();
 applyVersion(currentVersion);
 renderMOTD();
-updatePrompt();
+Terminal.updatePrompt();
+Terminal.init();
 
-if (huntState.flags.contact) {
-    runGlitchEffect('scanlines', { persistent: true });
-    document.body.style.backgroundColor = '#0a0d0a';
+for (const hunt of Object.values(Kernel.hunt._registry)) {
+    if (hunt.restore) hunt.restore(Kernel.hunt);
 }
 
-input.disabled = true;
+Terminal.el.input.disabled = true;
 
-if (sessionStorage.getItem('bootDone')) {
-    bootScreen.style.display = 'none';
-    terminal.style.display = '';
-    input.disabled = false;
-    input.focus();
+if (Kernel.session.get('bootDone')) {
+    Terminal.el.bootScreen.style.display = 'none';
+    Terminal.el.terminal.style.display = '';
+    Terminal.el.input.disabled = false;
+    Terminal.el.input.focus();
 } else {
-    runBootSequence().then(() => {
-        input.disabled = false;
-        input.focus();
+    Terminal.runBootSequence().then(() => {
+        Terminal.el.input.disabled = false;
+        Terminal.el.input.focus();
     });
 }
 </script>

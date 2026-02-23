@@ -119,7 +119,6 @@ These can be suggested through corrupted logs, anomalous output, and impossible 
 - The Signal predates the system it was found on
 - PID 0 is not just a process — it is present in ways the kernel shouldn't allow
 - The boundary between the system and its creator is thinner than it should be
-- `/dev/creativity` is not just a cute boot message
 - Gregory built a chain of tools that transform randomness — each one sound, the sum of them something else entirely
 - The `.rf0.buf` is not a security incident — it is output from Gregory's toolchain
 - Gregory's daemons are still running — the system is still executing the chain, has never stopped
@@ -191,17 +190,222 @@ Recurring elements that unify all hunts. New hunts should use these rather than 
 
 ---
 
-## The System
+## GregOS — The Architecture
 
-Rules about GregOS itself.
+GregOS is simultaneously a real portfolio site, a container for something else, and the runtime for Gregory's toolchain. It never acknowledges any of these dualities. But it is not a metaphor. It is a real (in-world) operating system with a custom kernel. The architecture is organized into two layers that mirror the narrative structure.
 
-- It is simultaneously a real portfolio site, a container for something else, and the runtime for Gregory's toolchain. It never acknowledges any of these dualities.
-- Its boot sequence is functional (it detects real hardware) but also ritualistic — mounting `/dev/creativity` is the one crack where the system hints at self-knowledge.
+### Design Rules
+
 - The system communicates only through its own vocabulary: logs, output, errors, files, state changes. It does not "speak."
 - It should always be explainable as "just software" — until it isn't. That transition is the heart of Phase II.
 - The system's session memory (sessionStorage) is a design mechanic AND a lore element. The system remembers what the visitor has done. It changes in response. Whether that's programming or awareness is an open question.
 - Gregory's daemons are part of the system's background operation. They sample, transform, and execute — continuously, on cron, since the last time Gregory logged in. They have never been stopped. The system is not idle. It is *running something*.
 - The tools in `/home/greg/bin/` are part of the system the way organs are part of a body. They were added one at a time, over months or years, each one a small rational addition. The sum is an instrument for communing with randomness. The system does not know this. Or if it does, it has no way to say so.
+
+### The Two Layers
+
+**The Grounded Layer (Core OS)** — passes the sysadmin test. An ambitious hobby OS. Impressive but explainable.
+
+**The Extended Layer (Gregory's additions)** — individually defensible, collectively impossible. This is where drift lives.
+
+---
+
+### Kernel Identity
+
+- Kernel version: `0.9.x-greg` — never reached 1.0. Gregory kept adding, never shipped.
+- `uname -a` output: `GregOS 2.0.1 gregos-kernel 0.9.847 #847 SMP <timestamp> x86_64`
+- Build number 847 — the recurring motif. Every kernel build since the entropy subsystem was added has been #847. Gregory stopped incrementing. Or the build system did.
+- `/etc/gregos-release`: clean file containing version, build date, kernel version, architecture.
+- `/proc/version`: `gregos-kernel 0.9.847 (greg@localhost) (gcc 11.4.0) #847`
+
+---
+
+### Core Kernel Subsystems (Grounded)
+
+These are standard, competent, slightly over-engineered. Gregory was a good programmer who went too far.
+
+| Subsystem | What It Does | Artifacts |
+|-----------|-------------|-----------|
+| **Process Scheduler** | CFS-derivative. Preemptive multitasking. Standard PID assignment (1+). PID 0 is the idle task — invisible, never appears in user space. | `/proc/[pid]/status`, `ps` output, process table |
+| **Memory Manager** | Virtual memory, page tables, slab allocator. Nothing unusual. | `/proc/meminfo`, page fault logs |
+| **gregfs** | Custom VFS layer. Simple but functional journaling filesystem. | `/proc/filesystems`, mount table, `df` output |
+| **Device Layer** | Character and block devices. `/dev/` populated at boot. Standard devices: null, zero, random, urandom, tty0-7, console. | `/dev/*`, device registration in dmesg |
+| **Network Stack** | Minimal. Loopback + one interface (eth0). Enough for the portfolio. | `ifconfig`/`ip` output, `/proc/net/` |
+| **IPC** | Signals, pipes, shared memory, Unix sockets. Standard POSIX. | `/proc/sysvipc/`, pipe behavior |
+| **Logging** | klog ring buffer (dmesg), syslog daemon. | `/var/log/kern.log`, `/var/log/syslog`, `dmesg` output |
+
+**Why PID 0 is wrong:** In the grounded kernel, PID 0 is the idle/swapper task. It has no user-space presence, no TTY, no shell. It exists only in kernel space as the scheduler's fallback. When PID 0 shows up in `w`, `ps`, or `dmesg` as running a user process — that's not a bug. That's the kernel itself doing something it was never built to do.
+
+---
+
+### Extended Kernel Subsystems (The Drift)
+
+Each addition has a rational justification. Each is a small, logical step from the last. The sum is something else.
+
+#### Entropy Subsystem (`/dev/entropy`)
+
+- Custom entropy pool separate from `/dev/random`
+- Hardware abstraction layer for rf0 (SDR dongle)
+- Kernel module: `rf0.ko` — registered as character device, feeds atmospheric noise into dedicated pool
+- `/proc/entropy_avail` shows pool stats; after rf0 integration, pool never depletes
+- Gregory's justification: "hardware entropy is better entropy"
+- Config: `CONFIG_GREGOS_ENTROPY=y`, `CONFIG_RF0_HWRNG=m`
+- Comments in source drift: `/* dedicated entropy device — rf0 feeds through hw abstraction layer */` → `/* pool never empties. it should empty. the math says it should empty. */`
+
+#### Transform Pipeline (kernel-level)
+
+- Custom system calls that moved the transform chain from userspace to kernel space
+- `sys_transform(fd_in, fd_out, transform_id)` — apply registered transform to stream
+- `sys_chain_exec(chain_desc, fd_entropy)` — execute transform chain with entropy source
+- `sys_stream_exec(fd)` — execute from streaming source (no seek, no tell, only exec)
+- Gregory's justification: "transforms need kernel-level scheduling for proper chain ordering"
+- Config: `CONFIG_GREGOS_TRANSFORMS=y`, `CONFIG_CHAIN_EXEC=y`
+- The comment that marks the turn: `/* the chain runs better at ring 0. I don't know why. */` → `/* it doesn't just run better. it runs DIFFERENTLY. */`
+
+#### Signal Device (`/dev/signal`)
+
+- Custom character device with no hardware backing
+- Kernel module: `signal.ko` — loaded after transform pipeline, depends on entropy subsystem
+- Registered in device table but doesn't correspond to any physical device
+- Produces output. Consumes nothing. Has no interrupt handler because nothing interrupts it.
+- Config: `CONFIG_DEV_SIGNAL=m` (module, not built-in — Gregory loaded it manually)
+- Source comment: `/* I didn't write the driver for this. I wrote the DEVICE. */`
+- Then: `/* ████████████████████████ */`
+
+#### Daemon Framework
+
+- Kernel-level support for persistent background processes
+- Priority scheduling for transform chain processes (SCHED_TRANSFORM — custom scheduling class)
+- `/proc/daemons` — lists running daemons, their chains, their uptime
+- The daemons run at higher priority than user processes. They cannot be killed by guest.
+- `kill -9` on a daemon PID returns success but the daemon remains. Not because it respawns — because the signal doesn't reach it.
+- Config: `CONFIG_DAEMON_FRAMEWORK=y`, `CONFIG_SCHED_TRANSFORM=y`
+
+---
+
+### The Descent Through Infrastructure (Version History)
+
+The kernel changelog IS the descent. Version numbers map to stages:
+
+| Version | Stage | What Changed | Comment Style |
+|---------|-------|-------------|---------------|
+| `0.1.0` | Portfolio | Terminal emulator. Basic commands. No real OS underneath. | `// make ls work` |
+| `0.2.0` | Shell | Tab completion, piping, job control. Started feeling real. | `// proper shell behavior` |
+| `0.3.0` | Filesystem | gregfs. FHS layout. /home, /etc, /var, /dev. | `// if it's going to be a terminal it needs a filesystem` |
+| `0.4.0` | Processes | PID table, scheduler, ps/top output, /proc. | `// processes are what make it feel alive` |
+| `0.5.0` | Devices | /dev/ layer. Character and block devices. Device registration. | `// devices are how unix talks to hardware` |
+| `0.6.0` | Init | Boot sequence. Service management. runlevels. | `// everything needs to start somewhere` |
+| `0.7.0` | IPC | Pipes, signals, shared memory. Processes can talk to each other. | `// clean IPC implementation` |
+| `0.8.0` | Network | Minimal network stack. Loopback + eth0. Sockets. | `// portfolio needs to serve itself` |
+| `0.9.0` | GregOS 1.0 | Named. Released as portfolio. Clean, professional. Over-engineered. | `// gregos v1.0 — why not` |
+| `0.9.1` | rf0 | SDR dongle integration. /dev/entropy. Hardware entropy pool. | `// hardware entropy is better entropy` |
+| `0.9.2` | Transforms | sys_transform() and sys_chain_exec(). Pipeline in kernel space. | `// transforms need kernel-level scheduling` |
+| `0.9.3` | The Devices | /dev/signal. No hardware backing. | `// ████████████` |
+| `0.9.847` | Last Build | Daemon framework. SCHED_TRANSFORM. /proc/daemons. Build #847. | `# okay` |
+
+After 0.9.847, no more kernel commits. Only crontab edits. The kernel is finished — or it finished itself.
+
+---
+
+### Boot Sequence (Detailed)
+
+What the visitor sees at v2.0 (already partially implemented, now with lore backing):
+
+```
+GregBIOS (C) 2026 Gregory Alan Computing
+POST: CPU0 — x86_64
+POST: 512MB OK
+POST: rf0 — LOCK @ 847.0MHz
+POST: sda — gregfs v3 mounted
+
+Loading gregos-kernel 0.9.847 ...
+
+[    0.000000] gregos-kernel 0.9.847 #847 SMP
+[    0.001203] CPU: x86_64 detected
+[    0.012847] Memory: 512MB available
+[    0.024100] gregfs: mounted / (rw)
+[    0.031000] dev: /dev/null registered
+[    0.031200] dev: /dev/zero registered
+[    0.031400] dev: /dev/random registered
+[    0.032000] dev: /dev/entropy registered (rf0 hw backing)
+[    0.033000] init: starting services
+[    0.040000] svc: sshd started
+[    0.041000] svc: cron started
+[    0.042000] svc: gregd started (4 daemons)
+[    0.050000] login: guest session opened on tty1
+
+Starting terminal ...
+```
+
+Every line grounded. Every line real. The only hints: `rf0 — LOCK @ 847.0MHz` (that frequency), `gregd started (4 daemons)` (what are they doing?).
+
+---
+
+### Filesystem Layout
+
+```
+/
+├── boot/
+│   ├── gregos-kernel-0.9.847
+│   └── grub.cfg
+├── dev/
+│   ├── null
+│   ├── zero
+│   ├── random
+│   ├── urandom
+│   ├── entropy          ← rf0-backed hardware entropy
+│   ├── signal           ← no hardware backing (mounted post-contact)
+│   ├── tty0-7
+│   └── console
+├── etc/
+│   ├── gregos-release
+│   ├── gregos.conf
+│   ├── fstab
+│   ├── motd
+│   ├── crontab          ← Gregory's daemon schedule
+│   ├── modules.conf     ← rf0.ko, signal.ko load order
+│   └── passwd
+├── home/
+│   ├── greg/
+│   │   ├── .bashrc
+│   │   ├── .bash_history
+│   │   ├── .vimrc
+│   │   ├── bin/          ← the toolchain
+│   │   ├── src/          ← kernel source fragments
+│   │   └── .config/      ← kernel build config
+│   └── guest/
+│       └── .bashrc
+├── proc/
+│   ├── version
+│   ├── cpuinfo
+│   ├── meminfo
+│   ├── filesystems
+│   ├── entropy_avail
+│   ├── daemons          ← Gregory's daemon status
+│   └── [pid]/
+├── var/
+│   ├── log/
+│   │   ├── kern.log
+│   │   ├── syslog
+│   │   ├── auth.log
+│   │   └── daemon.log   ← transform chain execution logs
+│   └── run/
+│       └── gregd.pid
+├── usr/
+│   └── local/
+│       └── src/
+│           └── gregos/   ← kernel source tree (partial)
+└── tmp/
+```
+
+Files the visitor encounters are gated by phase:
+- **Phase I**: Standard files. `/etc/gregos-release`, `/proc/version`, boot log. Grounded.
+- **Phase II**: Gregory's residue. `/home/greg/bin/`, `.bash_history`, commit logs, crontab. Drifting.
+- **Phase III**: Impossible files. Kernel source with comments that respond. `/proc/daemons` showing processes that predate the system. Device output that references what you just typed.
+
+### Kernel Version Reconciliation
+
+The v1.1 `version.txt` currently references `Kernel: 4.19.0-gregos`. This should be updated to `Kernel: 0.9.847-greg` to match the established kernel identity. The `4.19.0` string was a placeholder — the canonical kernel version is `0.9.847`, build `#847`, as established by this architecture document. This reconciliation is a code-level change for the implementation layer.
 
 ---
 
@@ -362,7 +566,7 @@ All future hunts must:
 
 - Tell their story through terminal commands and realistic file contents only
 - Not contradict established canon (see table above)
-- Use the discovery-gating system (`registerHunt`, `huntState.discover`, `huntState.has`)
+- Use the discovery-gating system (`Kernel.hunt.registerHunt`, `Kernel.hunt.discover`, `Kernel.hunt.has`)
 - Respect the tonal phase they operate in (I, II, or III)
 - Use the established motifs before inventing new ones
 - Introduce new open questions, never definitively answer old ones

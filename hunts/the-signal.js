@@ -5,17 +5,67 @@
 // realize you're no longer alone.
 //
 // See hunts/the-signal-storyline.md for narrative design.
+//
+// Depends on: kernel.js (Kernel), terminal.js (Terminal)
+
+// Simulate display corruption: each source character's code
+// is shifted by a small random offset, producing text-shaped
+// garbage that looks like it was almost readable.
+function garble(len) {
+    const base = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let s = '';
+    for (let i = 0; i < len; i++) {
+        const c = base.charCodeAt(Math.floor(Math.random() * base.length));
+        s += String.fromCharCode(c + Math.floor(Math.random() * 7) - 3);
+    }
+    return s;
+}
 
 const theSignalHunt = {
     id: 'the-signal',
 
+    stateMap: {
+        'idle': {
+            transitions: { 'rf0-mount-failed': 'buffer-dumped' }
+        },
+        'buffer-dumped': {
+            flags: { 'rf0-crashed': true },
+            transitions: { 'rf-found': 'signal-found' }
+        },
+        'signal-found': {
+            transitions: { 'rf-executed': 'relay-active' }
+        },
+        'relay-active': {
+            flags: { 'contact': true },
+            transitions: { 'contact-made': 'contact' }
+        },
+        'contact': {
+            flags: { 'contact': true },
+            transitions: {
+                'not-alone': 'investigating',
+                'intruder-finger': 'investigating',
+                'intruder-last': 'investigating',
+                'rf-strings': 'investigating'
+            }
+        },
+        'investigating': {
+            flags: { 'contact': true },
+            transitions: {
+                'not-alone': 'investigating',
+                'intruder-finger': 'investigating',
+                'intruder-last': 'investigating',
+                'rf-strings': 'investigating'
+            }
+        }
+    },
+
     files: {
         text: {},
         hidden: {
-            '.rf0.buf': (state) => {
-                if (!state.has('rf0-mount-failed')) return null;
-                state.discover('rf-found');
-                return 'rf0: rx ring overrun (847 bytes not consumed)\n'
+            '.rf0.buf': {
+                gate: 'rf0-mount-failed',
+                onRead: 'rf-found',
+                content: 'rf0: rx ring overrun (847 bytes not consumed)\n'
                     + 'checksum: a7 3f ?? ??\n\n'
                     + '0000  7f 45 4c 46 02 01 01 00  00 00 00 00 00 00 00 00\n'
                     + '0010  02 00 3e 00 01 00 00 00  00 03 47 00 00 00 00 00\n'
@@ -25,17 +75,17 @@ const theSignalHunt = {
                     + '0190  72 65 6c 61 79 20 2d 2d  74 61 72 67 65 74 3d 30\n'
                     + '01a0  2e 30 2e 30 2e 30 3a 34  31 31 39\n\n'
                     + 'end of buffer\n'
-                    + 'timestamp: <span class="timestamp-anomaly">-12</span>\n'
-                    + 'origin: unknown';
+                    + 'timestamp: 1970-01-01T00:00:00.012Z\n'
+                    + 'origin: unknown'
             },
 
-            '.node': (state) => {
-                if (!state.has('contact-made')) return null;
-                return 'Proto  Local Address          Foreign Address        State       PID\n'
-                    + 'rf0    guest@tty1              <span class="redacted">\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588</span>@tty0           ESTABLISHED 0\n\n'
+            '.node': {
+                gate: 'contact-made',
+                content: () => 'Proto  Local Address          Foreign Address        State       PID\n'
+                    + 'rf0    guest@tty1              ' + garble(8) + '@tty0           ESTABLISHED 0\n\n'
                     + 'connected ' + new Date().toLocaleString() + '\n'
                     + 'rtt <span class="timestamp-anomaly">-3ms</span>\n'
-                    + 'rx 847 bytes  tx 0 bytes';
+                    + 'rx 847 bytes  tx 0 bytes'
             },
         },
     },
@@ -48,15 +98,15 @@ const theSignalHunt = {
             const h = now.getHours();
             const m = String(now.getMinutes()).padStart(2, '0');
 
-            if (huntState.flags.contact) {
-                huntState.discover('not-alone');
+            if (Kernel.hunt.flags.contact) {
+                Kernel.hunt.discover('not-alone');
                 return ' ' + h + ':' + m + ' up 1 day, 3:14, 2 users, load average: 0.00, 0.01, 0.05\n'
                     + 'USER     TTY      FROM             LOGIN@   IDLE   WHAT\n'
                     + 'guest    tty1     -                ' + h + ':' + m + '   0.00s  /bin/bash\n'
                     + '???      tty0     0.0.0.0          03:14    0.00s  /dev/rf0';
             }
 
-            huntState.discover('checked-alone');
+            Kernel.hunt.discover('checked-alone');
             return ' ' + h + ':' + m + ' up 1 day, 3:14, 1 user, load average: 0.00, 0.01, 0.05\n'
                 + 'USER     TTY      FROM             LOGIN@   IDLE   WHAT\n'
                 + 'guest    tty1     -                ' + h + ':' + m + '   0.00s  /bin/bash';
@@ -64,9 +114,9 @@ const theSignalHunt = {
 
         finger: (args) => {
             if (args === 'root') {
-                if (huntState.flags.contact) {
-                    huntState.discover('intruder-finger');
-                    return 'Login: root                             Name: <span class="redacted">\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588</span>\n'
+                if (Kernel.hunt.flags.contact) {
+                    Kernel.hunt.discover('intruder-finger');
+                    return 'Login: root                             Name: ' + garble(12) + '\n'
                         + 'Directory: /dev/null                    Shell: /dev/null\n'
                         + 'Last login: <span class="timestamp-anomaly">Jan  0 00:00</span> from <span class="timestamp-anomaly">0.0.0.0</span>\n'
                         + 'No mail.\n'
@@ -90,8 +140,8 @@ const theSignalHunt = {
             const d = months[now.getMonth()] + ' ' + String(now.getDate()).padStart(2);
             const t = now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
 
-            if (huntState.flags.contact) {
-                huntState.discover('intruder-last');
+            if (Kernel.hunt.flags.contact) {
+                Kernel.hunt.discover('intruder-last');
                 return 'guest    tty1         ' + d + ' ' + t + '   still logged in\n'
                     + '<span class="timestamp-anomaly">???      tty0         Jan  0 00:00  - still logged in</span>\n\n'
                     + 'wtmp begins ' + d + ' 00:00:00';
@@ -108,7 +158,7 @@ const theSignalHunt = {
                 + '[    0.012000] CPU0: 1 core detected\n'
                 + '[    0.045000] eth0: link up, 100Mbps full-duplex';
 
-            if (huntState.flags.contact) {
+            if (Kernel.hunt.flags.contact) {
                 out += '\n[  847.000000] rf0: device registered\n'
                     + '[  847.000001] rf0: rx ring overrun (847 bytes not consumed)\n'
                     + '[  847.000003] audit: pid=0 comm=(unknown) ppid=0\n'
@@ -120,15 +170,15 @@ const theSignalHunt = {
             return out;
         },
 
-        decode: (args) => {
-            if (!args) return 'Usage: decode --hex &lt;data&gt; | decode --b64 &lt;data&gt;';
-            const parts = args.split(/\s+/);
+        decode: (args, stdin) => {
+            if (!args && !stdin) return 'Usage: decode --hex &lt;data&gt; | decode --b64 &lt;data&gt;';
+            const parts = (args || '').split(/\s+/).filter(Boolean);
             const flag = parts[0];
-            const data = parts.slice(1).join('');
+            const data = parts.slice(1).join('') || (stdin ? stdin.trim() : '');
 
             if (flag === '--hex') {
                 if (data.toLowerCase().startsWith('4e4f524d')) {
-                    huntState.discover('rf-executed');
+                    Kernel.hunt.discover('rf-executed');
                     return 'Decoding hex...\n\n'
                         + 'ELF binary detected in input\n'
                         + 'mapped segment at 0x847\n'
@@ -153,10 +203,14 @@ const theSignalHunt = {
             return 'decode: unknown flag. Use --hex or --b64';
         },
 
-        strings: (args) => {
+        strings: (args, stdin) => {
+            if (stdin) {
+                const matches = stdin.match(/[\x20-\x7E]{4,}/g);
+                return matches ? matches.join('\n') : '';
+            }
             if (!args) return 'Usage: strings &lt;file&gt;';
             if (args === '.rf0.buf') {
-                huntState.discover('rf-strings');
+                Kernel.hunt.discover('rf-strings');
                 return 'Extracting readable strings from .rf0.buf...\n\n'
                     + 'ELF\n'
                     + 'NORMAL SYSTEM OPERATION IS A LIE\n'
@@ -189,13 +243,13 @@ const theSignalHunt = {
 
                 messages.forEach(({ text, delay }) => {
                     setTimeout(() => {
-                        appendSystemLine(text);
+                        Terminal.appendSystemLine(text);
                     }, delay);
                 });
 
                 // Act 4 climax — "hello?"
                 setTimeout(() => {
-                    appendSystemLine('<span style="color:#5f5">hello?</span>');
+                    Terminal.appendSystemLine('<span style="color:#5f5">hello?</span>');
                     state.discover('contact-made');
                 }, 16000);
             }
@@ -216,7 +270,7 @@ const theSignalHunt = {
     patches: {
         hiddenFiles: {
             '.bash_history': (existing) => {
-                if (!huntState.has('rf0-mount-failed')) return existing;
+                if (!Kernel.hunt.has('rf0-mount-failed')) return existing;
                 const extra = [
                     'dmesg',
                     'cat .rf0.buf',
@@ -230,6 +284,13 @@ const theSignalHunt = {
             }
         }
     },
+
+    restore(state) {
+        if (state.flags.contact) {
+            runGlitchEffect('scanlines', { persistent: true });
+            document.body.style.backgroundColor = '#0a0d0a';
+        }
+    },
 };
 
-// Registration deferred to versions.js (applied at v2.0)
+Kernel.hunt.declareHunt(theSignalHunt);
