@@ -207,7 +207,7 @@ const Terminal = {
             { text: 'PCI: bus probe complete', delay: 200 },
             ...(net ? [{ text: `eth0: link up, ${net}`, delay: 200 }] : []),
             { text: '/dev/sda1: mounted (ext4)', delay: 300 },
-            ...(Kernel.hunt.has('rf0-mount-failed')
+            ...(Kernel.driver.has('rf0-mount-failed')
                 ? [{ text: 'rf0: device fault \u2014 buffer dumped (see .rf0.buf)', delay: 400, style: 'color:var(--warn)' }]
                 : []),
             { text: '', delay: 200 },
@@ -217,7 +217,7 @@ const Terminal = {
     },
 
     async runBootSequence() {
-        const lines = this.getBootLines(Kernel.hunt.getVersion());
+        const lines = this.getBootLines(Kernel.driver.getVersion());
 
         let skipped = false;
         const skipHandler = () => { skipped = true; };
@@ -382,10 +382,10 @@ const Terminal = {
 
         // Factory reset
         Kernel.session.clear();
-        Kernel.hunt.discoveries = {};
-        Kernel.hunt.flags = {};
-        Kernel.hunt._currentStates = {};
-        Kernel.hunt.setVersion(1.0);
+        Kernel.driver.discoveries = {};
+        Kernel.driver.flags = {};
+        Kernel.driver._currentStates = {};
+        Kernel.driver.setVersion(1.0);
         applyVersion(1.0);
         renderMOTD();
         this.updatePrompt();
@@ -441,7 +441,7 @@ const Terminal = {
 
         await new Promise(r => setTimeout(r, 3000));
 
-        Kernel.hunt.discover('rf0-mount-failed');
+        Kernel.driver.discover('rf0-mount-failed');
 
         this.el.terminal.style.display = 'none';
         await new Promise(r => setTimeout(r, 1500));
@@ -452,7 +452,7 @@ const Terminal = {
         this.el.bootScreen.style.display = '';
         this.el.bootScreen.style.opacity = '1';
 
-        applyVersion(Kernel.hunt.getVersion());
+        applyVersion(Kernel.driver.getVersion());
         renderMOTD();
         this.updatePrompt();
 

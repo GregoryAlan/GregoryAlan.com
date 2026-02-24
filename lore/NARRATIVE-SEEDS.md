@@ -22,7 +22,7 @@ Each file entry includes:
 
 <!-- contract
 status: implemented
-impl: js/versions.js (v1_1Seeds, narrativeSeeds), hunts/the-signal.js, js/cmd/unix.js, js/cmd/bin-tools.js
+impl: js/versions.js (v1_1Seeds, narrativeSeeds), drivers/the-signal.js, js/cmd/unix.js, js/cmd/bin-tools.js
 last-synced: 2026-02-22
 notes: Reference table. Values verified against code 2026-02-22. Kernel 847/851 split is correctly implemented per version layer.
 -->
@@ -430,7 +430,7 @@ alias chaintest='shift < /dev/entropy | remap | align | exec 2>/dev/null; echo $
 
 <!-- contract
 status: implemented
-impl: All thread paths verified against js/versions.js narrativeSeeds and hunts/the-signal.js
+impl: All thread paths verified against js/versions.js narrativeSeeds and drivers/the-signal.js
 last-synced: 2026-02-22
 notes: Design reference. Individual file implementations tracked in their own contracts above.
 -->

@@ -1,6 +1,6 @@
 // ─── EventBus ───────────────────────────────────────────────
 //
-// Pub/sub event system. Coexists with Kernel.hunt.checkTriggers()
+// Pub/sub event system. Coexists with Kernel.driver.checkTriggers()
 // — new code subscribes via EventBus.on(), existing triggers
 // continue working unchanged.
 //

@@ -73,8 +73,8 @@ const gregCorpCommands = {
             return 'su: unknown user \'' + username + '\'';
         }
 
-        // Gate: requires Signal hunt contact-made
-        if (!Kernel.hunt.has('contact-made')) {
+        // Gate: requires Signal driver contact-made
+        if (!Kernel.driver.has('contact-made')) {
             runGlitchEffect('promptCorruption', {});
             return 'su: authentication failure';
         }
@@ -87,9 +87,9 @@ const gregCorpCommands = {
                 return;
             }
             Shell.switchProfile(profile);
-            Kernel.hunt.discover('profile-' + username + '-entered');
+            Kernel.driver.discover('profile-' + username + '-entered');
             if (match.discover) {
-                Kernel.hunt.discover(match.discover);
+                Kernel.driver.discover(match.discover);
             }
             const lastLogin = profile.fingerInfo.split('\n')
                 .find(l => l.startsWith('Last login:'));
@@ -107,10 +107,10 @@ const gregCorpCommands = {
     },
 
     finger: (args) => {
-        // Signal hunt: corrupted root
+        // Signal driver: corrupted root
         if (args === 'root') {
-            if (Kernel.hunt.flags.contact) {
-                Kernel.hunt.discover('intruder-finger');
+            if (Kernel.driver.flags.contact) {
+                Kernel.driver.discover('intruder-finger');
                 return 'Login: root                             Name: ' + garble(12) + '\n'
                     + 'Directory: /dev/null                    Shell: /dev/null\n'
                     + 'Last login: <span class="timestamp-anomaly">Jan  0 00:00</span> from <span class="timestamp-anomaly">0.0.0.0</span>\n'
@@ -123,7 +123,7 @@ const gregCorpCommands = {
         // Profile lookup
         const profile = gregCorpProfiles[args];
         if (profile) {
-            if (!Kernel.hunt.has('contact-made')) {
+            if (!Kernel.driver.has('contact-made')) {
                 return 'finger: ' + args + ': no such user';
             }
             return profile.fingerInfo;

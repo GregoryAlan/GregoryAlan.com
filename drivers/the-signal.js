@@ -1,4 +1,4 @@
-// ─── The Signal Hunt ─────────────────────────────────────────
+// ─── The Signal Driver ───────────────────────────────────────
 //
 // spec: the-signal-storyline.md
 //
@@ -21,7 +21,7 @@ function garble(len) {
     return s;
 }
 
-const theSignalHunt = {
+const theSignalDriver = {
     id: 'the-signal',
 
     stateMap: {
@@ -59,7 +59,7 @@ const theSignalHunt = {
         }
     },
 
-    // Static files (.rf0.buf, /proc/0/*) loaded from content/signal-hunt.json
+    // Static files (.rf0.buf, /proc/0/*) loaded from content/signal-hunt.json manifest
     // Only computed hidden files stay here
     files: {
         text: {},
@@ -99,7 +99,7 @@ const theSignalHunt = {
                      + 'root   63  0.0  0.0   3024   512 ?    Ss   cron\n'
                      + u + ' '.repeat(Math.max(1, 6 - u.length)) + '184  0.0  0.2   5648  2048 tty1 Ss   bash\n'
                      + u + ' '.repeat(Math.max(1, 6 - u.length)) + '201  0.0  0.1   3472   768 tty1 R+   ps aux';
-                if (Kernel.hunt.flags.contact) {
+                if (Kernel.driver.flags.contact) {
                     out += '\n<span class="timestamp-anomaly">???     0  0.0  0.0      0     0 tty0 R    /dev/rf0</span>';
                 }
                 return out;
@@ -114,15 +114,15 @@ const theSignalHunt = {
             const u = Shell.env.USER;
             const uPad = u.padEnd(8);
 
-            if (Kernel.hunt.flags.contact) {
-                Kernel.hunt.discover('not-alone');
+            if (Kernel.driver.flags.contact) {
+                Kernel.driver.discover('not-alone');
                 return ' ' + h + ':' + m + ' up 1 day, 3:14, 2 users, load average: 0.00, 0.01, 0.05\n'
                     + 'USER     TTY      FROM             LOGIN@   IDLE   WHAT\n'
                     + uPad + ' tty1     -                ' + h + ':' + m + '   0.00s  /bin/bash\n'
                     + '???      tty0     0.0.0.0          03:14    0.00s  /dev/rf0';
             }
 
-            Kernel.hunt.discover('checked-alone');
+            Kernel.driver.discover('checked-alone');
             return ' ' + h + ':' + m + ' up 1 day, 3:14, 1 user, load average: 0.00, 0.01, 0.05\n'
                 + 'USER     TTY      FROM             LOGIN@   IDLE   WHAT\n'
                 + uPad + ' tty1     -                ' + h + ':' + m + '   0.00s  /bin/bash';
@@ -130,8 +130,8 @@ const theSignalHunt = {
 
         finger: (args) => {
             if (args === 'root') {
-                if (Kernel.hunt.flags.contact) {
-                    Kernel.hunt.discover('intruder-finger');
+                if (Kernel.driver.flags.contact) {
+                    Kernel.driver.discover('intruder-finger');
                     return 'Login: root                             Name: ' + garble(12) + '\n'
                         + 'Directory: /dev/null                    Shell: /dev/null\n'
                         + 'Last login: <span class="timestamp-anomaly">Jan  0 00:00</span> from <span class="timestamp-anomaly">0.0.0.0</span>\n'
@@ -157,8 +157,8 @@ const theSignalHunt = {
             const t = now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
             const u = Shell.env.USER.padEnd(8);
 
-            if (Kernel.hunt.flags.contact) {
-                Kernel.hunt.discover('intruder-last');
+            if (Kernel.driver.flags.contact) {
+                Kernel.driver.discover('intruder-last');
                 return u + ' tty1         ' + d + ' ' + t + '   still logged in\n'
                     + '<span class="timestamp-anomaly">???      tty0         Jan  0 00:00  - still logged in</span>\n\n'
                     + 'wtmp begins ' + d + ' 00:00:00';
@@ -176,9 +176,14 @@ const theSignalHunt = {
                 + '[    0.031000] dev: /dev/null registered\n'
                 + '[    0.031200] dev: /dev/zero registered\n'
                 + '[    0.031400] dev: /dev/random registered\n'
-                + '[    0.032000] dev: /dev/entropy registered (rf0 hw backing)';
+                + '[    0.032000] dev: /dev/entropy registered (rf0 hw backing)\n'
+                + '[    0.033000] init: starting services\n'
+                + '[    0.040000] svc: sshd started\n'
+                + '[    0.041000] svc: cron started\n'
+                + '[    0.042000] svc: gregd started (4 daemons)\n'
+                + '[    0.050000] login: guest session opened on tty1';
 
-            if (Kernel.hunt.flags.contact) {
+            if (Kernel.driver.flags.contact) {
                 out += '\n[  847.000000] rf0: device registered\n'
                     + '[  847.000001] rf0: rx ring overrun (847 bytes not consumed)\n'
                     + '[  847.000003] audit: pid=0 comm=(unknown) ppid=0\n'
@@ -198,7 +203,7 @@ const theSignalHunt = {
 
             if (flag === '--hex') {
                 if (data.toLowerCase().startsWith('4e4f524d')) {
-                    Kernel.hunt.discover('rf-executed');
+                    Kernel.driver.discover('rf-executed');
                     return 'Decoding hex...\n\n'
                         + 'ELF binary detected in input\n'
                         + 'mapped segment at 0x847\n'
@@ -230,7 +235,7 @@ const theSignalHunt = {
             }
             if (!args) return 'Usage: strings &lt;file&gt;';
             if (args === '.rf0.buf') {
-                Kernel.hunt.discover('rf-strings');
+                Kernel.driver.discover('rf-strings');
                 return 'Extracting readable strings from .rf0.buf...\n\n'
                     + 'ELF\n'
                     + 'NORMAL SYSTEM OPERATION IS A LIE\n'
@@ -291,7 +296,7 @@ const theSignalHunt = {
     patches: {
         hiddenFiles: {
             '.bash_history': (existing) => {
-                if (!Kernel.hunt.has('rf0-mount-failed')) return existing;
+                if (!Kernel.driver.has('rf0-mount-failed')) return existing;
                 const extra = [
                     'dmesg',
                     'cat .rf0.buf',
@@ -314,4 +319,4 @@ const theSignalHunt = {
     },
 };
 
-Kernel.hunt.declareHunt(theSignalHunt);
+Kernel.driver.declareDriver(theSignalDriver);

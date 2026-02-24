@@ -1,8 +1,24 @@
 # Narrative Engine
 
-Template specification for the GregOS narrative state machine. This is a contract between the lore and the engine — it defines what flags exist, what states artifacts can be in, and how story beats move the dials.
+The narrative engine is the kernel of GregOS — not metaphorically, but architecturally. It manages narrative the way a real kernel manages hardware: content is the resource, state machines are the scheduler, discoveries are interrupts, flags are kernel memory, gates are permissions, and beats are interrupt service routines.
 
-This document does not describe implementation. It describes the *vocabulary* the implementation must support.
+The engine already exists in simpler form as `Kernel.driver` (state machines, discoveries, flags, triggers, gated files). This document specifies the target vocabulary for its evolution — a formal flag taxonomy, declarative beat definitions, artifact lifecycle states, and ambient behavior systems. Everything here extends what the kernel already does; nothing replaces it.
+
+This is a contract between the lore and the engine — it defines what flags exist, what states artifacts can be in, and how story beats move the dials.
+
+### Architecture Mapping
+
+| Narrative Engine Concept | Kernel Analog | Current Implementation |
+|-------------------------|---------------|----------------------|
+| Flags | Kernel memory / registers | `Kernel.driver.flags` (flat object) |
+| State machines | Process scheduler | `Kernel.driver.registerStateMap()` |
+| Discoveries | Hardware interrupts (IRQs) | `Kernel.driver.discover()` |
+| Triggers / Beats | Interrupt service routines | `Kernel.driver._triggers[]` |
+| Gates | Permission checks | `Kernel.driver.evaluateGate()` |
+| Artifacts | Device nodes | Gated files via `createGatedFile()` |
+| Ambient behaviors | Timer interrupts | Not yet implemented |
+| Driver definitions | Device drivers / kernel modules | `Kernel.driver.registerDriver()` |
+| JSON manifests | Firmware / ROM | `ManifestLoader.loadCached()` |
 
 ---
 
@@ -11,7 +27,7 @@ This document does not describe implementation. It describes the *vocabulary* th
 <!-- contract
 status: aspirational
 last-synced: 2026-02-22
-notes: Formal flag system not implemented. Current code uses Kernel.hunt.flags (flat object) and Kernel.hunt.has() for discovery checks. This spec defines the target vocabulary for a future narrative engine.
+notes: Formal flag system not implemented. Current code uses Kernel.driver.flags (flat object) and Kernel.driver.has() for discovery checks. This spec defines the target vocabulary for a future narrative engine.
 -->
 
 Flags are the state of the world. Every observable behavior in GregOS is driven by flags. Flags are organized into four categories: kernel, OS, narrative, and artifact.
@@ -80,7 +96,7 @@ Per-artifact visibility and state. Each artifact is a file, command output, or s
 <!-- contract
 status: aspirational
 last-synced: 2026-02-22
-notes: Current code uses gate/onRead pattern in hunt definitions, not a formal artifact state machine. Artifacts are either gated (hidden until discovery) or always visible. No corrupted/drifting states exist yet.
+notes: Current code uses gate/onRead pattern in driver definitions, not a formal artifact state machine. Artifacts are either gated (hidden until discovery) or always visible. No corrupted/drifting states exist yet.
 -->
 
 Artifacts are files, command outputs, or system behaviors. Each has a lifecycle stage that determines how it presents to the visitor.
@@ -104,10 +120,10 @@ Artifacts are files, command outputs, or system behaviors. Each has a lifecycle 
 <!-- contract
 status: aspirational
 last-synced: 2026-02-22
-notes: Current hunts use a triggers[] array with {type, match, effect, once, callback} objects. This YAML beat format is the target for a future declarative narrative layer. The trigger types and effect actions defined here are the roadmap.
+notes: Current drivers use a triggers[] array with {type, match, effect, once, callback} objects. This YAML beat format is the target for a future declarative narrative layer. The trigger types and effect actions defined here are the roadmap.
 -->
 
-Each beat in a hunt template describes a story moment and its effects on the flag state. Beats are the atoms of narrative progression.
+Each beat in a driver template describes a story moment and its effects on the flag state. Beats are the atoms of narrative progression.
 
 ```yaml
 beat:
@@ -117,7 +133,7 @@ beat:
   trigger:
     type: discovery | command | file_read | threshold | auto
     match: "discovery-id" | "command-name" | "filename" | number
-    condition: "Kernel.hunt.has('prerequisite')"  # optional gate
+    condition: "Kernel.driver.has('prerequisite')"  # optional gate
 
   # Flag mutations when beat fires
   effects:
@@ -175,11 +191,11 @@ beat:
 
 | Type | `match` Value | Fires When |
 |------|--------------|------------|
-| `discovery` | discovery ID string | `Kernel.hunt.discover(id)` is called |
+| `discovery` | discovery ID string | `Kernel.driver.discover(id)` is called |
 | `command` | command name string | Visitor runs the named command |
 | `file_read` | filename string | Visitor reads the named file (via `cat`, etc.) |
 | `threshold` | number | Total discovery count reaches this value |
-| `auto` | — | Beat fires immediately when hunt loads (used for initial state setup) |
+| `auto` | — | Beat fires immediately when driver loads (used for initial state setup) |
 
 ### Effect Actions
 
@@ -194,23 +210,23 @@ beat:
 
 ---
 
-## Hunt Template (Narrative Engine Format)
+## Driver Template (Narrative Engine Format)
 
 <!-- contract
 status: aspirational
 last-synced: 2026-02-22
-notes: Current hunt format is the JS object format documented in HUNT-TEMPLATE.md. This YAML format is the declarative target. See HUNT-TEMPLATE.md for the implemented API.
+notes: Current driver format is the JS object format documented in DRIVER-TEMPLATE.md. This YAML format is the declarative target. See DRIVER-TEMPLATE.md for the implemented API.
 -->
 
-A complete hunt definition using the narrative engine. This extends the existing JavaScript hunt definition format (see HUNT-TEMPLATE.md) with a declarative narrative layer.
+A complete driver definition using the narrative engine. This extends the existing JavaScript driver definition format (see DRIVER-TEMPLATE.md) with a declarative narrative layer.
 
 ```yaml
-hunt:
-  id: "hunt-name"
+driver:
+  id: "driver-name"
   phase: "I"
-  prerequisites: []  # discovery IDs from previous hunts
+  prerequisites: []  # discovery IDs from previous drivers
 
-  # Initial flag state when hunt loads
+  # Initial flag state when driver loads
   initial_state:
     kernel:
       entropy.source: "rf0"
@@ -224,7 +240,7 @@ hunt:
       node-file: { state: "hidden" }
       kern-log: { state: "exists" }
 
-  # Artifacts defined by this hunt
+  # Artifacts defined by this driver
   artifacts:
     - id: "rf0-buf"
       type: "hidden_file"
@@ -299,7 +315,7 @@ hunt:
             value: 0.2
       once: true
 
-  # Ambient behaviors active while hunt is loaded
+  # Ambient behaviors active while driver is loaded
   ambient:
     - condition: "narrative.dread > 0.3"
       effect: "crtBand"
@@ -320,7 +336,7 @@ last-synced: 2026-02-22
 notes: Some behaviors partially exist (e.g., PID 0 visibility via contact flag, prompt corruption via glitch effect, background color change). But the formal flag-condition-to-behavior mapping is not implemented as a general engine.
 -->
 
-These define how flags affect system behavior globally — not per-hunt. The engine evaluates these continuously.
+These define how flags affect system behavior globally — not per-driver. The engine evaluates these continuously.
 
 | Flag Condition | System Behavior |
 |---------------|-----------------|
@@ -344,7 +360,7 @@ Multiple flag conditions can be active simultaneously. Effects compose additivel
 
 All flags persist in sessionStorage for the duration of a session. Flags survive page refresh but not `rm -rf /` (factory reset). On factory reset, all flags return to their defaults as defined in this document.
 
-Cross-hunt flag reads are always permitted. A hunt in Phase II can read flags set by a Phase I hunt to gate content appropriately. Flag *writes* should be scoped — each hunt should only mutate flags it declares in its `initial_state` or `beats`, but the engine does not enforce this (it is a convention, not a constraint).
+Cross-driver flag reads are always permitted. A driver in Phase II can read flags set by a Phase I driver to gate content appropriately. Flag *writes* should be scoped — each driver should only mutate flags it declares in its `initial_state` or `beats`, but the engine does not enforce this (it is a convention, not a constraint).
 
 ---
 
@@ -377,35 +393,35 @@ ambient:
 
 ---
 
-## Cross-Hunt Continuity
+## Cross-Driver Continuity
 
 <!-- contract
 status: aspirational
 last-synced: 2026-02-22
-notes: Basic cross-hunt flag reading exists (greg-corp.js checks Kernel.hunt.has('contact-made') from the-signal.js). Formal flag namespacing and phase transitions are not implemented.
+notes: Basic cross-driver flag reading exists (greg-corp.js checks Kernel.driver.has('contact-made') from the-signal.js). Formal flag namespacing and phase transitions are not implemented.
 -->
 
-Hunts exist in a shared flag namespace. This enables narrative continuity across the experience.
+Drivers exist in a shared flag namespace. This enables narrative continuity across the experience.
 
-### Reading Flags From Other Hunts
+### Reading Flags From Other Drivers
 
-Any hunt can read any flag at any time using gate expressions:
+Any driver can read any flag at any time using gate expressions:
 
 ```yaml
-# In a Phase II hunt, gate content behind Phase I completion
+# In a Phase II driver, gate content behind Phase I completion
 trigger:
   type: file_read
   match: ".daemon.log"
-  condition: "Kernel.hunt.has('contact-made')"  # from The Signal
+  condition: "Kernel.driver.has('contact-made')"  # from The Signal
 ```
 
 ### Writing Flags
 
-Convention: hunts should only SET flags in their declared scope (flags listed in `initial_state` or mutated in `beats`). This prevents flag collision between hunts. The engine does not enforce this — it is a social contract between hunt authors.
+Convention: drivers should only SET flags in their declared scope (flags listed in `initial_state` or mutated in `beats`). This prevents flag collision between drivers. The engine does not enforce this — it is a social contract between driver authors.
 
 ### Flag Namespacing
 
-For hunt-specific flags that don't map to the global vocabulary, use the hunt ID as a prefix:
+For driver-specific flags that don't map to the global vocabulary, use the driver ID as a prefix:
 
 ```yaml
 effects:
@@ -415,8 +431,8 @@ effects:
       value: true
 ```
 
-Global flags (those defined in the tables above) should never be prefixed. Hunt-specific flags always should be.
+Global flags (those defined in the tables above) should never be prefixed. Driver-specific flags always should be.
 
 ### Phase Transitions
 
-The `narrative.phase` flag is a global coordination point. When a hunt's beats advance the visitor to Phase II, all loaded hunts that read `narrative.phase` will reflect the change. This is by design — the phase is the visitor's state, not the hunt's.
+The `narrative.phase` flag is a global coordination point. When a driver's beats advance the visitor to Phase II, all loaded drivers that read `narrative.phase` will reflect the change. This is by design — the phase is the visitor's state, not the driver's.

@@ -21,7 +21,7 @@ Last updated: 2026-02-23
 
 | Spec | Section | Issue | Severity |
 |------|---------|-------|----------|
-| *(none)* | | | |
+| the-signal-storyline.md | Act 5 (dmesg) | `dmesg` post-contact lines diverge from `/var/log/kern.log` post-contact lines. Real Unix: both show the same kernel ring buffer. kern.log has `/dev/signal` registration + fork-from-swapper; dmesg has tx/connection + state=running. Need unified set in both `js/versions.js:137-144` and `drivers/the-signal.js:186-193`. | Medium |
 
 ---
 
@@ -41,7 +41,7 @@ Code that exists without a spec document. Lore master should review and retroact
 
 ### For Developer
 
-*(Nothing pending)*
+- **Unify kern.log / dmesg post-contact messages** — see Known Drift table. Pick one canonical set of post-contact kernel messages and use it in both `js/versions.js` (computedNarrativeSeeds `/var/log/kern.log`) and `drivers/the-signal.js` (dmesg command). Recommend merging both: keep `/dev/signal` registration from kern.log AND tx/connection from dmesg into one 6-line sequence.
 
 ### For Lore Master
 

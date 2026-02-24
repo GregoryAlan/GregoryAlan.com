@@ -5,8 +5,8 @@
 // and has a man page with an AUTHOR line that dates it.
 //
 // Load order: this file registers base implementations, then
-// hunt scripts (the-signal.js) override decode/strings with
-// hunt-aware versions.
+// driver scripts (the-signal.js) override decode/strings with
+// driver-aware versions.
 
 const binTools = {
     directories: {

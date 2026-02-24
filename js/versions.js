@@ -15,8 +15,8 @@
 //             cmd/bin-tools.js (binTools),
 //             cmd/v2.js (v2CommandsPack, pkgRegistry, restoreInstalledPackages,
 //                        getInstalledPackages),
-//             hunts/the-signal.js (theSignalHunt),
-//             hunts/greg-corp.js (gregCorpCommands, gregCorpTriggers)
+//             drivers/the-signal.js (theSignalDriver),
+//             drivers/greg-corp.js (gregCorpCommands, gregCorpTriggers)
 
 // ─── Manifest URLs ──────────────────────────────────────────
 // All content manifests. Pre-fetched once at page load,
@@ -211,15 +211,15 @@ const VERSION_MANIFEST = [
                 Kernel.fs.addTreeFile(path, fn);
             }
             // Register v2 commands (pkg, mount)
-            Kernel.hunt.registerHunt(v2CommandsPack);
-            // Register Signal hunt (commands, triggers, state machine)
+            Kernel.driver.registerDriver(v2CommandsPack);
+            // Register Signal driver (commands, triggers, state machine)
             // Must come after v2CommandsPack so Signal's decode/strings win
-            Kernel.hunt.registerHunt(theSignalHunt);
+            Kernel.driver.registerDriver(theSignalDriver);
             // Register Greg Corp commands and triggers
             for (const [name, fn] of Object.entries(gregCorpCommands)) {
                 Shell.register(name, fn);
             }
-            Kernel.hunt._triggers.push(...gregCorpTriggers);
+            Kernel.driver._triggers.push(...gregCorpTriggers);
             // Restore any previously installed packages
             restoreInstalledPackages();
             // Remove bin tool commands not yet installed via pkg
@@ -238,7 +238,7 @@ const VERSION_MANIFEST = [
 function applyVersion(targetVersion) {
     Shell.resetCommands();
     Kernel.fs.reset();
-    Kernel.hunt.reset();
+    Kernel.driver.reset();
     ManifestLoader.reset();
     // Reset active profile on version change
     Terminal._pendingAuth = null;
@@ -259,7 +259,7 @@ function applyVersion(targetVersion) {
 // ─── getNextVersion ─────────────────────────────────────────
 
 function getNextVersion(force) {
-    const ver = Kernel.hunt.getVersion();
+    const ver = Kernel.driver.getVersion();
 
     if (ver < 1.1) {
         return 1.1;
@@ -290,7 +290,7 @@ function renderMOTD() {
     const motdEl = document.getElementById('motd');
     if (!motdEl) return;
 
-    const ver = Kernel.hunt.getVersion();
+    const ver = Kernel.driver.getVersion();
 
     // Apply version theme
     document.body.classList.remove('v1-0', 'v2-0');
@@ -343,7 +343,7 @@ function renderMOTD() {
             + `<div class="motd">${lastLogin}</div>`
             + '<div class="motd">&nbsp;</div>'
             + `<pre class="v2-header">${header}\n</pre>`
-            + (!Kernel.hunt.flags['pkg-initialized']
+            + (!Kernel.driver.flags['pkg-initialized']
                 ? '<div class="motd">1 package repository configured. Run \'pkg update\' to synchronize.</div>'
                 : '')
             + '<div class="motd">&nbsp;</div>'

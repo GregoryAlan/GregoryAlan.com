@@ -1,6 +1,6 @@
 // ─── GregOS Kernel ──────────────────────────────────────────
 //
-// Owns all persistent state: filesystem, hunts, session.
+// Owns all persistent state: filesystem, drivers, session.
 // Everything else accesses state through Kernel methods.
 //
 // Depends on: glitch.js (runGlitchEffect)
@@ -53,10 +53,10 @@ const Kernel = {
         isNodeVisible(node) {
             if (typeof node !== 'function') return true;
             const peekState = {
-                has: (id) => Kernel.hunt.has(id),
-                flags: Kernel.hunt.flags,
-                getVersion: () => Kernel.hunt.getVersion(),
-                isInOrPast: (h, s) => Kernel.hunt.isInOrPast(h, s),
+                has: (id) => Kernel.driver.has(id),
+                flags: Kernel.driver.flags,
+                getVersion: () => Kernel.driver.getVersion(),
+                isInOrPast: (h, s) => Kernel.driver.isInOrPast(h, s),
                 discover() {}
             };
             return node(peekState) !== null;
@@ -78,7 +78,7 @@ const Kernel = {
             if (name in this._hiddenFiles) {
                 let content = this._hiddenFiles[name];
                 if (typeof content === 'function') {
-                    content = content(Kernel.hunt);
+                    content = content(Kernel.driver);
                     if (content === null) return null;
                 }
                 return content;
@@ -90,7 +90,7 @@ const Kernel = {
             if (node === 'file') return null;  // external HTML, not readable
             if (typeof node === 'object') return null;  // directory, not readable
             if (typeof node === 'function') {
-                const content = node(Kernel.hunt);
+                const content = node(Kernel.driver);
                 return content === null ? null : content;
             }
             return node;  // string content
@@ -197,10 +197,10 @@ const Kernel = {
             const content = this._hiddenFiles[name];
             if (typeof content !== 'function') return true;
             const peekState = {
-                has: (id) => Kernel.hunt.has(id),
-                flags: Kernel.hunt.flags,
-                getVersion: () => Kernel.hunt.getVersion(),
-                isInOrPast: (h, s) => Kernel.hunt.isInOrPast(h, s),
+                has: (id) => Kernel.driver.has(id),
+                flags: Kernel.driver.flags,
+                getVersion: () => Kernel.driver.getVersion(),
+                isInOrPast: (h, s) => Kernel.driver.isInOrPast(h, s),
                 discover() {}
             };
             return content(peekState) !== null;
@@ -241,9 +241,9 @@ const Kernel = {
         },
     },
 
-    // ─── Hunt Engine ────────────────────────────────────────
+    // ─── Driver Engine ──────────────────────────────────────
 
-    hunt: {
+    driver: {
         discoveries: JSON.parse(sessionStorage.getItem('hunt_discoveries') || '{}'),
         flags: JSON.parse(sessionStorage.getItem('hunt_flags') || '{}'),
         _stateMaps: {},
@@ -256,13 +256,13 @@ const Kernel = {
             this.discoveries[id] = Date.now();
             sessionStorage.setItem('hunt_discoveries', JSON.stringify(this.discoveries));
 
-            for (const [huntId, stateMap] of Object.entries(this._stateMaps)) {
-                const current = this._currentStates[huntId];
+            for (const [driverId, stateMap] of Object.entries(this._stateMaps)) {
+                const current = this._currentStates[driverId];
                 const stateDef = stateMap[current];
                 if (stateDef?.transitions?.[id]) {
                     const next = stateDef.transitions[id];
                     const prev = current;
-                    this._currentStates[huntId] = next;
+                    this._currentStates[driverId] = next;
                     sessionStorage.setItem('hunt_states', JSON.stringify(this._currentStates));
                     const nextDef = stateMap[next];
                     if (nextDef?.flags) {
@@ -270,7 +270,7 @@ const Kernel = {
                             this.setFlag(k, v);
                         }
                     }
-                    EventBus.emit('hunt:state-changed', { huntId, from: prev, to: next });
+                    EventBus.emit('driver:state-changed', { driverId, from: prev, to: next });
                 }
             }
 
@@ -293,22 +293,22 @@ const Kernel = {
         getVersion() { return parseFloat(this.flags.version || '1.0'); },
         setVersion(v) { this.setFlag('version', v.toString()); },
 
-        registerStateMap(huntId, stateMap) {
-            this._stateMaps[huntId] = stateMap;
-            if (!(huntId in this._currentStates)) {
-                this._currentStates[huntId] = 'idle';
+        registerStateMap(driverId, stateMap) {
+            this._stateMaps[driverId] = stateMap;
+            if (!(driverId in this._currentStates)) {
+                this._currentStates[driverId] = 'idle';
                 sessionStorage.setItem('hunt_states', JSON.stringify(this._currentStates));
             }
         },
 
-        getState(huntId) {
-            return this._currentStates[huntId] || 'idle';
+        getState(driverId) {
+            return this._currentStates[driverId] || 'idle';
         },
 
-        isInOrPast(huntId, stateName) {
-            const stateMap = this._stateMaps[huntId];
+        isInOrPast(driverId, stateName) {
+            const stateMap = this._stateMaps[driverId];
             if (!stateMap) return false;
-            const current = this._currentStates[huntId];
+            const current = this._currentStates[driverId];
             if (current === stateName) return true;
             const visited = new Set();
             const queue = [stateName];
@@ -331,12 +331,12 @@ const Kernel = {
                 version: this.getVersion(),
                 discoveries: { ...this.discoveries },
                 flags: { ...this.flags },
-                hunts: {}
+                drivers: {}
             };
-            for (const [huntId, stateMap] of Object.entries(this._stateMaps)) {
-                const current = this._currentStates[huntId] || 'idle';
+            for (const [driverId, stateMap] of Object.entries(this._stateMaps)) {
+                const current = this._currentStates[driverId] || 'idle';
                 const stateDef = stateMap[current];
-                info.hunts[huntId] = {
+                info.drivers[driverId] = {
                     state: current,
                     transitions: stateDef?.transitions ? Object.keys(stateDef.transitions) : []
                 };
@@ -351,7 +351,7 @@ const Kernel = {
                 if (t.once && sessionStorage.getItem('trigger_' + t.type + '_' + t.match)) continue;
                 if (t.once) sessionStorage.setItem('trigger_' + t.type + '_' + t.match, '1');
                 if (t.effect) runGlitchEffect(t.effect, t.effectOpts || {});
-                if (t.callback) t.callback(Kernel.hunt);
+                if (t.callback) t.callback(Kernel.driver);
             }
         },
 
@@ -369,8 +369,8 @@ const Kernel = {
             } else if (expr.startsWith('version:')) {
                 result = state.getVersion() >= parseFloat(expr.slice(8));
             } else if (expr.includes(':')) {
-                const [huntId, stateName] = expr.split(':');
-                result = state.isInOrPast(huntId, stateName);
+                const [driverId, stateName] = expr.split(':');
+                result = state.isInOrPast(driverId, stateName);
             } else {
                 result = state.has(expr);
             }
@@ -378,58 +378,58 @@ const Kernel = {
         },
 
         createGatedFile(def) {
-            const hunt = this;
+            const driver = this;
             return function(state) {
-                if (!hunt.evaluateGate(def.gate, state)) return null;
+                if (!driver.evaluateGate(def.gate, state)) return null;
                 if (def.onRead) state.discover(def.onRead);
                 return typeof def.content === 'function' ? def.content(state) : def.content;
             };
         },
 
-        declareHunt(hunt) {
-            this._registry[hunt.id] = hunt;
-            if (hunt.stateMap) {
-                this.registerStateMap(hunt.id, hunt.stateMap);
+        declareDriver(def) {
+            this._registry[def.id] = def;
+            if (def.stateMap) {
+                this.registerStateMap(def.id, def.stateMap);
             }
         },
 
-        registerHunt(hunt) {
-            if (hunt.files) {
-                if (hunt.files.text) {
-                    for (const [name, def] of Object.entries(hunt.files.text)) {
-                        Kernel.fs.addTextFile(name, typeof def === 'string' ? def : def.content);
+        registerDriver(def) {
+            if (def.files) {
+                if (def.files.text) {
+                    for (const [name, fileDef] of Object.entries(def.files.text)) {
+                        Kernel.fs.addTextFile(name, typeof fileDef === 'string' ? fileDef : fileDef.content);
                     }
                 }
-                if (hunt.files.hidden) {
-                    for (const [name, def] of Object.entries(hunt.files.hidden)) {
-                        if (typeof def === 'string' || typeof def === 'function') {
-                            Kernel.fs.addHiddenFile(name, def);
+                if (def.files.hidden) {
+                    for (const [name, fileDef] of Object.entries(def.files.hidden)) {
+                        if (typeof fileDef === 'string' || typeof fileDef === 'function') {
+                            Kernel.fs.addHiddenFile(name, fileDef);
                         } else {
-                            Kernel.fs.addHiddenFile(name, this.createGatedFile(def));
+                            Kernel.fs.addHiddenFile(name, this.createGatedFile(fileDef));
                         }
                     }
                 }
             }
-            if (hunt.commands) {
-                for (const [name, def] of Object.entries(hunt.commands)) {
-                    Shell.register(name, typeof def === 'function' ? def : def.run);
+            if (def.commands) {
+                for (const [name, cmdDef] of Object.entries(def.commands)) {
+                    Shell.register(name, typeof cmdDef === 'function' ? cmdDef : cmdDef.run);
                 }
             }
-            if (hunt.treeFiles) {
-                for (const [path, def] of Object.entries(hunt.treeFiles)) {
-                    if (typeof def === 'string' || typeof def === 'function') {
-                        Kernel.fs.addTreeFile(path, def);
+            if (def.treeFiles) {
+                for (const [path, fileDef] of Object.entries(def.treeFiles)) {
+                    if (typeof fileDef === 'string' || typeof fileDef === 'function') {
+                        Kernel.fs.addTreeFile(path, fileDef);
                     } else {
-                        Kernel.fs.addTreeFile(path, this.createGatedFile(def));
+                        Kernel.fs.addTreeFile(path, this.createGatedFile(fileDef));
                     }
                 }
             }
-            if (hunt.directories) Kernel.fs.mergeFileTree(hunt.directories);
-            if (hunt.manPages) Kernel.fs.mergeManPages(hunt.manPages);
-            if (hunt.triggers) this._triggers.push(...hunt.triggers);
-            if (hunt.patches) {
-                if (hunt.patches.hiddenFiles) {
-                    for (const [file, patchFn] of Object.entries(hunt.patches.hiddenFiles)) {
+            if (def.directories) Kernel.fs.mergeFileTree(def.directories);
+            if (def.manPages) Kernel.fs.mergeManPages(def.manPages);
+            if (def.triggers) this._triggers.push(...def.triggers);
+            if (def.patches) {
+                if (def.patches.hiddenFiles) {
+                    for (const [file, patchFn] of Object.entries(def.patches.hiddenFiles)) {
                         Kernel.fs.addHiddenFile(file, patchFn(Kernel.fs._hiddenFiles[file] || ''));
                     }
                 }

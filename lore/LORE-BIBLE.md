@@ -519,7 +519,7 @@ The visitor finds the system mid-communion — though nothing on the system woul
 
 ## The Signal — Established Canon
 
-What has been established by the first hunt and cannot be contradicted:
+What has been established by the first driver and cannot be contradicted:
 
 | Fact | Status |
 |------|--------|
@@ -561,24 +561,24 @@ What The Signal **did not establish** (and future hunts are free to develop):
 7. **The visitor connects the dots.** We place fragments. They assemble meaning. Their imagination does the hard work.
 8. **The "sysadmin test."** In Phase I, every output must pass it. In Phase II, it fails in troubling ways. In Phase III, the failure IS the content.
 9. **Vague logs are acceptable. Clean narrative text is not.** A corrupted entry that hints is always better than a clean entry that explains.
-10. **New questions, not answers.** Every hunt must introduce new mysteries. No hunt may definitively resolve an existing one.
+10. **New questions, not answers.** Every driver must introduce new mysteries. No driver may definitively resolve an existing one.
 11. **The descent is told in developer residue, not confessional prose.** Gregory's voice lives in commit messages, code comments, changelogs, and crontab annotations. Never in journals, letters, or monologues.
 12. **Every tool is defensible in isolation.** No single file, script, or utility should look insane on its own. The madness is only visible in the aggregate — in the chain, the trajectory, the accumulation.
 
 ---
 
-## Future Hunt Constraints
+## Future Driver Constraints
 
-All future hunts must:
+All future drivers must:
 
 - Tell their story through terminal commands and realistic file contents only
 - Not contradict established canon (see table above)
-- Use the discovery-gating system (`Kernel.hunt.registerHunt`, `Kernel.hunt.discover`, `Kernel.hunt.has`)
+- Use the discovery-gating system (`Kernel.driver.registerDriver`, `Kernel.driver.discover`, `Kernel.driver.has`)
 - Respect the tonal phase they operate in (I, II, or III)
 - Use the established motifs before inventing new ones
 - Introduce new open questions, never definitively answer old ones
 - Use corruption/redaction to prevent any single discovery from being fully legible
 - Feel like they belong on this system — every file, command, and output should be something that could plausibly exist on a Unix machine
-- Follow the naming conventions in HUNT-TEMPLATE.md
+- Follow the naming conventions in DRIVER-TEMPLATE.md
 - When introducing Gregory's residue (Phase II+), present it as artifacts a programmer would actually leave behind — never as narrative exposition dressed up as terminal output
 - When depicting the toolchain, keep each individual tool boring and defensible — the dread comes from the visitor assembling the picture, not from any single piece being alarming

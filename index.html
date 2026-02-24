@@ -30,8 +30,8 @@
 <script src="js/cmd/unix.js"></script>
 <script src="js/cmd/bin-tools.js"></script>
 <script src="js/cmd/v2.js"></script>
-<script src="hunts/the-signal.js"></script>
-<script src="hunts/greg-corp.js"></script>
+<script src="drivers/the-signal.js"></script>
+<script src="drivers/greg-corp.js"></script>
 <script src="js/versions.js"></script>
 <script>
 // Boot init — prefetch manifests, apply version, render MOTD, then boot or restore
@@ -39,14 +39,14 @@
     // Pre-fetch all content manifests in parallel
     await ManifestLoader.prefetch(MANIFEST_URLS);
 
-    const currentVersion = Kernel.hunt.getVersion();
+    const currentVersion = Kernel.driver.getVersion();
     applyVersion(currentVersion);
     renderMOTD();
     Terminal.updatePrompt();
     Terminal.init();
 
-    for (const hunt of Object.values(Kernel.hunt._registry)) {
-        if (hunt.restore) hunt.restore(Kernel.hunt);
+    for (const drv of Object.values(Kernel.driver._registry)) {
+        if (drv.restore) drv.restore(Kernel.driver);
     }
 
     Terminal.el.input.disabled = true;

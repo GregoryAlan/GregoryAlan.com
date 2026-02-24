@@ -27,7 +27,7 @@ const ManifestLoader = {
                 if (typeof def === 'string') {
                     Kernel.fs.addHiddenFile(name, def);
                 } else if (def.type === 'gated') {
-                    Kernel.fs.addHiddenFile(name, Kernel.hunt.createGatedFile(def));
+                    Kernel.fs.addHiddenFile(name, Kernel.driver.createGatedFile(def));
                 } else {
                     Kernel.fs.addHiddenFile(name, def.content);
                 }
@@ -39,7 +39,7 @@ const ManifestLoader = {
                 if (typeof def === 'string') {
                     Kernel.fs.addTreeFile(path, def);
                 } else if (def.type === 'gated') {
-                    Kernel.fs.addTreeFile(path, Kernel.hunt.createGatedFile(def));
+                    Kernel.fs.addTreeFile(path, Kernel.driver.createGatedFile(def));
                 } else {
                     Kernel.fs.addTreeFile(path, def.content);
                 }
