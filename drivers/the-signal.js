@@ -79,9 +79,10 @@ const theSignalDriver = {
 
     directories: {},
 
-    // spec: the-signal-storyline.md > Act 5: Not Alone (ps, w, finger, last, dmesg)
+    // spec: the-signal-storyline.md > Act 5: Not Alone (ps, w, last, dmesg)
     // spec: the-signal-storyline.md > Act 3: Accidental Execution (decode)
     // spec: the-signal-storyline.md > Act 5: Not Alone (strings)
+    // finger: removed — greg-corp.js owns the superset (profiles + root + guest)
     commands: {
         ps: (args) => {
             const basic =
@@ -128,28 +129,6 @@ const theSignalDriver = {
                 + uPad + ' tty1     -                ' + h + ':' + m + '   0.00s  /bin/bash';
         },
 
-        finger: (args) => {
-            if (args === 'root') {
-                if (Kernel.driver.flags.contact) {
-                    Kernel.driver.discover('intruder-finger');
-                    return 'Login: root                             Name: ' + garble(12) + '\n'
-                        + 'Directory: /dev/null                    Shell: /dev/null\n'
-                        + 'Last login: <span class="timestamp-anomaly">Jan  0 00:00</span> from <span class="timestamp-anomaly">0.0.0.0</span>\n'
-                        + 'No mail.\n'
-                        + 'No plan.';
-                }
-                return 'finger: root: no such user';
-            }
-            if (args === 'guest') {
-                return 'Login: guest                            Name: Visitor\n'
-                    + 'Directory: /home/guest                  Shell: /bin/bash\n'
-                    + 'Last login: ' + new Date().toDateString() + '\n'
-                    + 'No plan.';
-            }
-            if (!args) return 'Usage: finger [username]';
-            return 'finger: ' + args + ': no such user';
-        },
-
         last: (args) => {
             const now = new Date();
             const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -168,32 +147,8 @@ const theSignalDriver = {
                 + 'wtmp begins ' + d + ' 00:00:00';
         },
 
-        dmesg: (args) => {
-            let out = '[    0.000000] gregos-kernel 0.9.851 #851 SMP\n'
-                + '[    0.001203] CPU: x86_64 detected\n'
-                + '[    0.012847] Memory: 512MB available\n'
-                + '[    0.024100] gregfs: mounted / (rw)\n'
-                + '[    0.031000] dev: /dev/null registered\n'
-                + '[    0.031200] dev: /dev/zero registered\n'
-                + '[    0.031400] dev: /dev/random registered\n'
-                + '[    0.032000] dev: /dev/entropy registered (rf0 hw backing)\n'
-                + '[    0.033000] init: starting services\n'
-                + '[    0.040000] svc: sshd started\n'
-                + '[    0.041000] svc: cron started\n'
-                + '[    0.042000] svc: gregd started (4 daemons)\n'
-                + '[    0.050000] login: guest session opened on tty1';
-
-            if (Kernel.driver.flags.contact) {
-                out += '\n[  847.000000] rf0: device registered\n'
-                    + '[  847.000001] rf0: rx ring overrun (847 bytes not consumed)\n'
-                    + '[  847.000003] audit: pid=0 comm=(unknown) ppid=0\n'
-                    + '[  847.000005] rf0: tx 847 bytes to 0.0.0.0:4119\n'
-                    + '[  847.000007] rf0: <span style="color:#f55">connection from 0.0.0.0</span>\n'
-                    + '[  847.000009] PID 0: <span style="color:#f55">state=running (no controlling tty)</span>';
-            }
-
-            return out;
-        },
+        // dmesg reads the kernel ring buffer — same content as /var/log/kern.log
+        dmesg: () => Kernel.fs.read('/var/log/kern.log'),
 
         decode: (args, stdin) => {
             if (!args && !stdin) return 'Usage: decode --hex &lt;data&gt; | decode --b64 &lt;data&gt;';

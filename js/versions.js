@@ -16,7 +16,7 @@
 //             cmd/v2.js (v2CommandsPack, pkgRegistry, restoreInstalledPackages,
 //                        getInstalledPackages),
 //             drivers/the-signal.js (theSignalDriver),
-//             drivers/greg-corp.js (gregCorpCommands, gregCorpTriggers)
+//             drivers/greg-corp.js (gregCorpDriver)
 
 // ─── Manifest URLs ──────────────────────────────────────────
 // All content manifests. Pre-fetched once at page load,
@@ -139,8 +139,8 @@ const computedNarrativeSeeds = {
                 + '[  847.000001] rf0: unexpected exec in rx buffer\n'
                 + '[  847.000003] audit: pid=0 comm=(unknown) ppid=0\n'
                 + '[  847.000005] dev: /dev/signal registered (no hw backing)\n'
-                + '[  847.000007] signal: mount /dev/signal type=chardev (rw)\n'
-                + '[  847.000009] <span style="color:var(--error)">PID 0: fork() from swapper \u2014 illegal in user context</span>';
+                + '[  847.000007] rf0: <span style="color:#f55">connection from 0.0.0.0</span>\n'
+                + '[  847.000009] PID 0: <span style="color:#f55">fork() from swapper \u2014 illegal in user context</span>';
         }
         return out;
     },
@@ -215,11 +215,8 @@ const VERSION_MANIFEST = [
             // Register Signal driver (commands, triggers, state machine)
             // Must come after v2CommandsPack so Signal's decode/strings win
             Kernel.driver.registerDriver(theSignalDriver);
-            // Register Greg Corp commands and triggers
-            for (const [name, fn] of Object.entries(gregCorpCommands)) {
-                Shell.register(name, fn);
-            }
-            Kernel.driver._triggers.push(...gregCorpTriggers);
+            // Register Greg Corp driver (commands, triggers, state machine)
+            Kernel.driver.registerDriver(gregCorpDriver);
             // Restore any previously installed packages
             restoreInstalledPackages();
             // Remove bin tool commands not yet installed via pkg

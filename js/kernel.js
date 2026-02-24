@@ -244,17 +244,17 @@ const Kernel = {
     // ─── Driver Engine ──────────────────────────────────────
 
     driver: {
-        discoveries: JSON.parse(sessionStorage.getItem('hunt_discoveries') || '{}'),
-        flags: JSON.parse(sessionStorage.getItem('hunt_flags') || '{}'),
+        discoveries: JSON.parse(sessionStorage.getItem('driver_discoveries') || '{}'),
+        flags: JSON.parse(sessionStorage.getItem('driver_flags') || '{}'),
         _stateMaps: {},
-        _currentStates: JSON.parse(sessionStorage.getItem('hunt_states') || '{}'),
+        _currentStates: JSON.parse(sessionStorage.getItem('driver_states') || '{}'),
         _triggers: [],
         _registry: {},
 
         discover(id) {
             if (this.discoveries[id]) return;
             this.discoveries[id] = Date.now();
-            sessionStorage.setItem('hunt_discoveries', JSON.stringify(this.discoveries));
+            sessionStorage.setItem('driver_discoveries', JSON.stringify(this.discoveries));
 
             for (const [driverId, stateMap] of Object.entries(this._stateMaps)) {
                 const current = this._currentStates[driverId];
@@ -263,7 +263,7 @@ const Kernel = {
                     const next = stateDef.transitions[id];
                     const prev = current;
                     this._currentStates[driverId] = next;
-                    sessionStorage.setItem('hunt_states', JSON.stringify(this._currentStates));
+                    sessionStorage.setItem('driver_states', JSON.stringify(this._currentStates));
                     const nextDef = stateMap[next];
                     if (nextDef?.flags) {
                         for (const [k, v] of Object.entries(nextDef.flags)) {
@@ -287,7 +287,7 @@ const Kernel = {
 
         setFlag(k, v) {
             this.flags[k] = v;
-            sessionStorage.setItem('hunt_flags', JSON.stringify(this.flags));
+            sessionStorage.setItem('driver_flags', JSON.stringify(this.flags));
         },
 
         getVersion() { return parseFloat(this.flags.version || '1.0'); },
@@ -297,7 +297,7 @@ const Kernel = {
             this._stateMaps[driverId] = stateMap;
             if (!(driverId in this._currentStates)) {
                 this._currentStates[driverId] = 'idle';
-                sessionStorage.setItem('hunt_states', JSON.stringify(this._currentStates));
+                sessionStorage.setItem('driver_states', JSON.stringify(this._currentStates));
             }
         },
 
