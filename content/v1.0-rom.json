@@ -1,10 +1,4 @@
 {
     "id": "v1.0-rom",
-    "description": "v1.0 ROM firmware files",
-
-    "textFiles": {
-        "broadcast.log": "RF0 STATION LOG\n[2026-01-22 03:14:00] init from ROM\n[2026-01-22 03:14:01] ant0: ACTIVE\n[2026-01-22 03:14:02] relay: STANDBY\n[............]\n[2026-01-22 08:47:00] rx0: 847 bytes buffered (unconsumed)\n[2026-01-22 08:47:01] rx0: checksum FAIL \u2014 pkt held\n[............]\nEnd of log.",
-
-        "status.txt": "RF0 STATUS\nfirmware: 1.0-ROM\nsignal:   NOMINAL\nmaint:    UNKNOWN\nupdate:   AVAILABLE\n\nRun 'reboot' to check for updates."
-    }
+    "description": "v1.0 ROM firmware — no filesystem, commands are firmware monitor"
 }

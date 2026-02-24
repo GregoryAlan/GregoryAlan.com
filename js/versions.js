@@ -155,7 +155,7 @@ const VERSION_MANIFEST = [
             // v1.0 ROM: no kernel, no BIOS — bare firmware
             Kernel.kernelVersion.set(null);
             Kernel.biosVersion.set(null);
-            const v1Set = ['help', 'ls', 'cat', 'clear', 'reboot', 'rm', 'debug'];
+            const v1Set = ['help', 'clear', 'reboot'];
             for (const name of v1Set) {
                 if (coreCommands[name]) Shell.register(name, coreCommands[name]);
             }
@@ -172,13 +172,12 @@ const VERSION_MANIFEST = [
             Kernel.kernelVersion.set('0.9.847-greg');
             Kernel.biosVersion.set('1.2');
             // Restore core UNIX commands
-            const v1_1Set = ['cd', 'pwd', 'open', 'whoami', 'history', 'sudo', 'man'];
+            const v1_1Set = ['cd', 'pwd', 'open', 'whoami', 'history', 'sudo', 'man', 'ls', 'cat', 'rm', 'debug'];
             for (const name of v1_1Set) {
                 if (coreCommands[name]) Shell.register(name, coreCommands[name]);
             }
-            Shell.unregister('status');
-            Kernel.fs.removeTextFile('broadcast.log');
-            Kernel.fs.removeTextFile('status.txt');
+            // Remove firmware monitor commands
+            for (const name of Object.keys(v1Commands)) Shell.unregister(name);
             // Register commands
             for (const [name, fn] of Object.entries(v1_1CommandsPack.commands)) {
                 Shell.register(name, fn);
@@ -296,7 +295,9 @@ function renderMOTD() {
 
     if (ver < 1.1) {
         motdEl.innerHTML =
-            '<div class="motd">Type \'help\' for diagnostics.</div>'
+            '<div class="motd">POST: 6/7 OK, 1 WARN</div>'
+            + '<div class="motd">&nbsp;</div>'
+            + '<div class="motd">type \'help\' for commands</div>'
             + '<div class="motd">&nbsp;</div>';
         return;
     }
