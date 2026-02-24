@@ -1,11 +1,11 @@
 // ─── v2.0 Commands: Package Manager & Mount ─────────────────
 //
 // Adds `pkg` (install bin tools on demand) and `mount`
-// (discover /dev/rf0 → crash → Signal hunt begins).
+// (discover /dev/rf0 → crash → Signal driver begins).
 //
 // Depends on: kernel.js (Kernel), shell.js (Shell),
 //             terminal.js (Terminal), bin-tools.js (binTools),
-//             the-signal.js (theSignalHunt)
+//             the-signal.js (theSignalDriver)
 
 // ─── Package Metadata ───────────────────────────────────────
 
@@ -22,21 +22,19 @@ const pkgRegistry = [
 
 function getInstalledPackages() {
     try {
-        return JSON.parse(Kernel.hunt.flags['pkg-installed'] || '[]');
+        return JSON.parse(Kernel.driver.flags['pkg-installed'] || '[]');
     } catch(e) {
         return [];
     }
 }
 
 function installPackage(name) {
-    const cmd = (theSignalHunt.commands[name]) || binTools.commands[name];
+    const cmd = (theSignalDriver.commands[name]) || binTools.commands[name];
     if (!cmd) return false;
 
     Shell.register(name, cmd);
 
-    if (binTools.manPages[name]) {
-        Kernel.fs.addManPage(name, binTools.manPages[name]);
-    }
+    // Man pages already loaded from content/man-pages.json
 
     if (!Kernel.fs._fileTree.bin) {
         Kernel.fs._fileTree.bin = {};
@@ -46,7 +44,7 @@ function installPackage(name) {
     const installed = getInstalledPackages();
     if (!installed.includes(name)) {
         installed.push(name);
-        Kernel.hunt.setFlag('pkg-installed', JSON.stringify(installed));
+        Kernel.driver.setFlag('pkg-installed', JSON.stringify(installed));
     }
 
     return true;
@@ -55,9 +53,8 @@ function installPackage(name) {
 function restoreInstalledPackages() {
     const installed = getInstalledPackages();
     for (const name of installed) {
-        const cmd = (theSignalHunt.commands[name]) || binTools.commands[name];
+        const cmd = (theSignalDriver.commands[name]) || binTools.commands[name];
         if (cmd) Shell.register(name, cmd);
-        if (binTools.manPages[name]) Kernel.fs.addManPage(name, binTools.manPages[name]);
         if (!Kernel.fs._fileTree.bin) Kernel.fs._fileTree.bin = {};
         Kernel.fs._fileTree.bin[name] = 'file';
     }
@@ -68,20 +65,8 @@ function restoreInstalledPackages() {
 const v2CommandsPack = {
     id: 'v2-commands',
 
-    files: {
-        text: {
-            'migration.conf': '# GregOS Migration Configuration\n'
-                + '# Devices carried forward from v1.0 ROM\n'
-                + '#\n'
-                + '# device        type      status\n'
-                + '# \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n'
-                + '  /dev/tty1     terminal  active\n'
-                + '  /dev/eth0     network   active\n'
-                + '  /dev/sda1     disk      mounted\n'
-                + '  /dev/rf0      radio     pending\n',
-        },
-        hidden: {},
-    },
+    // Static files loaded from content/v2.0-system.json
+    files: { text: {}, hidden: {} },
 
     directories: {},
 
@@ -100,14 +85,14 @@ const v2CommandsPack = {
             const sub = parts[0];
 
             if (sub === 'update') {
-                Kernel.hunt.setFlag('pkg-initialized', true);
+                Kernel.driver.setFlag('pkg-initialized', true);
                 return 'Synchronizing package repository...\n'
                     + 'Reading package lists... done\n'
                     + `${pkgRegistry.length} packages available.`;
             }
 
             if (sub === 'list') {
-                if (!Kernel.hunt.flags['pkg-initialized']) {
+                if (!Kernel.driver.flags['pkg-initialized']) {
                     return 'pkg: repository not initialized. Run \'pkg update\' first.';
                 }
                 const installed = getInstalledPackages();
@@ -125,7 +110,7 @@ const v2CommandsPack = {
                 const pkgName = parts[1];
                 if (!pkgName) return 'Usage: pkg install <package>';
 
-                if (!Kernel.hunt.flags['pkg-initialized']) {
+                if (!Kernel.driver.flags['pkg-initialized']) {
                     return 'pkg: repository not initialized. Run \'pkg update\' first.';
                 }
 
@@ -161,14 +146,14 @@ const v2CommandsPack = {
                 let out = '/dev/sda1 on / type ext4 (rw,relatime)\n'
                     + 'devfs on /dev type devfs (rw)\n'
                     + 'tmpfs on /tmp type tmpfs (rw,nosuid,nodev)';
-                if (Kernel.hunt.has('rf0-mount-failed')) {
+                if (Kernel.driver.has('rf0-mount-failed')) {
                     out += '\n/dev/rf0 on \u2014 type \u2014 (device fault)';
                 }
                 return out;
             }
 
             if (args === '/dev/rf0') {
-                if (Kernel.hunt.has('rf0-mount-failed')) {
+                if (Kernel.driver.has('rf0-mount-failed')) {
                     return 'mount: /dev/rf0: device fault (see dmesg)';
                 }
                 setTimeout(() => Terminal.runMountCrash(), 50);
@@ -183,54 +168,9 @@ const v2CommandsPack = {
         },
     },
 
-    manPages: {
-        pkg: 'PKG(1)                       GregOS Manual                       PKG(1)\n\n'
-            + 'NAME\n'
-            + '       pkg - GregOS package manager\n\n'
-            + 'SYNOPSIS\n'
-            + '       pkg update\n'
-            + '       pkg list\n'
-            + '       pkg install <package>\n'
-            + '       pkg installed\n\n'
-            + 'DESCRIPTION\n'
-            + '       pkg manages the installation of utility packages from\n'
-            + '       the GregOS repository. Packages are installed to ~/bin\n'
-            + '       and become available as commands.\n\n'
-            + 'COMMANDS\n'
-            + '       update      Synchronize the package repository index.\n'
-            + '                   Must be run before list or install.\n\n'
-            + '       list        Display available packages with version,\n'
-            + '                   size, and installation status.\n\n'
-            + '       install     Download and install a package by name.\n\n'
-            + '       installed   Show currently installed packages.\n\n'
-            + 'AUTHOR\n'
-            + '       GregOS Package System\n\n'
-            + 'SEE ALSO\n'
-            + '       man(1)',
-
-        mount: 'MOUNT(8)                     GregOS Manual                     MOUNT(8)\n\n'
-            + 'NAME\n'
-            + '       mount - mount a filesystem\n\n'
-            + 'SYNOPSIS\n'
-            + '       mount [device]\n\n'
-            + 'DESCRIPTION\n'
-            + '       Without arguments, mount displays currently mounted\n'
-            + '       filesystems. With a device argument, attempts to mount\n'
-            + '       the specified device.\n\n'
-            + '       Devices from the v1.0 ROM migration are listed in\n'
-            + '       migration.conf. Pending devices may require manual\n'
-            + '       mounting.\n\n'
-            + 'DIAGNOSTICS\n'
-            + '       If a device fault occurs, check dmesg(1) for details.\n\n'
-            + 'FILES\n'
-            + '       /etc/migration.conf    Device migration manifest\n\n'
-            + 'AUTHOR\n'
-            + '       GregOS Kernel Team\n\n'
-            + 'SEE ALSO\n'
-            + '       dmesg(1), migration.conf',
-    },
+    // Man pages loaded from content/man-pages.json
 
     triggers: [],
 };
 
-Kernel.hunt.declareHunt(v2CommandsPack);
+Kernel.driver.declareDriver(v2CommandsPack);

@@ -12,7 +12,7 @@ Inspired by *The Cuckoo's Egg* — the horror isn't in the supernatural, it's in
 
 <!-- contract
 status: implemented
-impl: hunts/the-signal.js:files.hidden['.rf0.buf'], triggers[0] (rf-found → screenFlicker)
+impl: drivers/the-signal.js:files.hidden['.rf0.buf'], triggers[0] (rf-found → screenFlicker)
 last-synced: 2026-02-22
 -->
 
@@ -26,7 +26,7 @@ last-synced: 2026-02-22
 
 <!-- contract
 status: implemented
-impl: hunts/the-signal.js:commands.w (checked-alone discovery), patches.hiddenFiles['.bash_history']
+impl: drivers/the-signal.js:commands.w (checked-alone discovery), patches.hiddenFiles['.bash_history']
 last-synced: 2026-02-22
 -->
 
@@ -39,7 +39,7 @@ last-synced: 2026-02-22
 
 <!-- contract
 status: implemented
-impl: hunts/the-signal.js:commands.decode (rf-executed discovery), triggers[1] (heavyFlicker + connection sequence callback)
+impl: drivers/the-signal.js:commands.decode (rf-executed discovery), triggers[1] (heavyFlicker + connection sequence callback)
 last-synced: 2026-02-22
 -->
 
@@ -53,7 +53,7 @@ last-synced: 2026-02-22
 
 <!-- contract
 status: implemented
-impl: hunts/the-signal.js:triggers[1].callback (timed messages), triggers[2] (contact-made → scanlines + dark bg)
+impl: drivers/the-signal.js:triggers[1].callback (timed messages), triggers[2] (contact-made → scanlines + dark bg)
 last-synced: 2026-02-22
 -->
 
@@ -70,17 +70,16 @@ last-synced: 2026-02-22
 ### Act 5: Not Alone
 
 <!-- contract
-status: drift
-impl: hunts/the-signal.js:commands.w, commands.finger, commands.last, commands.dmesg, commands.strings, files.hidden['.node'], triggers[3-6]
-last-synced: 2026-02-22
-drift-notes: dmesg baseline boot lines in the-signal.js (line 216) differ from kern.log baseline in narrativeSeeds. dmesg shows "gregOS version 2.0" / "Memory: 640K" while kern.log shows "gresos-kernel 0.9.851" / "Memory: 512MB". Both are visible to the visitor.
+status: implemented
+impl: drivers/the-signal.js:commands.w, commands.finger, commands.last, commands.dmesg, commands.strings, files.hidden['.node'], triggers[3-6]
+last-synced: 2026-02-23
 -->
 
 - `w` now shows 2 users — guest on tty1, ??? on tty0 from 0.0.0.0
 - Investigation commands reveal details about the intruder:
   - `finger root` — mystery user with redacted name, /dev/null shell
   - `last` — login history showing the remote connection
-  - `dmesg` — kernel logs showing rf0 device registration, `audit: pid=0`, and PID 0 running with no controlling tty
+  - `dmesg` — kernel ring buffer showing device registration lines (baseline matches `/var/log/kern.log` boot entries), plus post-contact: rf0 device registration, `audit: pid=0`, and PID 0 running with no controlling tty. Post-contact lines differ between `dmesg` and `kern.log` — different filtered views of the same events (defensible).
   - `.node` file appears — netstat-style connection status report
   - `strings .rf0.buf` — extracts readable strings including `NORMAL SYSTEM OPERATION IS A LIE` and `relay --target=0.0.0.0:4119 --persist`
 - Effects: crtBand, promptCorruption, screenTear, textCorruption (tied to investigation moments)
@@ -89,7 +88,7 @@ drift-notes: dmesg baseline boot lines in the-signal.js (line 216) differ from k
 
 <!-- contract
 status: implemented
-impl: hunts/the-signal.js:stateMap, triggers[]
+impl: drivers/the-signal.js:stateMap, triggers[]
 last-synced: 2026-02-22
 notes: All 8 discoveries implemented. State machine and trigger effects match spec.
 -->
@@ -205,7 +204,7 @@ From v1.0, do some exploration first:
 | Command | Expected Output |
 |---------|----------------|
 | `history` | Shows `.bash_history` entries from previous user. Last two entries: `cat version.txt`, `reboot -f`. |
-| `cat version.txt` | Normal header (`GregOS v1.1`, `Build: 2026.01.22`, `Kernel: 4.19.0-gregos`, `Update: available`) followed by an anomalous update manifest: `timestamp: 2091-11-15T03:14:00Z`, `checksum: a7 3f ?? ??`, `source: rf0`. The 2091 date is impossible — this system was built in 2026. |
+| `cat version.txt` | Normal header (`GregOS v1.1`, `Build: 2026.01.22`, `Kernel: 0.9.847-greg`, `Update: available`) followed by an anomalous update manifest: `timestamp: 2091-11-15T03:14:00Z`, `checksum: a7 3f ?? ??`, `source: rf0`. The 2091 date is impossible — this system was built in 2026. |
 | `reboot` | Just reboots into v1.1 again. No update. Plain reboot doesn't advance. |
 | `reboot -f` | **Update animation**: `Current version: 1.1`, `Update available: v2.0`, download/verify/install, then **full v2.0 boot** with hardware detection, device registration, etc. |
 
@@ -243,7 +242,7 @@ From v1.0, do some exploration first:
 | `finger guest` | Normal finger output. |
 | `finger root` | `finger: root: no such user` |
 | `last` | Only `guest` on `tty1`, `still logged in`. |
-| `dmesg` | 5 boot lines only. No rf0 entries. |
+| `dmesg` | 13 boot lines (full kernel ring buffer matching `kern.log` baseline). No rf0 entries. |
 
 #### Act 3: Learn the Tool → Accidental Execution
 
@@ -270,7 +269,7 @@ From v1.0, do some exploration first:
 | `w` | **2 users** — `guest` on `tty1` and `???` on `tty0` from `0.0.0.0` running `/dev/rf0`. **crtBand** fires. |
 | `finger root` | Redacted name (█ blocks), `/dev/null` shell, last login `Jan  0 00:00` from `0.0.0.0` (red). **promptCorruption** fires. |
 | `last` | `guest` still logged in, plus red anomalous line: `???` on tty0 from `Jan  0 00:00`. **screenTear** fires. |
-| `dmesg` | Original 5 boot lines plus rf0 entries: `device registered`, `rx ring overrun`, `audit: pid=0`, red `connection from 0.0.0.0`, red `PID 0: state=running`. |
+| `dmesg` | Original 13 boot lines plus rf0 entries: `rx ring overrun`, `unexpected exec in rx buffer`, `audit: pid=0`, `tx 847 bytes`, red `connection from 0.0.0.0`, red `PID 0: state=running`. |
 | `ls -a` | `.node` now visible. |
 | `cat .node` | Netstat-style table — rf0 protocol, `guest@tty1` local, redacted `████████@tty0` foreign, ESTABLISHED, PID 0. rtt `-3ms` (red). |
 | `strings .rf0.buf` | `NORMAL SYSTEM OPERATION IS A LIE`, `relay --target=0.0.0.0:4119 --persist`, etc. **textCorruption** fires. |

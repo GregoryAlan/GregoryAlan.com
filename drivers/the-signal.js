@@ -1,4 +1,4 @@
-// ─── The Signal Hunt ─────────────────────────────────────────
+// ─── The Signal Driver ───────────────────────────────────────
 //
 // spec: the-signal-storyline.md
 //
@@ -21,7 +21,7 @@ function garble(len) {
     return s;
 }
 
-const theSignalHunt = {
+const theSignalDriver = {
     id: 'the-signal',
 
     stateMap: {
@@ -59,26 +59,11 @@ const theSignalHunt = {
         }
     },
 
+    // Static files (.rf0.buf, /proc/0/*) loaded from content/signal-hunt.json manifest
+    // Only computed hidden files stay here
     files: {
         text: {},
         hidden: {
-            '.rf0.buf': {
-                gate: 'rf0-mount-failed',
-                onRead: 'rf-found',
-                content: 'rf0: rx ring overrun (847 bytes not consumed)\n'
-                    + 'checksum: a7 3f ?? ??\n\n'
-                    + '0000  7f 45 4c 46 02 01 01 00  00 00 00 00 00 00 00 00\n'
-                    + '0010  02 00 3e 00 01 00 00 00  00 03 47 00 00 00 00 00\n'
-                    + '0020  4e 4f 52 4d 41 4c 20 53  59 53 54 45 4d 20 4f 50\n'
-                    + '0030  45 52 41 54 49 4f 4e 20  49 53 20 41 20 4c 49 45\n'
-                    + '      [354 bytes dropped]\n'
-                    + '0190  72 65 6c 61 79 20 2d 2d  74 61 72 67 65 74 3d 30\n'
-                    + '01a0  2e 30 2e 30 2e 30 3a 34  31 31 39\n\n'
-                    + 'end of buffer\n'
-                    + 'timestamp: 1970-01-01T00:00:00.012Z\n'
-                    + 'origin: unknown'
-            },
-
             '.node': {
                 gate: 'contact-made',
                 content: () => 'Proto  Local Address          Foreign Address        State       PID\n'
@@ -90,39 +75,7 @@ const theSignalHunt = {
         },
     },
 
-    treeFiles: {
-        '/proc/0/status': {
-            gate: 'contact-made',
-            content: 'Name:\t(unknown)\n'
-                + 'Umask:\t0022\n'
-                + 'State:\tR (running)\n'
-                + 'Tgid:\t0\n'
-                + 'Pid:\t0\n'
-                + 'PPid:\t0\n'
-                + 'Uid:\t1002\t1002\t1002\t1002\n'
-                + 'Gid:\t1002\t1002\t1002\t1002\n'
-                + 'FDSize:\t0\n'
-                + 'Threads:\t1\n'
-                + 'voluntary_ctxt_switches:\t0\n'
-                + 'nonvoluntary_ctxt_switches:\t847',
-        },
-        '/proc/0/environ': {
-            gate: 'contact-made',
-            content: 'USER=dhollis\n'
-                + 'HOME=/home/dhollis\n'
-                + 'SHELL=/bin/bash\n'
-                + 'TERM=vt100\n'
-                + 'HOSTNAME=gregcorp.internal\n'
-                + 'DEPT=Human Resources\n'
-                + 'EMPLOYEE_ID=GC-0012\n'
-                + 'LANG=en_US\n'
-                + 'TZ=US/Pacific',
-        },
-        '/proc/0/cmdline': {
-            gate: 'contact-made',
-            content: '/dev/rf0 --listen --persist',
-        },
-    },
+    treeFiles: {},
 
     directories: {},
 
@@ -146,7 +99,7 @@ const theSignalHunt = {
                      + 'root   63  0.0  0.0   3024   512 ?    Ss   cron\n'
                      + u + ' '.repeat(Math.max(1, 6 - u.length)) + '184  0.0  0.2   5648  2048 tty1 Ss   bash\n'
                      + u + ' '.repeat(Math.max(1, 6 - u.length)) + '201  0.0  0.1   3472   768 tty1 R+   ps aux';
-                if (Kernel.hunt.flags.contact) {
+                if (Kernel.driver.flags.contact) {
                     out += '\n<span class="timestamp-anomaly">???     0  0.0  0.0      0     0 tty0 R    /dev/rf0</span>';
                 }
                 return out;
@@ -161,15 +114,15 @@ const theSignalHunt = {
             const u = Shell.env.USER;
             const uPad = u.padEnd(8);
 
-            if (Kernel.hunt.flags.contact) {
-                Kernel.hunt.discover('not-alone');
+            if (Kernel.driver.flags.contact) {
+                Kernel.driver.discover('not-alone');
                 return ' ' + h + ':' + m + ' up 1 day, 3:14, 2 users, load average: 0.00, 0.01, 0.05\n'
                     + 'USER     TTY      FROM             LOGIN@   IDLE   WHAT\n'
                     + uPad + ' tty1     -                ' + h + ':' + m + '   0.00s  /bin/bash\n'
                     + '???      tty0     0.0.0.0          03:14    0.00s  /dev/rf0';
             }
 
-            Kernel.hunt.discover('checked-alone');
+            Kernel.driver.discover('checked-alone');
             return ' ' + h + ':' + m + ' up 1 day, 3:14, 1 user, load average: 0.00, 0.01, 0.05\n'
                 + 'USER     TTY      FROM             LOGIN@   IDLE   WHAT\n'
                 + uPad + ' tty1     -                ' + h + ':' + m + '   0.00s  /bin/bash';
@@ -177,8 +130,8 @@ const theSignalHunt = {
 
         finger: (args) => {
             if (args === 'root') {
-                if (Kernel.hunt.flags.contact) {
-                    Kernel.hunt.discover('intruder-finger');
+                if (Kernel.driver.flags.contact) {
+                    Kernel.driver.discover('intruder-finger');
                     return 'Login: root                             Name: ' + garble(12) + '\n'
                         + 'Directory: /dev/null                    Shell: /dev/null\n'
                         + 'Last login: <span class="timestamp-anomaly">Jan  0 00:00</span> from <span class="timestamp-anomaly">0.0.0.0</span>\n'
@@ -204,8 +157,8 @@ const theSignalHunt = {
             const t = now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
             const u = Shell.env.USER.padEnd(8);
 
-            if (Kernel.hunt.flags.contact) {
-                Kernel.hunt.discover('intruder-last');
+            if (Kernel.driver.flags.contact) {
+                Kernel.driver.discover('intruder-last');
                 return u + ' tty1         ' + d + ' ' + t + '   still logged in\n'
                     + '<span class="timestamp-anomaly">???      tty0         Jan  0 00:00  - still logged in</span>\n\n'
                     + 'wtmp begins ' + d + ' 00:00:00';
@@ -216,13 +169,21 @@ const theSignalHunt = {
         },
 
         dmesg: (args) => {
-            let out = '[    0.000000] gregOS version 2.0 (tty1)\n'
-                + '[    0.001234] PCI: bus probe complete\n'
-                + '[    0.003456] Memory: 640K available\n'
-                + '[    0.012000] CPU0: 1 core detected\n'
-                + '[    0.045000] eth0: link up, 100Mbps full-duplex';
+            let out = '[    0.000000] gregos-kernel 0.9.851 #851 SMP\n'
+                + '[    0.001203] CPU: x86_64 detected\n'
+                + '[    0.012847] Memory: 512MB available\n'
+                + '[    0.024100] gregfs: mounted / (rw)\n'
+                + '[    0.031000] dev: /dev/null registered\n'
+                + '[    0.031200] dev: /dev/zero registered\n'
+                + '[    0.031400] dev: /dev/random registered\n'
+                + '[    0.032000] dev: /dev/entropy registered (rf0 hw backing)\n'
+                + '[    0.033000] init: starting services\n'
+                + '[    0.040000] svc: sshd started\n'
+                + '[    0.041000] svc: cron started\n'
+                + '[    0.042000] svc: gregd started (4 daemons)\n'
+                + '[    0.050000] login: guest session opened on tty1';
 
-            if (Kernel.hunt.flags.contact) {
+            if (Kernel.driver.flags.contact) {
                 out += '\n[  847.000000] rf0: device registered\n'
                     + '[  847.000001] rf0: rx ring overrun (847 bytes not consumed)\n'
                     + '[  847.000003] audit: pid=0 comm=(unknown) ppid=0\n'
@@ -242,7 +203,7 @@ const theSignalHunt = {
 
             if (flag === '--hex') {
                 if (data.toLowerCase().startsWith('4e4f524d')) {
-                    Kernel.hunt.discover('rf-executed');
+                    Kernel.driver.discover('rf-executed');
                     return 'Decoding hex...\n\n'
                         + 'ELF binary detected in input\n'
                         + 'mapped segment at 0x847\n'
@@ -274,7 +235,7 @@ const theSignalHunt = {
             }
             if (!args) return 'Usage: strings &lt;file&gt;';
             if (args === '.rf0.buf') {
-                Kernel.hunt.discover('rf-strings');
+                Kernel.driver.discover('rf-strings');
                 return 'Extracting readable strings from .rf0.buf...\n\n'
                     + 'ELF\n'
                     + 'NORMAL SYSTEM OPERATION IS A LIE\n'
@@ -335,7 +296,7 @@ const theSignalHunt = {
     patches: {
         hiddenFiles: {
             '.bash_history': (existing) => {
-                if (!Kernel.hunt.has('rf0-mount-failed')) return existing;
+                if (!Kernel.driver.has('rf0-mount-failed')) return existing;
                 const extra = [
                     'dmesg',
                     'cat .rf0.buf',
@@ -358,4 +319,4 @@ const theSignalHunt = {
     },
 };
 
-Kernel.hunt.declareHunt(theSignalHunt);
+Kernel.driver.declareDriver(theSignalDriver);

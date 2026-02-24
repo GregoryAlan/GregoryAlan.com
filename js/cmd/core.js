@@ -17,49 +17,7 @@ const coreCommands = {
     help: () => {
         const names = Shell.listVisibleCommands().sort();
         let msg = 'Available commands:\n';
-        const descs = {
-            help: 'Show this help message',
-            ls: 'List directory contents',
-            cd: 'Change directory (use .. to go up)',
-            pwd: 'Print working directory',
-            cat: 'Display file contents',
-            open: 'Open file or current folder in browser',
-            whoami: 'Display system info',
-            history: 'Show command history',
-            clear: 'Clear terminal',
-            reboot: 'Reboot system',
-            rm: 'Remove files',
-            man: 'View manual pages',
-            sudo: 'Execute as superuser',
-            status: 'Show system status',
-            date: 'Display current date and time',
-            echo: 'Print arguments to output',
-            uname: 'Print system information',
-            wc: 'Word, line, and byte count',
-            head: 'Output the first part of files',
-            grep: 'Search file contents for a pattern',
-            uptime: 'Show system uptime',
-            hostname: 'Show system hostname',
-            id: 'Display user identity',
-            ps: 'Report process status',
-            df: 'Report filesystem disk space',
-            free: 'Display memory usage',
-            env: 'Display environment variables',
-            pkg: 'Package manager',
-            mount: 'Mount a filesystem',
-            w: 'Show who is logged on',
-            finger: 'User information lookup',
-            last: 'Show last logins',
-            dmesg: 'Print kernel messages',
-            decode: 'Hex/base64 decoder',
-            rot13: 'ROT13 cipher',
-            freq: 'Letter frequency analysis',
-            entropy: 'Shannon entropy calculator',
-            crc: 'CRC32 checksum',
-            strings: 'Extract printable strings',
-            su: 'Switch user',
-            mail: 'Read mail',
-        };
+        const descs = ManifestLoader._helpDescs;
         for (const name of names) {
             const d = descs[name] || '';
             msg += '  ' + name.padEnd(15) + '- ' + d + '\n';
@@ -67,12 +25,10 @@ const coreCommands = {
         return msg.trimEnd();
     },
 
-    ls: (args) => {
-        // Parse flags and optional path argument
-        const tokens = args ? args.split(/\s+/) : [];
-        const flags = tokens.filter(t => t.startsWith('-')).join('');
-        const showHidden = flags.includes('a');
-        const pathArg = tokens.find(t => !t.startsWith('-'));
+    ls: (args, stdin, parsed) => {
+        parsed = parsed || parseArgs(args || '');
+        const showHidden = !!parsed.flags.a;
+        const pathArg = parsed.positional[0];
 
         let dir, isRoot;
         if (pathArg) {
@@ -143,15 +99,16 @@ const coreCommands = {
         if (content === null) return `cat: ${args}: No such file or directory`;
         // Fire triggers for hidden files (flat store)
         if (args in Kernel.fs._hiddenFiles) {
-            Kernel.hunt.checkTriggers('file_read', args);
+            Kernel.driver.checkTriggers('file_read', args);
         }
         // Fire triggers for gated tree files (function nodes)
         const pathArr = Kernel.fs._resolve(args);
         const node = Kernel.fs._getNode(pathArr);
         if (typeof node === 'function') {
             const fullPath = '/' + pathArr.join('/');
-            Kernel.hunt.checkTriggers('file_read', fullPath);
+            Kernel.driver.checkTriggers('file_read', fullPath);
         }
+        EventBus.emit('file:read', { path: args, content });
         return content.replace(/\n/g, '<br>');
     },
 
@@ -237,8 +194,8 @@ Local Time: ${new Date().toLocaleString()}`;
             Terminal.el.input.disabled = true;
 
             const doReboot = () => {
-                if (nextVer) Kernel.hunt.setVersion(nextVer);
-                applyVersion(Kernel.hunt.getVersion());
+                if (nextVer) Kernel.driver.setVersion(nextVer);
+                applyVersion(Kernel.driver.getVersion());
                 renderMOTD();
                 Terminal.updatePrompt();
                 Terminal.runBootSequence().then(() => {
@@ -247,8 +204,8 @@ Local Time: ${new Date().toLocaleString()}`;
                 });
             };
 
-            if (nextVer && nextVer > Kernel.hunt.getVersion()) {
-                Terminal.runUpdateSequence(Kernel.hunt.getVersion(), nextVer).then(doReboot);
+            if (nextVer && nextVer > Kernel.driver.getVersion()) {
+                Terminal.runUpdateSequence(Kernel.driver.getVersion(), nextVer).then(doReboot);
             } else {
                 doReboot();
             }
@@ -262,7 +219,7 @@ Local Time: ${new Date().toLocaleString()}`;
         if (!new URLSearchParams(window.location.search).has('debug')) {
             return 'debug: command not found. Type \'help\' for available commands.';
         }
-        const info = Kernel.hunt.debug();
+        const info = Kernel.driver.debug();
         let out = `GregOS v${info.version}\n\n`;
         out += `Discoveries (${Object.keys(info.discoveries).length}):\n`;
         for (const [id, ts] of Object.entries(info.discoveries)) {
@@ -272,11 +229,11 @@ Local Time: ${new Date().toLocaleString()}`;
         for (const [k, v] of Object.entries(info.flags)) {
             out += `  ${k} = ${JSON.stringify(v)}\n`;
         }
-        out += `\nHunt States:\n`;
-        for (const [huntId, h] of Object.entries(info.hunts)) {
-            out += `  ${huntId}: ${h.state}`;
-            if (h.transitions.length) {
-                out += ` → [${h.transitions.join(', ')}]`;
+        out += `\nDriver States:\n`;
+        for (const [driverId, d] of Object.entries(info.drivers)) {
+            out += `  ${driverId}: ${d.state}`;
+            if (d.transitions.length) {
+                out += ` → [${d.transitions.join(', ')}]`;
             }
             out += '\n';
         }
@@ -287,7 +244,7 @@ Local Time: ${new Date().toLocaleString()}`;
 // v1.0-specific commands (status)
 const v1Commands = {
     status: () => {
-        Kernel.hunt.discover('ran-status');
+        Kernel.driver.discover('ran-status');
         return 'RF0 DIAGNOSTICS\n'
             + 'firmware:  1.0-ROM\n'
             + 'uptime:    847h 14m\n'

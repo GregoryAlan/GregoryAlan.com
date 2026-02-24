@@ -1,0 +1,30 @@
+{
+    "id": "v1.1-home",
+    "description": "v1.1 home directory files and directories",
+
+    "textFiles": {
+        "welcome.txt": "GregOS 1.1 \u2014 Guest Terminal\n\nDirectories:\n  games/     Interactive projects (cd games, then open)\n  drafts/    Work in progress experiments\n\nUseful commands:\n  help       List available commands\n  man <cmd>  Read the manual for a command\n  cat <file> Read a file\n  ls         List files and directories\n  cd <dir>   Change directory\n  open       Launch current folder in browser\n\nTry: man gregos",
+
+        "version.txt": "GregOS v1.1\nBuild:  2026.01.22\nKernel: 0.9.847-greg\nUpdate: available\n\n-- update manifest --\ntimestamp: 2091-11-15T03:14:00Z\nchecksum:  a7 3f ?? ??\nsource:    rf0",
+
+        "contact.txt": "greg@gregoryalan.com",
+
+        "about.txt": "Gregory Alan\nDeveloper. Builds games, tools, and systems.\n\nThis machine runs GregOS \u2014 a custom kernel and terminal.\nProjects live in games/ and drafts/. Everything here is\neither shipped or half-finished. Explore at your own pace."
+    },
+
+    "hiddenFiles": {
+        ".bash_history": "  1  uname -a\n  2  whoami\n  3  cat about.txt\n  4  cd games\n  5  ls\n  6  open beary-time.html\n  7  cd ..\n  8  uptime\n  9  cat version.txt\n  10  ps\n  11  df -h\n  12  reboot -f"
+    },
+
+    "directories": {
+        "games": {
+            "beary-time.html": "file",
+            "ice-runner.html": "file",
+            "taipei-climber.html": "file"
+        },
+        "drafts": {
+            "game-of-life.html": "file",
+            "sound-pad.html": "file"
+        }
+    }
+}

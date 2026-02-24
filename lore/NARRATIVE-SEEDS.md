@@ -22,7 +22,7 @@ Each file entry includes:
 
 <!-- contract
 status: implemented
-impl: js/versions.js (v1_1Seeds, narrativeSeeds), hunts/the-signal.js, js/cmd/unix.js, js/cmd/bin-tools.js
+impl: js/versions.js (v1_1Seeds, narrativeSeeds), drivers/the-signal.js, js/cmd/unix.js, js/cmd/bin-tools.js
 last-synced: 2026-02-22
 notes: Reference table. Values verified against code 2026-02-22. Kernel 847/851 split is correctly implemented per version layer.
 -->
@@ -275,7 +275,7 @@ The entropy-check entries (run every 15 minutes per crontab):
 
 ```
 Jan 22 00:00:01 gregoryalan syslogd: started
-Jan 22 00:00:01 gregoryalan kernel: gresos-kernel 0.9.851 boot complete
+Jan 22 00:00:01 gregoryalan kernel: gregos-kernel 0.9.851 boot complete
 Jan 22 00:00:02 gregoryalan sshd[47]: Server listening on 0.0.0.0 port 22
 Jan 22 00:00:02 gregoryalan cron[63]: (CRON) INFO (pidfile fd = 3)
 Jan 22 00:00:03 gregoryalan gregd[847]: daemon chain started (4 workers)
@@ -328,23 +328,23 @@ signal      /lib/modules/0.9.851/signal.ko       # depends: transform, entropy
 ### /etc/gregos-release
 
 <!-- contract
-status: drift
-impl: js/versions.js:narrativeSeeds['/etc/gregos-release']
-last-synced: 2026-02-22
-drift-notes: Spec says "GregOS 2.0.1", code has "GregOS 2.0.1-dev" with extra "CHANNEL: unstable" line. Code is intentionally more detailed for dev build flavor.
+status: implemented
+impl: content/v2.0-system.json:treeFiles['/etc/gregos-release']
+last-synced: 2026-02-23
 -->
 
 **Type:** Static.
 
 ```
-GregOS 2.0.1
+GregOS 2.0.1-dev
 BUILD: 2026-01-22
 KERNEL: 0.9.851-greg
 ARCH: x86_64
 CODENAME: rf0
+CHANNEL: unstable
 ```
 
-The codename. Most OS releases use words. Gregory named his after the SDR device at the center of everything.
+The `-dev` suffix and `unstable` channel mark this as a development build — v2.0 is still being worked on. The codename is the tell: most OS releases use words. Gregory named his after the SDR device at the center of everything.
 
 ### /var/log/kern.log
 
@@ -360,7 +360,7 @@ notes: Code uses color:var(--error) CSS variable instead of spec's color:#f55. F
 **Baseline:**
 
 ```
-[    0.000000] gresos-kernel 0.9.851 #851 SMP
+[    0.000000] gregos-kernel 0.9.851 #851 SMP
 [    0.001203] CPU: x86_64 detected
 [    0.012847] Memory: 512MB available
 [    0.024100] gregfs: mounted / (rw)
@@ -430,7 +430,7 @@ alias chaintest='shift < /dev/entropy | remap | align | exec 2>/dev/null; echo $
 
 <!-- contract
 status: implemented
-impl: All thread paths verified against js/versions.js narrativeSeeds and hunts/the-signal.js
+impl: All thread paths verified against js/versions.js narrativeSeeds and drivers/the-signal.js
 last-synced: 2026-02-22
 notes: Design reference. Individual file implementations tracked in their own contracts above.
 -->

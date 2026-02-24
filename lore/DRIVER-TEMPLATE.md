@@ -1,12 +1,12 @@
-# Hunt Template
+# Driver Template
 
-Guide for creating drop-in easter egg hunts for the GregoryAlan.com terminal.
+Guide for creating drop-in narrative drivers for the GregoryAlan.com terminal.
 
 ---
 
 ## Naming Convention
 
-### Hunt ID
+### Driver ID
 - Lowercase, hyphenated: `the-signal`, `the-archive`, `the-breach`
 - Used as prefix for discovery IDs and sessionStorage keys
 
@@ -24,15 +24,15 @@ Guide for creating drop-in easter egg hunts for the GregoryAlan.com terminal.
 - Prefer real Unix commands: `dmesg`, `finger`, `last`, `w`, `strings`, `uptime`
 - Invented commands should feel like real tools: `decode`, `trace`, `scan`
 - Never override core commands: `ls`, `cd`, `cat`, `pwd`, `clear`, `help`
-- `help` is overridden by the hunt system to add a discovery-gated hint line
+- `help` is overridden by the driver system to add a discovery-gated hint line
 
 ---
 
-## Hunt Definition Structure
+## Driver Definition Structure
 
 ```javascript
-const myHunt = {
-    id: 'hunt-name',
+const myDriver = {
+    id: 'driver-name',
 
     // State machine: declares narrative progression as named states
     // with transitions keyed by discovery IDs. Optional — omit for
@@ -70,8 +70,8 @@ const myHunt = {
 
             // Legacy function format (still works):
             '.legacy-file': (state) => {
-                if (!Kernel.hunt.has('prerequisite-id')) return null;
-                Kernel.hunt.discover('this-discovery-id');
+                if (!Kernel.driver.has('prerequisite-id')) return null;
+                Kernel.driver.discover('this-discovery-id');
                 return 'content revealed after prerequisite';
             },
         },
@@ -85,7 +85,7 @@ const myHunt = {
     // Commands added to the Shell command registry
     commands: {
         commandname: (args, stdin) => {
-            Kernel.hunt.discover('discovery-id');
+            Kernel.driver.discover('discovery-id');
             return 'output string with <span> HTML allowed';
         },
     },
@@ -122,7 +122,7 @@ const myHunt = {
 };
 
 // Register at script load time (before version activation)
-Kernel.hunt.declareHunt(myHunt);
+Kernel.driver.declareDriver(myDriver);
 ```
 
 ---
@@ -171,25 +171,25 @@ Use for garbled/corrupted data: `░▒▓█▄▀■□▪▫◊○●◘◙`
 
 ## Engine API
 
-The engine is organized into three namespace objects. Hunt scripts access them directly.
+The engine is organized into three namespace objects. Driver scripts access them directly.
 
-### Kernel.hunt — Narrative State
+### Kernel.driver — Narrative State
 
 | Function | Purpose |
 |----------|---------|
-| `Kernel.hunt.declareHunt(hunt)` | Register hunt globally and initialize its state map (call at script load time) |
-| `Kernel.hunt.registerHunt(hunt)` | Merge hunt content into the runtime (called by `applyVersion()`) |
-| `Kernel.hunt.discover(id)` | Record a discovery, advance state machines, fire triggers |
-| `Kernel.hunt.has(id)` | Check if a discovery was made |
-| `Kernel.hunt.setFlag(k, v)` | Set arbitrary persistent state (survives refresh) |
-| `Kernel.hunt.flags` | Read flags set by `setFlag` |
-| `Kernel.hunt.getVersion()` | Current GregOS version number |
-| `Kernel.hunt.getState(huntId)` | Get current state machine position for a hunt |
-| `Kernel.hunt.isInOrPast(huntId, stateName)` | Check if a hunt has reached or passed a state |
-| `Kernel.hunt.debug()` | Return full state dump (version, discoveries, flags, hunt states) |
-| `Kernel.hunt.evaluateGate(gate, state)` | Evaluate a gate expression against state |
-| `Kernel.hunt.createGatedFile(def)` | Create a gated file function from `{ gate, onRead, content }` |
-| `Kernel.hunt.checkTriggers(type, value)` | Fire triggers matching a type/value pair |
+| `Kernel.driver.declareDriver(def)` | Register driver globally and initialize its state map (call at script load time) |
+| `Kernel.driver.registerDriver(def)` | Merge driver content into the runtime (called by `applyVersion()`) |
+| `Kernel.driver.discover(id)` | Record a discovery, advance state machines, fire triggers |
+| `Kernel.driver.has(id)` | Check if a discovery was made |
+| `Kernel.driver.setFlag(k, v)` | Set arbitrary persistent state (survives refresh) |
+| `Kernel.driver.flags` | Read flags set by `setFlag` |
+| `Kernel.driver.getVersion()` | Current GregOS version number |
+| `Kernel.driver.getState(driverId)` | Get current state machine position for a driver |
+| `Kernel.driver.isInOrPast(driverId, stateName)` | Check if a driver has reached or passed a state |
+| `Kernel.driver.debug()` | Return full state dump (version, discoveries, flags, driver states) |
+| `Kernel.driver.evaluateGate(gate, state)` | Evaluate a gate expression against state |
+| `Kernel.driver.createGatedFile(def)` | Create a gated file function from `{ gate, onRead, content }` |
+| `Kernel.driver.checkTriggers(type, value)` | Fire triggers matching a type/value pair |
 
 ### Kernel.fs — Filesystem
 
@@ -241,22 +241,22 @@ The engine is organized into three namespace objects. Hunt scripts access them d
 
 ### Two-Phase Registration
 
-- **`Kernel.hunt.declareHunt(hunt)`** — called at **script load time**. Registers the hunt in the hunt registry and initializes its state machine. State maps exist before content is activated.
-- **`Kernel.hunt.registerHunt(hunt)`** — called by `applyVersion()` at **the version layer that activates the hunt**. Merges files, commands, triggers into the runtime.
+- **`Kernel.driver.declareDriver(def)`** — called at **script load time**. Registers the driver in the driver registry and initializes its state machine. State maps exist before content is activated.
+- **`Kernel.driver.registerDriver(def)`** — called by `applyVersion()` at **the version layer that activates the driver**. Merges files, commands, triggers into the runtime.
 
-`registerHunt()` routes content through proper APIs:
+`registerDriver()` routes content through proper APIs:
 
-| Hunt field | Routed to |
+| Driver field | Routed to |
 |------------|-----------|
-| `hunt.files.text` | `Kernel.fs.addTextFile()` |
-| `hunt.files.hidden` | `Kernel.fs.addHiddenFile()` |
-| `hunt.commands` | `Shell.register()` |
-| `hunt.directories` | `Kernel.fs.mergeFileTree()` |
-| `hunt.manPages` | `Kernel.fs.mergeManPages()` |
-| `hunt.triggers` | `Kernel.hunt._triggers` |
-| `hunt.patches` | `Kernel.fs.addHiddenFile(name, patchFn(existing))` |
+| `def.files.text` | `Kernel.fs.addTextFile()` |
+| `def.files.hidden` | `Kernel.fs.addHiddenFile()` |
+| `def.commands` | `Shell.register()` |
+| `def.directories` | `Kernel.fs.mergeFileTree()` |
+| `def.manPages` | `Kernel.fs.mergeManPages()` |
+| `def.triggers` | `Kernel.driver._triggers` |
+| `def.patches` | `Kernel.fs.addHiddenFile(name, patchFn(existing))` |
 
-Hunt scripts should **not** directly reference engine internals (`Kernel.fs._textFiles`, `Shell._commands`, `Terminal.el`, etc.). Use `registerHunt()` to inject content, and the public APIs above to read state.
+Driver scripts should **not** directly reference engine internals (`Kernel.fs._textFiles`, `Shell._commands`, `Terminal.el`, etc.). Use `registerDriver()` to inject content, and the public APIs above to read state.
 
 ---
 
@@ -266,19 +266,19 @@ Gates declare when content is available. Used in `{ gate, content, onRead }` fil
 
 | Syntax | Meaning |
 |--------|---------|
-| `'discovery-id'` | Discovery check — `Kernel.hunt.has(id)` |
-| `'flag:name'` | Flag check — `!!Kernel.hunt.flags[name]` |
-| `'version:2.0'` | Version check — `Kernel.hunt.getVersion() >= 2.0` |
-| `'hunt-id:state-name'` | Hunt state check — is in or past this state |
+| `'discovery-id'` | Discovery check — `Kernel.driver.has(id)` |
+| `'flag:name'` | Flag check — `!!Kernel.driver.flags[name]` |
+| `'version:2.0'` | Version check — `Kernel.driver.getVersion() >= 2.0` |
+| `'driver-id:state-name'` | Driver state check — is in or past this state |
 | `'!expression'` | Negation — inverts any of the above |
 | `['a', 'b']` | AND — all gates must pass |
-| `(state) => ...` | Function escape hatch (receives `Kernel.hunt`) |
+| `(state) => ...` | Function escape hatch (receives `Kernel.driver`) |
 
 ---
 
 ## Branch Design Pattern
 
-Each hunt should have 2-4 branches. Each branch:
+Each driver should have 2-4 branches. Each branch:
 - Has 3-5 discovery steps
 - Starts from a breadcrumb in `.bash_history` or a visible hidden file
 - Gates later content behind earlier discoveries (function-valued files)
@@ -308,11 +308,11 @@ Use `type: 'count'` triggers for effects based on total discoveries across all b
 
 ## Narrative Engine Integration
 
-Hunts connect to the narrative state machine through a declarative layer that sits alongside the existing JavaScript hunt definition. The full specification lives in [NARRATIVE-ENGINE.md](NARRATIVE-ENGINE.md). This section covers the integration points.
+Drivers connect to the narrative state machine through a declarative layer that sits alongside the existing JavaScript driver definition. The full specification lives in [NARRATIVE-ENGINE.md](NARRATIVE-ENGINE.md). This section covers the integration points.
 
 ### Declaring Initial Flag State
 
-Every hunt declares the flag state it expects when loaded. This is both documentation ("what does this hunt assume about the world?") and initialization ("set these flags if they aren't already set").
+Every driver declares the flag state it expects when loaded. This is both documentation ("what does this driver assume about the world?") and initialization ("set these flags if they aren't already set").
 
 ```yaml
 initial_state:
@@ -328,7 +328,7 @@ initial_state:
     kern-log: { state: "exists" }
 ```
 
-Flags already set by a prior hunt are not overwritten. Initial state is a floor, not a reset. If a Phase I hunt set `narrative.dread` to 0.3, a Phase II hunt's `initial_state` of `dread: 0` will not lower it.
+Flags already set by a prior driver are not overwritten. Initial state is a floor, not a reset. If a Phase I driver set `narrative.dread` to 0.3, a Phase II driver's `initial_state` of `dread: 0` will not lower it.
 
 ### Mapping Beats to Flag Mutations
 
@@ -352,7 +352,7 @@ beats:
 
 Beats fire in response to the same events the existing trigger system handles (`discovery`, `command`, `file_read`, `count`). The difference is that beats mutate flags rather than (or in addition to) running callbacks. This makes the effects declarative and inspectable.
 
-**Coexistence with existing triggers:** Hunts can use both the existing `triggers` array (JavaScript callbacks) and the narrative engine `beats` array. They are evaluated independently. For new hunts, prefer beats. For existing hunts, no migration is required.
+**Coexistence with existing triggers:** Drivers can use both the existing `triggers` array (JavaScript callbacks) and the narrative engine `beats` array. They are evaluated independently. For new drivers, prefer beats. For existing drivers, no migration is required.
 
 ### Artifact Content by State
 
@@ -382,7 +382,7 @@ When an artifact is in the `hidden` state, it does not appear in any listing and
 
 ### Ambient Behaviors
 
-Ambient behaviors create background atmosphere without requiring visitor action. They are defined per-hunt and evaluated on intervals:
+Ambient behaviors create background atmosphere without requiring visitor action. They are defined per-driver and evaluated on intervals:
 
 ```yaml
 ambient:
@@ -401,21 +401,21 @@ ambient:
 - Suspend during active typing
 - Ambient effects should be subtle — atmosphere, not alarm
 
-### Cross-Hunt Continuity
+### Cross-Driver Continuity
 
-Hunts share a global flag namespace. Any hunt can READ any flag. Hunts should only WRITE flags they declare in their own scope.
+Drivers share a global flag namespace. Any driver can READ any flag. Drivers should only WRITE flags they declare in their own scope.
 
-**Reading flags from other hunts:**
+**Reading flags from other drivers:**
 
 ```yaml
 # Gate a Phase II artifact behind Phase I completion
 trigger:
   type: file_read
   match: ".daemon.log"
-  condition: "Kernel.hunt.has('contact-made')"  # from The Signal
+  condition: "Kernel.driver.has('contact-made')"  # from The Signal
 ```
 
-**Hunt-specific flags** (not in the global vocabulary) should be namespaced with the hunt ID:
+**Driver-specific flags** (not in the global vocabulary) should be namespaced with the driver ID:
 
 ```yaml
 effects:
@@ -425,24 +425,24 @@ effects:
       value: true
 ```
 
-**Global flags** (kernel.*, os.*, narrative.*, artifact.*) are never prefixed. They belong to the world, not to any hunt.
+**Global flags** (kernel.*, os.*, narrative.*, artifact.*) are never prefixed. They belong to the world, not to any driver.
 
-### Summary: Hunt Definition Checklist (Narrative Engine)
+### Summary: Driver Definition Checklist (Narrative Engine)
 
-When creating a hunt with narrative engine integration, include:
+When creating a driver with narrative engine integration, include:
 
 - [ ] `initial_state` — declare expected flag values at load time
 - [ ] `artifacts` — define content variants for each artifact state
 - [ ] `beats` — map story moments to flag mutations
 - [ ] `ambient` — define passive atmospheric effects (if any)
-- [ ] Flag scope — document which global flags this hunt reads and writes
-- [ ] Prerequisites — list discovery IDs from other hunts that gate this hunt's content
+- [ ] Flag scope — document which global flags this driver reads and writes
+- [ ] Prerequisites — list discovery IDs from other drivers that gate this driver's content
 
 ---
 
 ## Testing Checklist
 
-For each hunt, verify:
+For each driver, verify:
 - [ ] All hidden files appear/hide correctly based on discovery gates
 - [ ] All commands return expected output
 - [ ] Glitch effects fire on correct discoveries
@@ -455,5 +455,5 @@ For each hunt, verify:
 - [ ] Narrative engine flags mutate correctly on beat triggers
 - [ ] Artifact content varies correctly by artifact state
 - [ ] Ambient behaviors fire on correct conditions and intervals
-- [ ] Cross-hunt flag reads gate content appropriately
+- [ ] Cross-driver flag reads gate content appropriately
 - [ ] Factory reset (`rm -rf /`) restores all flags to defaults

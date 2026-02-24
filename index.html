@@ -20,41 +20,49 @@
 </div>
 
 <script src="js/glitch.js"></script>
+<script src="js/events.js"></script>
+<script src="js/argparse.js"></script>
 <script src="js/kernel.js"></script>
 <script src="js/shell.js"></script>
+<script src="js/manifest-loader.js"></script>
 <script src="js/terminal.js"></script>
 <script src="js/cmd/core.js"></script>
 <script src="js/cmd/unix.js"></script>
 <script src="js/cmd/bin-tools.js"></script>
 <script src="js/cmd/v2.js"></script>
-<script src="hunts/the-signal.js"></script>
-<script src="hunts/greg-corp.js"></script>
+<script src="drivers/the-signal.js"></script>
+<script src="drivers/greg-corp.js"></script>
 <script src="js/versions.js"></script>
 <script>
-// Boot init — apply version, render MOTD, then boot or restore
-const currentVersion = Kernel.hunt.getVersion();
-applyVersion(currentVersion);
-renderMOTD();
-Terminal.updatePrompt();
-Terminal.init();
+// Boot init — prefetch manifests, apply version, render MOTD, then boot or restore
+(async function boot() {
+    // Pre-fetch all content manifests in parallel
+    await ManifestLoader.prefetch(MANIFEST_URLS);
 
-for (const hunt of Object.values(Kernel.hunt._registry)) {
-    if (hunt.restore) hunt.restore(Kernel.hunt);
-}
+    const currentVersion = Kernel.driver.getVersion();
+    applyVersion(currentVersion);
+    renderMOTD();
+    Terminal.updatePrompt();
+    Terminal.init();
 
-Terminal.el.input.disabled = true;
+    for (const drv of Object.values(Kernel.driver._registry)) {
+        if (drv.restore) drv.restore(Kernel.driver);
+    }
 
-if (Kernel.session.get('bootDone')) {
-    Terminal.el.bootScreen.style.display = 'none';
-    Terminal.el.terminal.style.display = '';
-    Terminal.el.input.disabled = false;
-    Terminal.el.input.focus();
-} else {
-    Terminal.runBootSequence().then(() => {
+    Terminal.el.input.disabled = true;
+
+    if (Kernel.session.get('bootDone')) {
+        Terminal.el.bootScreen.style.display = 'none';
+        Terminal.el.terminal.style.display = '';
         Terminal.el.input.disabled = false;
         Terminal.el.input.focus();
-    });
-}
+    } else {
+        Terminal.runBootSequence().then(() => {
+            Terminal.el.input.disabled = false;
+            Terminal.el.input.focus();
+        });
+    }
+})();
 </script>
 </body>
 </html>

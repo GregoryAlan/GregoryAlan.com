@@ -36,8 +36,10 @@ const Shell = {
 
         if (!command) return '';
         if (this._commands[command]) {
-            const result = this._commands[command](args);
-            Kernel.hunt.checkTriggers('command', command);
+            const parsed = parseArgs(args);
+            const result = this._commands[command](args, null, parsed);
+            Kernel.driver.checkTriggers('command', command);
+            EventBus.emit('command:executed', { command, args, parsed, output: result });
             return result;
         }
         return `${command}: command not found. Type 'help' for available commands.`;
@@ -56,10 +58,12 @@ const Shell = {
                 return `${command}: command not found`;
             }
 
-            const result = this._commands[command](args, stdin);
+            const parsed = parseArgs(args);
+            const result = this._commands[command](args, stdin, parsed);
             if (result === null) return null;
 
-            Kernel.hunt.checkTriggers('command', command);
+            Kernel.driver.checkTriggers('command', command);
+            EventBus.emit('command:executed', { command, args, parsed, output: result });
             stdin = this.stripHTML(result) || '';
         }
 
@@ -192,7 +196,7 @@ const Shell = {
                 return [];
             }
         } else if (cmd === 'mount') {
-            if (!Kernel.hunt.has('rf0-mount-failed')) {
+            if (!Kernel.driver.has('rf0-mount-failed')) {
                 candidates = ['/dev/rf0'];
             }
         } else if (cmd === 'grep' || cmd === 'wc' || cmd === 'head') {
@@ -269,7 +273,7 @@ const Shell = {
     // ─── Prompt ─────────────────────────────────────────────
 
     getPrompt() {
-        if (Kernel.hunt.getVersion() < 1.1) {
+        if (Kernel.driver.getVersion() < 1.1) {
             return 'rf0>';
         }
         const user = Shell.env.USER;

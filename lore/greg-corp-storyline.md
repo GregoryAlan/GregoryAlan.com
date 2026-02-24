@@ -10,7 +10,7 @@ This is Phase I territory — everything here passes the sysadmin test. No super
 
 <!-- contract
 status: implemented
-impl: hunts/greg-corp.js (gregCorpProfiles, gregCorpHomeFiles)
+impl: drivers/greg-corp.js (gregCorpProfiles, gregCorpHomeFiles)
 last-synced: 2026-02-22
 -->
 
@@ -36,7 +36,7 @@ last-synced: 2026-02-22
 
 <!-- contract
 status: implemented
-impl: hunts/greg-corp.js:gregCorpProfiles.dhollis, gregCorpHomeFiles['/home/dhollis/*']
+impl: drivers/greg-corp.js:gregCorpProfiles.dhollis, gregCorpHomeFiles['/home/dhollis/*']
 last-synced: 2026-02-22
 -->
 
@@ -80,7 +80,7 @@ last-synced: 2026-02-22
 
 <!-- contract
 status: implemented
-impl: hunts/greg-corp.js:gregCorpCommands.su (line 425: Kernel.hunt.has('contact-made'))
+impl: drivers/greg-corp.js:gregCorpCommands.su (line 425: Kernel.driver.has('contact-made'))
 last-synced: 2026-02-22
 -->
 
@@ -94,7 +94,7 @@ After contact, the profiles become accessible.
 
 <!-- contract
 status: implemented
-impl: hunts/greg-corp.js:gregCorpCommands.su, Shell.switchProfile()
+impl: drivers/greg-corp.js:gregCorpCommands.su, Shell.switchProfile()
 last-synced: 2026-02-22
 -->
 
@@ -107,7 +107,7 @@ last-synced: 2026-02-22
 
 <!-- contract
 status: implemented
-impl: hunts/greg-corp.js:gregCorpHomeFiles
+impl: drivers/greg-corp.js:gregCorpHomeFiles
 last-synced: 2026-02-22
 -->
 
@@ -140,7 +140,7 @@ last-synced: 2026-02-22
 
 <!-- contract
 status: implemented
-impl: hunts/greg-corp.js:gregCorpHomeFiles['/home/dhollis/.pending/HR-97-0847.complaint'], gregCorpTriggers[0]
+impl: drivers/greg-corp.js:gregCorpHomeFiles['/home/dhollis/.pending/HR-97-0847.complaint'], gregCorpTriggers[0]
 last-synced: 2026-02-22
 -->
 
@@ -159,7 +159,7 @@ On read: discovery `complaint-found` fires → `screenFlicker` effect → 1.5s d
 
 <!-- contract
 status: implemented
-impl: hunts/greg-corp.js:gregCorpCommands (su, mail, finger), gregCorpManPages
+impl: drivers/greg-corp.js:gregCorpCommands (su, mail, finger), gregCorpManPages
 last-synced: 2026-02-22
 -->
 

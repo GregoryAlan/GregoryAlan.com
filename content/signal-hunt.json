@@ -1,0 +1,33 @@
+{
+    "id": "signal-hunt",
+    "description": "The Signal hunt - gated files for the rf0 discovery chain",
+
+    "hiddenFiles": {
+        ".rf0.buf": {
+            "type": "gated",
+            "gate": "rf0-mount-failed",
+            "onRead": "rf-found",
+            "content": "rf0: rx ring overrun (847 bytes not consumed)\nchecksum: a7 3f ?? ??\n\n0000  7f 45 4c 46 02 01 01 00  00 00 00 00 00 00 00 00\n0010  02 00 3e 00 01 00 00 00  00 03 47 00 00 00 00 00\n0020  4e 4f 52 4d 41 4c 20 53  59 53 54 45 4d 20 4f 50\n0030  45 52 41 54 49 4f 4e 20  49 53 20 41 20 4c 49 45\n      [336 bytes dropped]\n0190  72 65 6c 61 79 20 2d 2d  74 61 72 67 65 74 3d 30\n01a0  2e 30 2e 30 2e 30 3a 34  31 31 39\n\nend of buffer\ntimestamp: 1970-01-01T00:00:00.012Z\norigin: unknown"
+        }
+    },
+
+    "treeFiles": {
+        "/proc/0/status": {
+            "type": "gated",
+            "gate": "contact-made",
+            "content": "Name:\t(unknown)\nUmask:\t0022\nState:\tR (running)\nTgid:\t0\nPid:\t0\nPPid:\t0\nUid:\t1002\t1002\t1002\t1002\nGid:\t1002\t1002\t1002\t1002\nFDSize:\t0\nThreads:\t1\nvoluntary_ctxt_switches:\t0\nnonvoluntary_ctxt_switches:\t847"
+        },
+
+        "/proc/0/environ": {
+            "type": "gated",
+            "gate": "contact-made",
+            "content": "USER=dhollis\nHOME=/home/dhollis\nSHELL=/bin/bash\nTERM=vt100\nHOSTNAME=gregcorp.internal\nDEPT=Human Resources\nEMPLOYEE_ID=GC-0012\nLANG=en_US\nTZ=US/Pacific"
+        },
+
+        "/proc/0/cmdline": {
+            "type": "gated",
+            "gate": "contact-made",
+            "content": "/dev/rf0 --listen --persist"
+        }
+    }
+}
