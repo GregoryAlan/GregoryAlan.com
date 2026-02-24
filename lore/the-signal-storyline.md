@@ -104,6 +104,46 @@ notes: All 8 discoveries implemented. State machine and trigger effects match sp
 | 7 | `intruder-last` | `last` (after contact) | screenTear |
 | 8 | `rf-strings` | `strings .rf0.buf` | textCorruption |
 
+## The Buffer — Technical Anatomy
+
+The 847-byte `.rf0.buf` is not a signal readout with some executable data mixed in. It is a realistic weaponized payload — a **dropper** — disguised as a signal readout. The visitor thinks they are decoding a message. They are looking at a weapon.
+
+### Byte Layout
+
+| Offset Range | Size | Content | Purpose |
+|-------------|------|---------|---------|
+| `0x0000–0x0258` | ~600 bytes | Valid signal data | **Camouflage layer** — when decoded normally, produces the signal readout the visitor sees. Legitimate-looking RF telemetry: frequency locks, timestamps, station IDs. This is the layer `decode --hex 4e4f524d` reads from. |
+| `0x0259–0x026C` | ~20 bytes | `90 90 90 90 90 90...` | **NOP sled** — classic exploit technique. A runway of no-operation instructions that catches imprecise jumps and slides execution into the payload. Any execution that lands in this region will glide forward into the shellcode. |
+| `0x026D–0x030C` | ~160 bytes | Position-independent shellcode | **Reverse shell payload** — compact, null-free machine code that opens a socket, connects back to the relay target (`0.0.0.0:4119`), and redirects stdin/stdout/stderr to the socket. This is the actual weapon: a ~160-byte reverse shell, small enough to be realistic, large enough to be functional. |
+| `0x030D–0x034F` | ~67 bytes | Repeating 4-byte pattern | **Return address trigger** — a spray of return addresses pointing back into the NOP sled. When the buffer overflows its frame, one of these overwrites the saved return pointer, redirecting execution into the sled → payload. The repetition is the fingerprint: the same 4 bytes over and over. |
+
+Total: 847 bytes. Not a round number. Not a power of two. The size of what survived the crossing.
+
+### Offset-Dependent Duality
+
+The buffer has two readings depending on where you start:
+
+- **Normal decode** (offset 0x0000) — produces the signal readout. The camouflage layer. This is what `cat .rf0.buf` shows and what `decode --hex 4e4f524d` initially processes. The visitor sees RF telemetry and thinks they are reading a message.
+
+- **Execution** (offset 0x0259+) — the NOP sled catches the jump, slides into the shellcode, and the same bytes that looked like a signal readout become executable instructions. The `ELF binary detected` / `segfault at 0x847` output in Act 3 is the system recognizing that the data it just "decoded" was actually code.
+
+The duality is the point: the same 847 bytes are simultaneously a message and a weapon. The camouflage isn't hiding the payload — it IS the payload, read from a different offset. The visitor's act of decoding is the act that triggers execution.
+
+### Forensic Fingerprints
+
+What examination of the raw buffer would reveal to someone who knows what they're looking at:
+
+- **High Shannon entropy** in the `0x026D–0x030C` range — payload section entropy approaches theoretical maximum (~7.9 bits/byte), far higher than the signal data section (~5.2 bits/byte). The `entropy` bin tool could detect this discontinuity.
+- **NOP sled signature** — `90 90 90 90` is the x86 NOP opcode. A sequence of 20+ consecutive NOPs in a data buffer is a classic exploit indicator. The `strings` or `freq` bin tools could surface this pattern.
+- **Null-byte avoidance** — the payload section contains zero `00` bytes. Real signal data would have nulls. Shellcode avoids them because null terminates string operations that might be handling the buffer. This is a deliberate engineering constraint.
+- **Return address repetition** — the final ~67 bytes are the same 4-byte sequence repeated ~16 times. No natural data produces this pattern. It's a NOP sled return address spray, unmistakable to anyone who has analyzed buffer overflow exploits.
+
+### The Dropper Concept
+
+The 847 bytes are not the attack. They are the **dropper** — a minimal bootstrap that establishes a connection and fetches something bigger. The reverse shell payload doesn't contain instructions or data beyond "open a socket, connect back, hand over control." What comes through that socket — what arrives after `hello?` — is the actual payload.
+
+This reframes the entire Signal arc: the visitor did not decode a message and accidentally trigger a side effect. The visitor activated a staged weapon system. The "message" was bait. The decode was the detonation. And the dropper's fetch destination — the address it calls home to — may be encoded in the signal data itself, hiding in the camouflage layer that the visitor already read past.
+
 ## Design Principles
 
 - **No exposition text** — no colored `<span>` hints telling the user what to think

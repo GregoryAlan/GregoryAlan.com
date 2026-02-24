@@ -222,7 +222,7 @@ Local Time: ${new Date().toLocaleString()}`;
         for (const [driverId, d] of Object.entries(info.drivers)) {
             out += `  ${driverId}: ${d.state}`;
             if (d.transitions.length) {
-                out += ` → [${d.transitions.join(', ')}]`;
+                out += ` \u2192 [${d.transitions.join(', ')}]`;
             }
             out += '\n';
         }
@@ -239,77 +239,9 @@ Shell.registerCompletion('man', (argPrefix) => Shell.completeFromList(argPrefix,
 
 // v1.0-specific commands (firmware monitor)
 const v1Commands = {
-    status: () => {
-        Kernel.driver.discover('ran-status');
-        return 'RF0 DIAGNOSTICS\n'
-            + 'firmware:  1.0-ROM\n'
-            + 'uptime:    847h 14m\n'
-            + 'rf:        847.0MHz LOCK\n'
-            + 'antenna:   ACTIVE\n'
-            + 'relay:     STANDBY\n'
-            + 'rx buf:    847 bytes (unconsumed)\n'
-            + 'tx buf:    0 bytes\n'
-            + 'update:    AVAILABLE';
-    },
-
-    post: () => {
-        return 'RF0-CR POST RESULTS\n'
-            + '===================\n'
-            + 'ROM     1.0         OK\n'
-            + 'RAM     512K        OK\n'
-            + 'ADC     12-bit      OK\n'
-            + 'PLL     4119.0 kHz  LOCK\n'
-            + 'ANT                 ACTIVE \u2014 NO CARRIER\n'
-            + 'FIFO    847/4096    WARN \u2014 NOT CONSUMED\n'
-            + 'RELAY               STANDBY\n'
-            + '\n'
-            + '6/7 OK, 1 WARN\n'
-            + 'POST completed at init';
-    },
-
-    info: () => {
-        return 'RF0-CR DEVICE INFORMATION\n'
-            + '=========================\n'
-            + 'model:     RF0-CR (crystal receiver)\n'
-            + 'serial:    GC-0847\n'
-            + 'mfg:       Gregory Alan Computing, Inc.\n'
-            + 'mfg_date:  1987\n'
-            + 'firmware:  1.0-ROM\n'
-            + 'pll_freq:  4119.0 kHz\n'
-            + 'pll_mode:  rx_lock\n'
-            + 'adc_res:   12-bit\n'
-            + 'fifo_sz:   4096 bytes\n'
-            + 'rx_gain:   auto\n'
-            + 'rx_bw:     12.5 kHz';
-    },
-
-    log: () => {
-        return 'RF0 STATION LOG\n'
-            + '[2026-01-22 03:14:00] init from ROM\n'
-            + '[2026-01-22 03:14:01] ant0: ACTIVE\n'
-            + '[2026-01-22 03:14:02] relay: STANDBY\n'
-            + '[............]\n'
-            + '[2026-01-22 08:47:00] rx0: 847 bytes buffered (unconsumed)\n'
-            + '[2026-01-22 08:47:01] rx0: checksum FAIL \u2014 pkt held\n'
-            + '[............]\n'
-            + 'End of log.';
-    },
-
-    rxbuf: () => {
-        return 'RX FIFO \u2014 847/4096 bytes (STALE)\n'
-            + '\n'
-            + '0000: 7f454c46 02010100 00000000 00000000\n'
-            + '0010: 02003e00 01000000 00034700 00000000\n'
-            + '0020: 4e4f524d 414c2053 59535445 4d204f50\n'
-            + '0030: 45524154 494f4e20 49532041 204c4945\n'
-            + '0040: 00000000 00000000 00000000 00000000\n'
-            + '*\n'
-            + '0190: 72656c61 79202d2d 74617267 65743d30\n'
-            + '01a0: 2e302e30 2e303a34 31313900 00000000\n'
-            + '01b0: 00000000 00000000 00000000 00000000\n'
-            + '*\n'
-            + '034e:\n'
-            + '\n'
-            + 'checksum: FAIL';
-    },
+    status: () => { Kernel.driver.discover('ran-status'); return Kernel.fs.read('rom:status'); },
+    post:   () => Kernel.fs.read('rom:post'),
+    info:   () => Kernel.fs.read('rom:info'),
+    log:    () => Kernel.fs.read('rom:log'),
+    rxbuf:  () => Kernel.fs.read('rom:rxbuf'),
 };

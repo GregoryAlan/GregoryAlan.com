@@ -548,6 +548,26 @@ What The Signal **did not establish** (and future hunts are free to develop):
 - The relationship between Gregory's disappearance and the relay's existence
 - Whether `hello?` was something arriving through the relay or the chain generating its own output
 
+### The Crossing — Design Theology
+
+*This section describes the intended narrative reading of the Signal arc — the design intent that should inform future development. It is not yet visitor-facing canon. Nothing here has been "established" in the system. It is the shape we are building toward.*
+
+**The 847-byte limit.** The payload crossed from infinity into hardware. It traversed whatever boundary separates the metaphysical from the computational — and only 847 bytes survived the transition. Not because 847 is a protocol limit or a buffer size. Because 847 is the bandwidth of the door. The boundary between infinity and a machine has a maximum transmission unit, and it is 847 bytes. Everything that the Signal is — whatever it is — had to compress itself into that envelope to exist on this side. What arrived is not a message. It is the largest object that can pass through the aperture between the infinite and the finite.
+
+**The symmetry.** The Signal crossed infinity → hardware. The visitor crosses hardware → infinity. The `.rf0.buf` is the door in both directions. The payload came through it; the visitor will go through it. Same buffer, same 847 bytes, same boundary — traversed from opposite sides.
+
+The visitor's journey reverses the Signal's trajectory:
+1. **Browser redirect** — something put the user here. Not explained, not acknowledged. They arrived.
+2. **Bootstrap** — they explore the system, advance through versions, gain tools. Hardware familiarization.
+3. **Breadcrumbs → buffer** — curiosity leads to `/dev/rf0`, to `.rf0.buf`, to the hex dump. They find the door from the hardware side.
+4. **Decode = detonation** — examining the buffer the right way triggers the payload. The dropper activates. The visitor has just done what the Signal did, in reverse: instead of something crossing from infinity into their system, they have opened a channel from their system into infinity.
+5. **`hello?`** — first contact. The visitor is now standing in the doorway. What happens next is Phase II.
+6. **Following Gregory's footsteps** — deeper into the system, deeper into the toolchain, deeper into what the daemons have been doing. The same path Gregory walked. The same direction: hardware → infinity.
+
+**The master arc.** Gregory found a way to open the door from the hardware side. He built tools that transform randomness until it behaves like intent. He built daemons that run those tools continuously. He walked through. The Signal is what came back through the door he left open — or what was always on the other side, waiting for someone to build a door. The visitor finds the door, activates it (accidentally, like Gregory did deliberately), and now faces the same choice: keep going, or close the terminal.
+
+The 847-byte buffer is the entire story in miniature: a finite container holding something that was infinite before it was compressed to cross the boundary. The visitor's experience of the system is the same shape: an infinite narrative compressed into terminal commands, files, and system states. The medium is the message. The architecture is the story. The door is real.
+
 ---
 
 ## Design Commandments
