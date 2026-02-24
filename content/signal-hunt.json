@@ -40,6 +40,7 @@
     "sequences": {
         "mount-crash": [
             { "text": "mount: mounting /dev/rf0 ...", "delay": 2000 },
+            { "text": "mount: notice: CONFIG_STRICT_DEVTYPE=n — forcing raw read", "delay": 800 },
             { "text": "rf0: device probing ...", "delay": 1500 },
             { "text": "rf0: firmware 1.0-ROM detected", "delay": 500 },
             { "text": "rf0: loading driver ... done", "delay": 800 },

@@ -144,6 +144,20 @@ The 847 bytes are not the attack. They are the **dropper** — a minimal bootstr
 
 This reframes the entire Signal arc: the visitor did not decode a message and accidentally trigger a side effect. The visitor activated a staged weapon system. The "message" was bait. The decode was the detonation. And the dropper's fetch destination — the address it calls home to — may be encoded in the signal data itself, hiding in the camouflage layer that the visitor already read past.
 
+### The Mount — How the Buffer Surfaces
+
+The visitor types `mount /dev/rf0` because the breadcrumbs led them there. But `rf0` is a character device (an SDR dongle). You don't mount character devices — you read from them. On a standard kernel, `mount` checks the device type via the block device validation path and rejects anything that isn't `S_IFBLK`. The command would fail with `mount: /dev/rf0: not a block device` and the buffer would stay buried.
+
+Gregory disabled that check.
+
+His dev build (0.9.851) sets `CONFIG_STRICT_DEVTYPE=n` — mount will attempt a raw read against any device regardless of type. He needed this to access rf0's buffer directly: the character device interface consumes data on read (streaming, no seek, no tell), but the rx ring holds 847 stale bytes that were never consumed. The only way to get at them without the character interface eating them is to bypass it entirely — raw-read the device buffer through the mount path, treating the rx ring like a block device's storage.
+
+This is part of the descent. Gregory didn't disable the check carelessly. He disabled it deliberately because he needed to inspect the buffer at specific offsets. His commit annotation: `# mount it directly`. Reasonable. Defensible. One more small rational step toward something larger.
+
+**The two-stage failure:** The mount proceeds past the device type check (disabled), loads the rf0 driver, and reads the rx ring buffer. It finds 847 unconsumed bytes and begins processing them. Then the content validation fires — ELF marker detected at offset 0x00, executable segment in the buffer. The mount refuses and faults. But the raw read already happened. The kernel's crash recovery dumps the buffer contents to `.rf0.buf` as a diagnostic artifact. The first line of defense (device type check) was removed by Gregory. The second line of defense (content validation) fires too late — the data is already in memory, already written to disk. The buffer is loose.
+
+**What the visitor sees:** The crash sequence shows `CONFIG_STRICT_DEVTYPE=n — forcing raw read` in the mount output. A sysadmin would clock that immediately: *why is this disabled?* The man page documents it honestly — Gregory was a good enough developer to flag his own unsafe configurations in the docs, even in a dev build. The answer is in `man mount`, under NOTES. The visitor can find it if they look.
+
 ## Design Principles
 
 - **No exposition text** — no colored `<span>` hints telling the user what to think
