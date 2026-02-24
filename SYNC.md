@@ -53,8 +53,7 @@ Code that exists without a spec document. Lore master should review and retroact
 
 | Branch | Agent | Status | Description |
 |--------|-------|--------|-------------|
-| `feature/user-profiles` | Developer | Active | GregCorp employee profiles and su system |
-| *(main)* | — | Stable | Last merged: initial implementation |
+| *(main)* | — | Stable | All Phase I content implemented (Signal + GregCorp drivers) |
 
 ---
 
