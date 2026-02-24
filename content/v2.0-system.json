@@ -1,0 +1,42 @@
+{
+    "id": "v2.0-system",
+    "description": "v2.0 system files, narrative seeds (static), and overrides",
+
+    "textFiles": {
+        "welcome.txt": "Welcome to GregOS 2.0-dev\nDevelopment build \u2014 not for production use.\nAll activity may be monitored and recorded.",
+
+        "version.txt": "GregOS v2.0-dev\nBuild:  2026.02.15\nKernel: 0.9.851-greg\nBranch: dev/transform-pipeline\nStatus: unstable",
+
+        "migration.conf": "# GregOS Migration Configuration\n# Devices carried forward from v1.0 ROM\n#\n# device        type      status\n# \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n  /dev/tty1     terminal  active\n  /dev/eth0     network   active\n  /dev/sda1     disk      mounted\n  /dev/rf0      radio     pending\n"
+    },
+
+    "hiddenFiles": {
+        ".bash_history": "  1  cat welcome.txt\n  2  pkg update\n  3  pkg list\n  4  pkg install decode\n  5  pkg install strings\n  6  cat migration.conf\n  7  mount"
+    },
+
+    "treeFiles": {
+        "/proc/version": { "content": "gresos-kernel 0.9.851-greg (gcc 14.1.0) #851 SMP Feb 15 2026 00:00:00" },
+
+        "/sys/firmware/bios": { "content": "GregBIOS 1.4\nVendor:       Gregory Alan Computing, Inc.\nRelease Date: 10/15/2025\nROM Size:     256 KB\nACPI:         2.0\nSMBIOS:       3.3.0\n\nRevision History:\n  1.0  1985-03-14  Initial POST, 8-bit bus, 640K memory test\n  1.1  1986-08-22  rf0 antenna controller, extended memory detect\n  1.2  1987-01-22  Boot device priority, shipped with GregOS 1.1\n  1.3  2025-06-01  ACPI table support, PCI bus enumeration\n  1.4  2025-10-15  Entropy source init, extended POST, 64-bit" },
+
+        "/etc/passwd": { "content": "root:x:0:0:root:/root:/bin/bash\ngreg:x:1000:1000:Gregory Alan:/home/greg:/bin/bash\nguest:x:1001:1001:Visitor:/home/guest:/bin/bash\ndhollis:x:1002:1002:Diane Hollis:/home/dhollis:/bin/bash\nsshd:x:47:47:SSH Daemon:/var/run/sshd:/usr/sbin/nologin\nnobody:x:65534:65534:Nobody:/nonexistent:/usr/sbin/nologin" },
+
+        "/etc/crontab": { "content": "# /etc/crontab - GregOS system crontab\n# m h  dom mon dow  user   command\n\n# system maintenance\n0  3   *   *   *    root   /usr/sbin/logrotate /etc/logrotate.conf\n15 *   *   *   *    root   /usr/bin/entropy-check >> /var/log/syslog 2>&1\n\n# \u2500\u2500 greg's daemon chain \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n*/1 *  *   *   *    greg   /home/greg/bin/shift < /dev/entropy | /home/greg/bin/remap | /home/greg/bin/align | /home/greg/bin/exec >> /var/log/daemon.log 2>&1\n*/1 *  *   *   *    greg   /home/greg/bin/shift < /dev/entropy | /home/greg/bin/remap | /home/greg/bin/exec >> /var/log/daemon.log 2>&1\n*/1 *  *   *   *    greg   /home/greg/bin/remap < /dev/entropy | /home/greg/bin/align | /home/greg/bin/exec >> /var/log/daemon.log 2>&1\n*/1 *  *   *   *    greg   /home/greg/bin/shift < /dev/entropy | /home/greg/bin/align >> /var/log/daemon.log 2>&1\n\n# keep the channel open" },
+
+        "/etc/modules.conf": { "content": "# /etc/modules.conf - module load order\n#\n# Core devices\nrf0         /lib/modules/0.9.851/rf0.ko         # SDR hardware entropy source\nentropy     (built-in)                           # entropy pool management\n\n# Extended pipeline (added 0.9.2)\ntransform   (built-in)                           # sys_transform(), sys_chain_exec()\n\n# Post-pipeline (added 0.9.3)\nsignal      /lib/modules/0.9.851/signal.ko       # depends: transform, entropy" },
+
+        "/etc/gresos-release": { "content": "GregOS 2.0.1-dev\nBUILD: 2026-01-22\nKERNEL: 0.9.851-greg\nARCH: x86_64\nCODENAME: rf0\nCHANNEL: unstable" },
+
+        "/var/log/syslog": { "content": "Jan 22 00:00:01 gregoryalan syslogd: started\nJan 22 00:00:01 gregoryalan kernel: gresos-kernel 0.9.851 boot complete\nJan 22 00:00:02 gregoryalan sshd[47]: Server listening on 0.0.0.0 port 22\nJan 22 00:00:02 gregoryalan cron[63]: (CRON) INFO (pidfile fd = 3)\nJan 22 00:00:03 gregoryalan gregd[847]: daemon chain started (4 workers)\nJan 22 00:00:03 gregoryalan gregd[847]: source: /dev/entropy (rf0 hw)\nJan 22 00:00:03 gregoryalan gregd[847]: pool level: nominal\nJan 22 00:15:01 gregoryalan entropy-check: pool 3847, refill nominal\nJan 22 00:30:01 gregoryalan entropy-check: pool 3841, refill nominal\nJan 22 00:45:01 gregoryalan entropy-check: pool 3847, refill nominal\nJan 22 01:00:01 gregoryalan entropy-check: pool 3844, refill nominal" },
+
+        "/home/greg/bin/shift": { "content": "#!/usr/bin/env bash\n# shift - Bitwise stream transform\n# v2.1.0 (2025-08-14)\n#\n# Applies rotational bit-shifting to each byte in the\n# input stream. Configurable offset with default of 7\n# bits. Transform is reversible with the -r flag.\n#\n# Usage: shift [options] < input > output\n#   -o N    Bit offset (default: 7)\n#   -r      Reverse transform\n#\n# Part of the rf0 analysis toolkit.\n# Gregory Alan, 2025" },
+
+        "/home/greg/bin/remap": { "content": "#!/usr/bin/env bash\n# remap - Byte substitution transform (bijective)\n# v1.4.0 (2025-09-02)\n#\n# Applies bijective byte-level substitution using a\n# built-in mapping table. Every input byte maps to\n# exactly one output byte. Deterministic and reversible.\n#\n# Usage: remap [options] < input > output\n#   -t FILE    Use alternate substitution table\n#   -r         Reverse mapping\n#\n# Part of the rf0 analysis toolkit.\n# Gregory Alan, 2025" },
+
+        "/home/greg/bin/align": { "content": "#!/usr/bin/env bash\n# align - Stream frame alignment\n# v3.0.1 (2025-09-20)\n#\n# Segments input stream into fixed-width frames for\n# downstream consumption. Incomplete trailing frames\n# are padded with null bytes.\n#\n# Usage: align [options] < input > output\n#   -w N    Frame width in bytes (default: 847)\n#   -s      Strip padding on output\n#\n# Part of the rf0 analysis toolkit.\n# Gregory Alan, 2025" },
+
+        "/home/greg/bin/exec": { "content": "#!/usr/bin/env bash\n# exec - Stream execution engine (sandboxed)\n# v4.2.0 (2025-10-12)\n#\n# Interprets aligned byte frames as executable micro-ops.\n# Sandboxed by default \u2014 no filesystem or network access\n# unless explicitly disabled.\n#\n# Usage: exec [options] < input > output\n#   --sandbox=on|off   Toggle sandbox (default: on)\n#   --analyze          Log execution patterns to stderr\n#\n# Part of the rf0 analysis toolkit.\n# Gregory Alan, 2025" },
+
+        "/home/greg/.bashrc": { "content": "# ~/.bashrc - Gregory Alan\nexport PATH=\"$HOME/bin:$PATH\"\nexport EDITOR=vim\nalias ll='ls -la'\nalias entropy='cat /proc/entropy_avail'\nalias dlog='tail -20 /var/log/daemon.log'\n\n# quick chain test\nalias chaintest='shift < /dev/entropy | remap | align | exec 2>/dev/null; echo $?'" }
+    }
+}

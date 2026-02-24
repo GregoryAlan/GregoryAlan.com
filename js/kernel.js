@@ -261,6 +261,7 @@ const Kernel = {
                 const stateDef = stateMap[current];
                 if (stateDef?.transitions?.[id]) {
                     const next = stateDef.transitions[id];
+                    const prev = current;
                     this._currentStates[huntId] = next;
                     sessionStorage.setItem('hunt_states', JSON.stringify(this._currentStates));
                     const nextDef = stateMap[next];
@@ -269,11 +270,17 @@ const Kernel = {
                             this.setFlag(k, v);
                         }
                     }
+                    EventBus.emit('hunt:state-changed', { huntId, from: prev, to: next });
                 }
             }
 
             this.checkTriggers('discovery', id);
             this.checkTriggers('count', Object.keys(this.discoveries).length);
+            EventBus.emit('discovery:made', {
+                id,
+                timestamp: this.discoveries[id],
+                count: Object.keys(this.discoveries).length,
+            });
         },
 
         has(id) { return !!this.discoveries[id]; },
@@ -431,6 +438,7 @@ const Kernel = {
 
         reset() {
             this._triggers.length = 0;
+            EventBus.reset();
         },
     },
 

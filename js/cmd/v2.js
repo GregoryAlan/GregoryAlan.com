@@ -34,9 +34,7 @@ function installPackage(name) {
 
     Shell.register(name, cmd);
 
-    if (binTools.manPages[name]) {
-        Kernel.fs.addManPage(name, binTools.manPages[name]);
-    }
+    // Man pages already loaded from content/man-pages.json
 
     if (!Kernel.fs._fileTree.bin) {
         Kernel.fs._fileTree.bin = {};
@@ -57,7 +55,6 @@ function restoreInstalledPackages() {
     for (const name of installed) {
         const cmd = (theSignalHunt.commands[name]) || binTools.commands[name];
         if (cmd) Shell.register(name, cmd);
-        if (binTools.manPages[name]) Kernel.fs.addManPage(name, binTools.manPages[name]);
         if (!Kernel.fs._fileTree.bin) Kernel.fs._fileTree.bin = {};
         Kernel.fs._fileTree.bin[name] = 'file';
     }
@@ -68,20 +65,8 @@ function restoreInstalledPackages() {
 const v2CommandsPack = {
     id: 'v2-commands',
 
-    files: {
-        text: {
-            'migration.conf': '# GregOS Migration Configuration\n'
-                + '# Devices carried forward from v1.0 ROM\n'
-                + '#\n'
-                + '# device        type      status\n'
-                + '# \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n'
-                + '  /dev/tty1     terminal  active\n'
-                + '  /dev/eth0     network   active\n'
-                + '  /dev/sda1     disk      mounted\n'
-                + '  /dev/rf0      radio     pending\n',
-        },
-        hidden: {},
-    },
+    // Static files loaded from content/v2.0-system.json
+    files: { text: {}, hidden: {} },
 
     directories: {},
 
@@ -183,52 +168,7 @@ const v2CommandsPack = {
         },
     },
 
-    manPages: {
-        pkg: 'PKG(1)                       GregOS Manual                       PKG(1)\n\n'
-            + 'NAME\n'
-            + '       pkg - GregOS package manager\n\n'
-            + 'SYNOPSIS\n'
-            + '       pkg update\n'
-            + '       pkg list\n'
-            + '       pkg install <package>\n'
-            + '       pkg installed\n\n'
-            + 'DESCRIPTION\n'
-            + '       pkg manages the installation of utility packages from\n'
-            + '       the GregOS repository. Packages are installed to ~/bin\n'
-            + '       and become available as commands.\n\n'
-            + 'COMMANDS\n'
-            + '       update      Synchronize the package repository index.\n'
-            + '                   Must be run before list or install.\n\n'
-            + '       list        Display available packages with version,\n'
-            + '                   size, and installation status.\n\n'
-            + '       install     Download and install a package by name.\n\n'
-            + '       installed   Show currently installed packages.\n\n'
-            + 'AUTHOR\n'
-            + '       GregOS Package System\n\n'
-            + 'SEE ALSO\n'
-            + '       man(1)',
-
-        mount: 'MOUNT(8)                     GregOS Manual                     MOUNT(8)\n\n'
-            + 'NAME\n'
-            + '       mount - mount a filesystem\n\n'
-            + 'SYNOPSIS\n'
-            + '       mount [device]\n\n'
-            + 'DESCRIPTION\n'
-            + '       Without arguments, mount displays currently mounted\n'
-            + '       filesystems. With a device argument, attempts to mount\n'
-            + '       the specified device.\n\n'
-            + '       Devices from the v1.0 ROM migration are listed in\n'
-            + '       migration.conf. Pending devices may require manual\n'
-            + '       mounting.\n\n'
-            + 'DIAGNOSTICS\n'
-            + '       If a device fault occurs, check dmesg(1) for details.\n\n'
-            + 'FILES\n'
-            + '       /etc/migration.conf    Device migration manifest\n\n'
-            + 'AUTHOR\n'
-            + '       GregOS Kernel Team\n\n'
-            + 'SEE ALSO\n'
-            + '       dmesg(1), migration.conf',
-    },
+    // Man pages loaded from content/man-pages.json
 
     triggers: [],
 };

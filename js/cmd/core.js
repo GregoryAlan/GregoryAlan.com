@@ -17,49 +17,7 @@ const coreCommands = {
     help: () => {
         const names = Shell.listVisibleCommands().sort();
         let msg = 'Available commands:\n';
-        const descs = {
-            help: 'Show this help message',
-            ls: 'List directory contents',
-            cd: 'Change directory (use .. to go up)',
-            pwd: 'Print working directory',
-            cat: 'Display file contents',
-            open: 'Open file or current folder in browser',
-            whoami: 'Display system info',
-            history: 'Show command history',
-            clear: 'Clear terminal',
-            reboot: 'Reboot system',
-            rm: 'Remove files',
-            man: 'View manual pages',
-            sudo: 'Execute as superuser',
-            status: 'Show system status',
-            date: 'Display current date and time',
-            echo: 'Print arguments to output',
-            uname: 'Print system information',
-            wc: 'Word, line, and byte count',
-            head: 'Output the first part of files',
-            grep: 'Search file contents for a pattern',
-            uptime: 'Show system uptime',
-            hostname: 'Show system hostname',
-            id: 'Display user identity',
-            ps: 'Report process status',
-            df: 'Report filesystem disk space',
-            free: 'Display memory usage',
-            env: 'Display environment variables',
-            pkg: 'Package manager',
-            mount: 'Mount a filesystem',
-            w: 'Show who is logged on',
-            finger: 'User information lookup',
-            last: 'Show last logins',
-            dmesg: 'Print kernel messages',
-            decode: 'Hex/base64 decoder',
-            rot13: 'ROT13 cipher',
-            freq: 'Letter frequency analysis',
-            entropy: 'Shannon entropy calculator',
-            crc: 'CRC32 checksum',
-            strings: 'Extract printable strings',
-            su: 'Switch user',
-            mail: 'Read mail',
-        };
+        const descs = ManifestLoader._helpDescs;
         for (const name of names) {
             const d = descs[name] || '';
             msg += '  ' + name.padEnd(15) + '- ' + d + '\n';
@@ -67,12 +25,10 @@ const coreCommands = {
         return msg.trimEnd();
     },
 
-    ls: (args) => {
-        // Parse flags and optional path argument
-        const tokens = args ? args.split(/\s+/) : [];
-        const flags = tokens.filter(t => t.startsWith('-')).join('');
-        const showHidden = flags.includes('a');
-        const pathArg = tokens.find(t => !t.startsWith('-'));
+    ls: (args, stdin, parsed) => {
+        parsed = parsed || parseArgs(args || '');
+        const showHidden = !!parsed.flags.a;
+        const pathArg = parsed.positional[0];
 
         let dir, isRoot;
         if (pathArg) {
@@ -152,6 +108,7 @@ const coreCommands = {
             const fullPath = '/' + pathArr.join('/');
             Kernel.hunt.checkTriggers('file_read', fullPath);
         }
+        EventBus.emit('file:read', { path: args, content });
         return content.replace(/\n/g, '<br>');
     },
 

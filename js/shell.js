@@ -36,8 +36,10 @@ const Shell = {
 
         if (!command) return '';
         if (this._commands[command]) {
-            const result = this._commands[command](args);
+            const parsed = parseArgs(args);
+            const result = this._commands[command](args, null, parsed);
             Kernel.hunt.checkTriggers('command', command);
+            EventBus.emit('command:executed', { command, args, parsed, output: result });
             return result;
         }
         return `${command}: command not found. Type 'help' for available commands.`;
@@ -56,10 +58,12 @@ const Shell = {
                 return `${command}: command not found`;
             }
 
-            const result = this._commands[command](args, stdin);
+            const parsed = parseArgs(args);
+            const result = this._commands[command](args, stdin, parsed);
             if (result === null) return null;
 
             Kernel.hunt.checkTriggers('command', command);
+            EventBus.emit('command:executed', { command, args, parsed, output: result });
             stdin = this.stripHTML(result) || '';
         }
 

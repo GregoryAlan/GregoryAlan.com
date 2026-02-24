@@ -59,26 +59,11 @@ const theSignalHunt = {
         }
     },
 
+    // Static files (.rf0.buf, /proc/0/*) loaded from content/signal-hunt.json
+    // Only computed hidden files stay here
     files: {
         text: {},
         hidden: {
-            '.rf0.buf': {
-                gate: 'rf0-mount-failed',
-                onRead: 'rf-found',
-                content: 'rf0: rx ring overrun (847 bytes not consumed)\n'
-                    + 'checksum: a7 3f ?? ??\n\n'
-                    + '0000  7f 45 4c 46 02 01 01 00  00 00 00 00 00 00 00 00\n'
-                    + '0010  02 00 3e 00 01 00 00 00  00 03 47 00 00 00 00 00\n'
-                    + '0020  4e 4f 52 4d 41 4c 20 53  59 53 54 45 4d 20 4f 50\n'
-                    + '0030  45 52 41 54 49 4f 4e 20  49 53 20 41 20 4c 49 45\n'
-                    + '      [354 bytes dropped]\n'
-                    + '0190  72 65 6c 61 79 20 2d 2d  74 61 72 67 65 74 3d 30\n'
-                    + '01a0  2e 30 2e 30 2e 30 3a 34  31 31 39\n\n'
-                    + 'end of buffer\n'
-                    + 'timestamp: 1970-01-01T00:00:00.012Z\n'
-                    + 'origin: unknown'
-            },
-
             '.node': {
                 gate: 'contact-made',
                 content: () => 'Proto  Local Address          Foreign Address        State       PID\n'
@@ -90,39 +75,7 @@ const theSignalHunt = {
         },
     },
 
-    treeFiles: {
-        '/proc/0/status': {
-            gate: 'contact-made',
-            content: 'Name:\t(unknown)\n'
-                + 'Umask:\t0022\n'
-                + 'State:\tR (running)\n'
-                + 'Tgid:\t0\n'
-                + 'Pid:\t0\n'
-                + 'PPid:\t0\n'
-                + 'Uid:\t1002\t1002\t1002\t1002\n'
-                + 'Gid:\t1002\t1002\t1002\t1002\n'
-                + 'FDSize:\t0\n'
-                + 'Threads:\t1\n'
-                + 'voluntary_ctxt_switches:\t0\n'
-                + 'nonvoluntary_ctxt_switches:\t847',
-        },
-        '/proc/0/environ': {
-            gate: 'contact-made',
-            content: 'USER=dhollis\n'
-                + 'HOME=/home/dhollis\n'
-                + 'SHELL=/bin/bash\n'
-                + 'TERM=vt100\n'
-                + 'HOSTNAME=gregcorp.internal\n'
-                + 'DEPT=Human Resources\n'
-                + 'EMPLOYEE_ID=GC-0012\n'
-                + 'LANG=en_US\n'
-                + 'TZ=US/Pacific',
-        },
-        '/proc/0/cmdline': {
-            gate: 'contact-made',
-            content: '/dev/rf0 --listen --persist',
-        },
-    },
+    treeFiles: {},
 
     directories: {},
 
