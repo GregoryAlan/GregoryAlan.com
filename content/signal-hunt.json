@@ -2,6 +2,12 @@
     "id": "signal-hunt",
     "description": "The Signal hunt - gated files for the rf0 discovery chain",
 
+    "textFiles": {
+        "signal:decode-output": "Decoding hex...\n\nELF binary detected in input\nmapped segment at 0x847\n<span style=\"color:#f55\">segfault at 0x847: unexpected exec in rx buffer</span>",
+
+        "signal:strings-output": "Extracting readable strings from .rf0.buf...\n\nELF\nNORMAL SYSTEM OPERATION IS A LIE\nrelay --target=0.0.0.0:4119 --persist\n/dev/rf0\n/dev/null\nPID 0\nhandshake"
+    },
+
     "hiddenFiles": {
         ".rf0.buf": {
             "type": "gated",
@@ -29,5 +35,34 @@
             "gate": "contact-made",
             "content": "/dev/rf0 --listen --persist"
         }
+    },
+
+    "sequences": {
+        "mount-crash": [
+            { "text": "mount: mounting /dev/rf0 ...", "delay": 2000 },
+            { "text": "rf0: device probing ...", "delay": 1500 },
+            { "text": "rf0: firmware 1.0-ROM detected", "delay": 500 },
+            { "text": "rf0: loading driver ... done", "delay": 800 },
+            { "text": "rf0: initializing rx buffer ...", "delay": 3000 },
+            { "text": "rf0: rx ring overrun detected", "delay": 500 },
+            { "text": "rf0: 847 bytes in buffer (unconsumed since v1.0)", "delay": 800 },
+            { "text": "rf0: attempting recovery ...", "delay": 2000 },
+            { "text": "rf0: buffer checksum: a7 3f ?? ??", "delay": 500 },
+            { "text": "rf0: WARN: checksum incomplete", "delay": 1500, "style": "color:var(--warn)" },
+            { "text": "rf0: ERR: buffer contains executable segment (ELF marker at offset 0x00)", "delay": 800, "style": "color:var(--error)" },
+            { "text": "rf0: FATAL: refusing to mount \u2014 unverified executable content", "delay": 500, "style": "color:var(--error);font-weight:bold" },
+            { "text": "kernel: rf0: device fault \u2014 dumping buffer to .rf0.buf", "delay": 800 },
+            { "text": "kernel: rf0: 847 bytes written", "delay": 2000 },
+            { "text": "Segmentation fault (core dumped)", "delay": 3000, "style": "color:var(--error);font-weight:bold" },
+            { "text": "kernel panic - not syncing: device fault in rf0 driver", "delay": 0, "style": "color:var(--warn);font-weight:bold" }
+        ],
+
+        "signal-connect": [
+            { "text": "rf0: connecting to 0.0.0.0:4119", "delay": 2000 },
+            { "text": "rf0: SYN sent ................ ACK", "delay": 4500 },
+            { "text": "rf0: connection pending", "delay": 7000 },
+            { "text": "rf0: connection established from 0.0.0.0", "delay": 10000 },
+            { "text": "rf0: session opened on tty0", "delay": 12000 }
+        ]
     }
 }

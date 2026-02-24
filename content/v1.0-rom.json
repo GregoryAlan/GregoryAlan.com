@@ -1,4 +1,23 @@
 {
     "id": "v1.0-rom",
-    "description": "v1.0 ROM firmware — no filesystem, commands are firmware monitor"
+    "description": "v1.0 ROM firmware — no filesystem, commands are firmware monitor",
+
+    "textFiles": {
+        "rom:status": "RF0 DIAGNOSTICS\nfirmware:  1.0-ROM\nuptime:    847h 14m\nrf:        847.0MHz LOCK\nantenna:   ACTIVE\nrelay:     STANDBY\nrx buf:    847 bytes (unconsumed)\ntx buf:    0 bytes\nupdate:    AVAILABLE",
+
+        "rom:post": "RF0-CR POST RESULTS\n===================\nROM     1.0         OK\nRAM     512K        OK\nADC     12-bit      OK\nPLL     4119.0 kHz  LOCK\nANT                 ACTIVE — NO CARRIER\nFIFO    847/4096    WARN — NOT CONSUMED\nRELAY               STANDBY\n\n6/7 OK, 1 WARN\nPOST completed at init",
+
+        "rom:info": "RF0-CR DEVICE INFORMATION\n=========================\nmodel:     RF0-CR (crystal receiver)\nserial:    GC-0847\nmfg:       Gregory Alan Computing, Inc.\nmfg_date:  1987\nfirmware:  1.0-ROM\npll_freq:  4119.0 kHz\npll_mode:  rx_lock\nadc_res:   12-bit\nfifo_sz:   4096 bytes\nrx_gain:   auto\nrx_bw:     12.5 kHz",
+
+        "rom:log": "RF0 STATION LOG\n[2026-01-22 03:14:00] init from ROM\n[2026-01-22 03:14:01] ant0: ACTIVE\n[2026-01-22 03:14:02] relay: STANDBY\n[............]\n[2026-01-22 08:47:00] rx0: 847 bytes buffered (unconsumed)\n[2026-01-22 08:47:01] rx0: checksum FAIL — pkt held\n[............]\nEnd of log.",
+
+        "rom:rxbuf": "RX FIFO — 847/4096 bytes (STALE)\n\n0000: 7f454c46 02010100 00000000 00000000\n0010: 02003e00 01000000 00034700 00000000\n0020: 4e4f524d 414c2053 59535445 4d204f50\n0030: 45524154 494f4e20 49532041 204c4945\n0040: 00000000 00000000 00000000 00000000\n*\n0190: 72656c61 79202d2d 74617267 65743d30\n01a0: 2e302e30 2e303a34 31313900 00000000\n01b0: 00000000 00000000 00000000 00000000\n*\n034e:\n\nchecksum: FAIL"
+    },
+
+    "sequences": {
+        "boot-v1.0": [
+            { "text": "RF0 Broadcast Repeater v1.0", "delay": 300 },
+            { "text": "S/N RF0-4119-0847", "delay": 200 }
+        ]
+    }
 }

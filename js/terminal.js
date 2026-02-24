@@ -174,27 +174,10 @@ const Terminal = {
     // ─── Boot Sequence ──────────────────────────────────────
 
     getBootLines(version) {
-        if (version < 1.1) {
-            return [
-                { text: 'RF0 Broadcast Repeater v1.0', delay: 300 },
-                { text: 'S/N RF0-4119-0847', delay: 200 },
-            ];
-        }
+        if (version < 1.1) return ManifestLoader.getSequence('boot-v1.0');
+        if (version < 2.0) return ManifestLoader.getSequence('boot-v1.1');
 
-        if (version < 2.0) {
-            return [
-                { text: 'GregBIOS 1.2 (C) 1987 Gregory Alan Computing', delay: 300 },
-                { text: 'POST: CPU \u2014 OK', delay: 250 },
-                { text: 'POST: Memory \u2014 OK', delay: 250 },
-                { text: 'POST: sda1 \u2014 gregfs mounted', delay: 300 },
-                { text: '', delay: 200 },
-                { text: 'Loading gregos-kernel 0.9.847 ...', delay: 600 },
-                { text: '', delay: 200 },
-                { text: 'Starting terminal ...', delay: 400 },
-            ];
-        }
-
-        // v2.0 — full boot
+        // v2.0 — full boot (dynamic — uses navigator APIs, stays in JS)
         const cores = navigator.hardwareConcurrency || '?';
         const mem = navigator.deviceMemory ? navigator.deviceMemory + ' GB' : '640K';
         const net = navigator.connection ? navigator.connection.effectiveType : null;
@@ -407,24 +390,7 @@ const Terminal = {
     async runMountCrash() {
         this.el.input.disabled = true;
 
-        const crashLines = [
-            { text: 'mount: mounting /dev/rf0 ...', delay: 2000 },
-            { text: 'rf0: device probing ...', delay: 1500 },
-            { text: 'rf0: firmware 1.0-ROM detected', delay: 500 },
-            { text: 'rf0: loading driver ... done', delay: 800 },
-            { text: 'rf0: initializing rx buffer ...', delay: 3000 },
-            { text: 'rf0: rx ring overrun detected', delay: 500 },
-            { text: 'rf0: 847 bytes in buffer (unconsumed since v1.0)', delay: 800 },
-            { text: 'rf0: attempting recovery ...', delay: 2000 },
-            { text: 'rf0: buffer checksum: a7 3f ?? ??', delay: 500 },
-            { text: 'rf0: WARN: checksum incomplete', delay: 1500, style: 'color:var(--warn)' },
-            { text: 'rf0: ERR: buffer contains executable segment (ELF marker at offset 0x00)', delay: 800, style: 'color:var(--error)' },
-            { text: 'rf0: FATAL: refusing to mount \u2014 unverified executable content', delay: 500, style: 'color:var(--error);font-weight:bold' },
-            { text: 'kernel: rf0: device fault \u2014 dumping buffer to .rf0.buf', delay: 800 },
-            { text: 'kernel: rf0: 847 bytes written', delay: 2000 },
-            { text: 'Segmentation fault (core dumped)', delay: 3000, style: 'color:var(--error);font-weight:bold' },
-            { text: 'kernel panic - not syncing: device fault in rf0 driver', delay: 0, style: 'color:var(--warn);font-weight:bold' },
-        ];
+        const crashLines = ManifestLoader.getSequence('mount-crash');
 
         const crashDiv = document.createElement('div');
         crashDiv.className = 'output';

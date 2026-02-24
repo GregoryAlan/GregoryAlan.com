@@ -139,10 +139,7 @@ const theSignalDriver = {
             const data = parts.slice(1).join('') || (stdin ? stdin.trim() : '');
             if (parts[0] === '--hex' && data.toLowerCase().startsWith('4e4f524d')) {
                 Kernel.driver.discover('rf-executed');
-                return 'Decoding hex...\n\n'
-                    + 'ELF binary detected in input\n'
-                    + 'mapped segment at 0x847\n'
-                    + '<span style="color:#f55">segfault at 0x847: unexpected exec in rx buffer</span>';
+                return Kernel.fs.read('signal:decode-output');
             }
             return binTools.commands.decode(args, stdin);
         },
@@ -150,14 +147,7 @@ const theSignalDriver = {
         strings: (args, stdin) => {
             if (!stdin && args === '.rf0.buf') {
                 Kernel.driver.discover('rf-strings');
-                return 'Extracting readable strings from .rf0.buf...\n\n'
-                    + 'ELF\n'
-                    + 'NORMAL SYSTEM OPERATION IS A LIE\n'
-                    + 'relay --target=0.0.0.0:4119 --persist\n'
-                    + '/dev/rf0\n'
-                    + '/dev/null\n'
-                    + 'PID 0\n'
-                    + 'handshake';
+                return Kernel.fs.read('signal:strings-output');
             }
             return binTools.commands.strings(args, stdin);
         },
@@ -173,14 +163,7 @@ const theSignalDriver = {
             callback: (state) => {
                 state.setFlag('contact', true);
 
-                const messages = [
-                    { text: 'rf0: connecting to 0.0.0.0:4119', delay: 2000 },
-                    { text: 'rf0: SYN sent ................ ACK', delay: 4500 },
-                    { text: 'rf0: connection pending', delay: 7000 },
-                    { text: 'rf0: connection established from 0.0.0.0', delay: 10000 },
-                    { text: 'rf0: session opened on tty0', delay: 12000 },
-                ];
-
+                const messages = ManifestLoader.getSequence('signal-connect');
                 messages.forEach(({ text, delay }) => {
                     setTimeout(() => {
                         Terminal.appendSystemLine(text);

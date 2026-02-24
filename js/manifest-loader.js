@@ -11,6 +11,7 @@ const ManifestLoader = {
     _loaded: [],    // track loaded manifest IDs
     _cache: {},     // url → parsed manifest (survives reboot)
     _helpDescs: {}, // command → description (for help command)
+    _sequences: {}, // id → [{text, delay, style?}, ...] (timed display sequences)
 
     // Load a parsed manifest object (synchronous).
     load(manifest) {
@@ -58,6 +59,10 @@ const ManifestLoader = {
             Object.assign(this._helpDescs, manifest.helpDescriptions);
         }
 
+        if (manifest.sequences) {
+            Object.assign(this._sequences, manifest.sequences);
+        }
+
         this._loaded.push(manifest.id);
     },
 
@@ -98,10 +103,15 @@ const ManifestLoader = {
         }));
     },
 
+    getSequence(id) {
+        return this._sequences[id] || null;
+    },
+
     // Clear loaded state (called during version reset).
     // Cache persists — manifests don't need re-fetching on reboot.
     reset() {
         this._loaded = [];
         this._helpDescs = {};
+        this._sequences = {};
     },
 };
