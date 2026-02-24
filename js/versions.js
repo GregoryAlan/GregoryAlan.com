@@ -121,7 +121,7 @@ const computedNarrativeSeeds = {
 
     // spec: NARRATIVE-SEEDS.md > Thread 3 > /var/log/kern.log
     '/var/log/kern.log': (state) => {
-        let out = '[    0.000000] gresos-kernel 0.9.851 #851 SMP\n'
+        let out = '[    0.000000] gregos-kernel 0.9.851 #851 SMP\n'
             + '[    0.001203] CPU: x86_64 detected\n'
             + '[    0.012847] Memory: 512MB available\n'
             + '[    0.024100] gregfs: mounted / (rw)\n'

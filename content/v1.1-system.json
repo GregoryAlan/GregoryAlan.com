@@ -11,7 +11,7 @@
 
         "/etc/fstab": { "content": "# /etc/fstab - GregOS filesystem table\n#\n# <device>       <mount>      <type>   <options>        <dump> <pass>\n/dev/sda1        /            gregfs   defaults         0      1\nproc             /proc        proc     defaults         0      0\ntmpfs            /tmp         tmpfs    defaults         0      0\n/dev/rf0         /mnt/rf0     auto     noauto,user      0      0" },
 
-        "/proc/version": { "content": "gresos-kernel 0.9.847-greg (gcc 12.2.0) #847 SMP Jan 22 2026 00:00:00" },
+        "/proc/version": { "content": "gregos-kernel 0.9.847-greg (gcc 12.2.0) #847 SMP Jan 22 2026 00:00:00" },
 
         "/sys/firmware/bios": { "content": "GregBIOS 1.2\nVendor:       Gregory Alan Computing, Inc.\nRelease Date: 01/22/1987\nROM Size:     64 KB\n\nRevision History:\n  1.0  1985-03-14  Initial POST, 8-bit bus, 640K memory test\n  1.1  1986-08-22  rf0 antenna controller, extended memory detect\n  1.2  1987-01-22  Boot device priority, shipped with GregOS 1.1" },
 

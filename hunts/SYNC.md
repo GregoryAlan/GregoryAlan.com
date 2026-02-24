@@ -2,7 +2,7 @@
 
 Dashboard for the Lore/Code pipeline. Both agents read this at session start.
 
-Last updated: 2026-02-22
+Last updated: 2026-02-23
 
 ---
 
@@ -10,8 +10,8 @@ Last updated: 2026-02-22
 
 | Spec Document | Implemented | Draft | Drift | Aspirational | Total |
 |---------------|:-----------:|:-----:|:-----:|:------------:|:-----:|
-| NARRATIVE-SEEDS.md | 11 | 0 | 1 | 0 | 12 |
-| the-signal-storyline.md | 5 | 0 | 1 | 0 | 6 |
+| NARRATIVE-SEEDS.md | 12 | 0 | 0 | 0 | 12 |
+| the-signal-storyline.md | 6 | 0 | 0 | 0 | 6 |
 | NARRATIVE-ENGINE.md | 0 | 0 | 0 | 7 | 7 |
 | greg-corp-storyline.md | 7 | 0 | 0 | 0 | 7 |
 
@@ -21,8 +21,7 @@ Last updated: 2026-02-22
 
 | Spec | Section | Issue | Severity |
 |------|---------|-------|----------|
-| NARRATIVE-SEEDS.md | `/etc/gregos-release` | Spec says `GregOS 2.0.1`, code has `GregOS 2.0.1-dev` with extra `CHANNEL: unstable` line. Code is intentionally more detailed (dev build flavor). | Low — code extends spec, doesn't contradict |
-| the-signal-storyline.md | Act 5: `dmesg` | Storyline spec describes `dmesg` showing `rf0: device registered`, `connection from 0.0.0.0`, `PID 0: state=running`. Code in `the-signal.js:216` shows different baseline boot lines (`gregOS version 2.0`, `Memory: 640K`) vs `kern.log` in narrativeSeeds (`gresos-kernel 0.9.851`, `Memory: 512MB`). Two different "boot log" views exist with inconsistent baselines. | Medium — visitor sees both |
+| *(none)* | | | |
 
 ---
 
@@ -46,10 +45,7 @@ Code that exists without a spec document. Lore master should review and retroact
 
 ### For Lore Master
 
-| Item | Context | Priority |
-|------|---------|----------|
-| `dmesg` vs `kern.log` drift | `the-signal.js` dmesg baseline and `narrativeSeeds` kern.log baseline show different boot messages. Decide: should dmesg match kern.log? Or are they intentionally different views? | Medium |
-| `/etc/gregos-release` spec update | Code has `-dev` suffix and `CHANNEL: unstable` — update spec to match if intentional | Low |
+*(Nothing pending)*
 
 ---
 

@@ -188,7 +188,7 @@ const Terminal = {
                 { text: 'POST: Memory \u2014 OK', delay: 250 },
                 { text: 'POST: sda1 \u2014 gregfs mounted', delay: 300 },
                 { text: '', delay: 200 },
-                { text: 'Loading gresos-kernel 0.9.847 ...', delay: 600 },
+                { text: 'Loading gregos-kernel 0.9.847 ...', delay: 600 },
                 { text: '', delay: 200 },
                 { text: 'Starting terminal ...', delay: 400 },
             ];

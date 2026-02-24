@@ -70,10 +70,9 @@ last-synced: 2026-02-22
 ### Act 5: Not Alone
 
 <!-- contract
-status: drift
+status: implemented
 impl: hunts/the-signal.js:commands.w, commands.finger, commands.last, commands.dmesg, commands.strings, files.hidden['.node'], triggers[3-6]
-last-synced: 2026-02-22
-drift-notes: dmesg baseline boot lines in the-signal.js (line 216) differ from kern.log baseline in narrativeSeeds. dmesg shows "gregOS version 2.0" / "Memory: 640K" while kern.log shows "gresos-kernel 0.9.851" / "Memory: 512MB". Both are visible to the visitor.
+last-synced: 2026-02-23
 -->
 
 - `w` now shows 2 users — guest on tty1, ??? on tty0 from 0.0.0.0
@@ -205,7 +204,7 @@ From v1.0, do some exploration first:
 | Command | Expected Output |
 |---------|----------------|
 | `history` | Shows `.bash_history` entries from previous user. Last two entries: `cat version.txt`, `reboot -f`. |
-| `cat version.txt` | Normal header (`GregOS v1.1`, `Build: 2026.01.22`, `Kernel: 4.19.0-gregos`, `Update: available`) followed by an anomalous update manifest: `timestamp: 2091-11-15T03:14:00Z`, `checksum: a7 3f ?? ??`, `source: rf0`. The 2091 date is impossible — this system was built in 2026. |
+| `cat version.txt` | Normal header (`GregOS v1.1`, `Build: 2026.01.22`, `Kernel: 0.9.847-greg`, `Update: available`) followed by an anomalous update manifest: `timestamp: 2091-11-15T03:14:00Z`, `checksum: a7 3f ?? ??`, `source: rf0`. The 2091 date is impossible — this system was built in 2026. |
 | `reboot` | Just reboots into v1.1 again. No update. Plain reboot doesn't advance. |
 | `reboot -f` | **Update animation**: `Current version: 1.1`, `Update available: v2.0`, download/verify/install, then **full v2.0 boot** with hardware detection, device registration, etc. |
 
@@ -243,7 +242,7 @@ From v1.0, do some exploration first:
 | `finger guest` | Normal finger output. |
 | `finger root` | `finger: root: no such user` |
 | `last` | Only `guest` on `tty1`, `still logged in`. |
-| `dmesg` | 5 boot lines only. No rf0 entries. |
+| `dmesg` | 8 boot lines (kernel identity through `/dev/entropy` registration). No rf0 entries. |
 
 #### Act 3: Learn the Tool → Accidental Execution
 
@@ -270,7 +269,7 @@ From v1.0, do some exploration first:
 | `w` | **2 users** — `guest` on `tty1` and `???` on `tty0` from `0.0.0.0` running `/dev/rf0`. **crtBand** fires. |
 | `finger root` | Redacted name (█ blocks), `/dev/null` shell, last login `Jan  0 00:00` from `0.0.0.0` (red). **promptCorruption** fires. |
 | `last` | `guest` still logged in, plus red anomalous line: `???` on tty0 from `Jan  0 00:00`. **screenTear** fires. |
-| `dmesg` | Original 5 boot lines plus rf0 entries: `device registered`, `rx ring overrun`, `audit: pid=0`, red `connection from 0.0.0.0`, red `PID 0: state=running`. |
+| `dmesg` | Original 8 boot lines plus rf0 entries: `rx ring overrun`, `unexpected exec in rx buffer`, `audit: pid=0`, `/dev/signal registered`, `signal: mount`, red `PID 0: fork() from swapper`. |
 | `ls -a` | `.node` now visible. |
 | `cat .node` | Netstat-style table — rf0 protocol, `guest@tty1` local, redacted `████████@tty0` foreign, ESTABLISHED, PID 0. rtt `-3ms` (red). |
 | `strings .rf0.buf` | `NORMAL SYSTEM OPERATION IS A LIE`, `relay --target=0.0.0.0:4119 --persist`, etc. **textCorruption** fires. |

@@ -15,7 +15,7 @@
     },
 
     "treeFiles": {
-        "/proc/version": { "content": "gresos-kernel 0.9.851-greg (gcc 14.1.0) #851 SMP Feb 15 2026 00:00:00" },
+        "/proc/version": { "content": "gregos-kernel 0.9.851-greg (gcc 14.1.0) #851 SMP Feb 15 2026 00:00:00" },
 
         "/sys/firmware/bios": { "content": "GregBIOS 1.4\nVendor:       Gregory Alan Computing, Inc.\nRelease Date: 10/15/2025\nROM Size:     256 KB\nACPI:         2.0\nSMBIOS:       3.3.0\n\nRevision History:\n  1.0  1985-03-14  Initial POST, 8-bit bus, 640K memory test\n  1.1  1986-08-22  rf0 antenna controller, extended memory detect\n  1.2  1987-01-22  Boot device priority, shipped with GregOS 1.1\n  1.3  2025-06-01  ACPI table support, PCI bus enumeration\n  1.4  2025-10-15  Entropy source init, extended POST, 64-bit" },
 
@@ -25,9 +25,9 @@
 
         "/etc/modules.conf": { "content": "# /etc/modules.conf - module load order\n#\n# Core devices\nrf0         /lib/modules/0.9.851/rf0.ko         # SDR hardware entropy source\nentropy     (built-in)                           # entropy pool management\n\n# Extended pipeline (added 0.9.2)\ntransform   (built-in)                           # sys_transform(), sys_chain_exec()\n\n# Post-pipeline (added 0.9.3)\nsignal      /lib/modules/0.9.851/signal.ko       # depends: transform, entropy" },
 
-        "/etc/gresos-release": { "content": "GregOS 2.0.1-dev\nBUILD: 2026-01-22\nKERNEL: 0.9.851-greg\nARCH: x86_64\nCODENAME: rf0\nCHANNEL: unstable" },
+        "/etc/gregos-release": { "content": "GregOS 2.0.1-dev\nBUILD: 2026-01-22\nKERNEL: 0.9.851-greg\nARCH: x86_64\nCODENAME: rf0\nCHANNEL: unstable" },
 
-        "/var/log/syslog": { "content": "Jan 22 00:00:01 gregoryalan syslogd: started\nJan 22 00:00:01 gregoryalan kernel: gresos-kernel 0.9.851 boot complete\nJan 22 00:00:02 gregoryalan sshd[47]: Server listening on 0.0.0.0 port 22\nJan 22 00:00:02 gregoryalan cron[63]: (CRON) INFO (pidfile fd = 3)\nJan 22 00:00:03 gregoryalan gregd[847]: daemon chain started (4 workers)\nJan 22 00:00:03 gregoryalan gregd[847]: source: /dev/entropy (rf0 hw)\nJan 22 00:00:03 gregoryalan gregd[847]: pool level: nominal\nJan 22 00:15:01 gregoryalan entropy-check: pool 3847, refill nominal\nJan 22 00:30:01 gregoryalan entropy-check: pool 3841, refill nominal\nJan 22 00:45:01 gregoryalan entropy-check: pool 3847, refill nominal\nJan 22 01:00:01 gregoryalan entropy-check: pool 3844, refill nominal" },
+        "/var/log/syslog": { "content": "Jan 22 00:00:01 gregoryalan syslogd: started\nJan 22 00:00:01 gregoryalan kernel: gregos-kernel 0.9.851 boot complete\nJan 22 00:00:02 gregoryalan sshd[47]: Server listening on 0.0.0.0 port 22\nJan 22 00:00:02 gregoryalan cron[63]: (CRON) INFO (pidfile fd = 3)\nJan 22 00:00:03 gregoryalan gregd[847]: daemon chain started (4 workers)\nJan 22 00:00:03 gregoryalan gregd[847]: source: /dev/entropy (rf0 hw)\nJan 22 00:00:03 gregoryalan gregd[847]: pool level: nominal\nJan 22 00:15:01 gregoryalan entropy-check: pool 3847, refill nominal\nJan 22 00:30:01 gregoryalan entropy-check: pool 3841, refill nominal\nJan 22 00:45:01 gregoryalan entropy-check: pool 3847, refill nominal\nJan 22 01:00:01 gregoryalan entropy-check: pool 3844, refill nominal" },
 
         "/home/greg/bin/shift": { "content": "#!/usr/bin/env bash\n# shift - Bitwise stream transform\n# v2.1.0 (2025-08-14)\n#\n# Applies rotational bit-shifting to each byte in the\n# input stream. Configurable offset with default of 7\n# bits. Transform is reversible with the -r flag.\n#\n# Usage: shift [options] < input > output\n#   -o N    Bit offset (default: 7)\n#   -r      Reverse transform\n#\n# Part of the rf0 analysis toolkit.\n# Gregory Alan, 2025" },
 

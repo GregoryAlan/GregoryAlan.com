@@ -169,11 +169,14 @@ const theSignalHunt = {
         },
 
         dmesg: (args) => {
-            let out = '[    0.000000] gregOS version 2.0 (tty1)\n'
-                + '[    0.001234] PCI: bus probe complete\n'
-                + '[    0.003456] Memory: 640K available\n'
-                + '[    0.012000] CPU0: 1 core detected\n'
-                + '[    0.045000] eth0: link up, 100Mbps full-duplex';
+            let out = '[    0.000000] gregos-kernel 0.9.851 #851 SMP\n'
+                + '[    0.001203] CPU: x86_64 detected\n'
+                + '[    0.012847] Memory: 512MB available\n'
+                + '[    0.024100] gregfs: mounted / (rw)\n'
+                + '[    0.031000] dev: /dev/null registered\n'
+                + '[    0.031200] dev: /dev/zero registered\n'
+                + '[    0.031400] dev: /dev/random registered\n'
+                + '[    0.032000] dev: /dev/entropy registered (rf0 hw backing)';
 
             if (Kernel.hunt.flags.contact) {
                 out += '\n[  847.000000] rf0: device registered\n'

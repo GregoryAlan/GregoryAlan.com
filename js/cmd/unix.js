@@ -269,7 +269,7 @@ const v1_1CommandsPack = {
             + 'NAME\n'
             + '       GregOS - Gregory Alan Computing operating system\n\n'
             + 'DESCRIPTION\n'
-            + '       GregOS is a custom operating system built on the gresos-kernel.\n'
+            + '       GregOS is a custom operating system built on the gregos-kernel.\n'
             + '       The system provides a standard UNIX interface for navigating\n'
             + '       projects, games, and experiments by its creator.\n\n'
             + '       The current kernel version is ' + (Kernel.kernelVersion.get() || '0.9.847-greg') + '.\n\n'
