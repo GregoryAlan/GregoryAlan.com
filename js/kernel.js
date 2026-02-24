@@ -3,7 +3,7 @@
 // Owns all persistent state: filesystem, drivers, session.
 // Everything else accesses state through Kernel methods.
 //
-// Depends on: glitch.js (runGlitchEffect)
+// Depends on: events.js (EventBus), glitch.js (runGlitchEffect)
 
 const Kernel = {
 
@@ -74,26 +74,37 @@ const Kernel = {
         },
 
         read(name) {
-            if (this._textFiles[name]) return this._textFiles[name];
-            if (name in this._hiddenFiles) {
-                let content = this._hiddenFiles[name];
+            let content = null;
+            let pathArr = null;
+
+            if (this._textFiles[name]) {
+                content = this._textFiles[name];
+            } else if (name in this._hiddenFiles) {
+                content = this._hiddenFiles[name];
                 if (typeof content === 'function') {
                     content = content(Kernel.driver);
                     if (content === null) return null;
                 }
-                return content;
+            } else {
+                // Fall through to tree resolution
+                pathArr = this._resolve(name);
+                const node = this._getNode(pathArr);
+                if (node === null || node === undefined) return null;
+                if (node === 'file') return null;  // external HTML, not readable
+                if (typeof node === 'object') return null;  // directory, not readable
+                if (typeof node === 'function') {
+                    content = node(Kernel.driver);
+                    if (content === null) return null;
+                } else {
+                    content = node;  // string content
+                }
             }
-            // Fall through to tree resolution
-            const pathArr = this._resolve(name);
-            const node = this._getNode(pathArr);
-            if (node === null || node === undefined) return null;
-            if (node === 'file') return null;  // external HTML, not readable
-            if (typeof node === 'object') return null;  // directory, not readable
-            if (typeof node === 'function') {
-                const content = node(Kernel.driver);
-                return content === null ? null : content;
+
+            if (content !== null) {
+                if (!pathArr) pathArr = this._resolve(name);
+                EventBus.emit('file:read', { name, path: pathArr });
             }
-            return node;  // string content
+            return content;
         },
 
         stat(name) {
@@ -134,10 +145,6 @@ const Kernel = {
                 this._homePrefix.forEach(p => this._cwd.push(p));
                 return { ok: true };
             }
-            if (path.startsWith('~/')) {
-                const abs = '/' + this._homePrefix.join('/') + '/' + path.slice(2);
-                return this.chdir(abs);
-            }
 
             // Profile boundary: clamp to home prefix
             const hp = this._homePrefix;
@@ -149,40 +156,12 @@ const Kernel = {
                 return arr;
             };
 
-            if (path === '/') {
-                this._cwd.length = 0;
-                clamp(this._cwd).forEach(p => this._cwd.push(p));
-                return { ok: true };
-            }
-            if (path === '.') return { ok: true };
-            if (path === '..') {
-                if (this._cwd.length > 0) this._cwd.pop();
-                const clamped = clamp([...this._cwd]);
-                this._cwd.length = 0;
-                clamped.forEach(p => this._cwd.push(p));
-                return { ok: true };
-            }
+            const testPath = this._resolve(path);
 
-            const isAbsolute = path.startsWith('/');
-            const parts = path.replace(/^\/+/, '').replace(/\/$/, '').split('/');
-            const testPath = isAbsolute ? [] : [...this._cwd];
-
-            for (const part of parts) {
-                if (part === '..') {
-                    if (testPath.length > 0) testPath.pop();
-                    continue;
-                }
-                if (part === '.' || part === '') continue;
-
-                let checkDir = this._fileTree;
-                for (const p of testPath) {
-                    checkDir = checkDir[p];
-                }
-
-                if (checkDir && typeof checkDir === 'object' && part in checkDir
-                    && typeof checkDir[part] === 'object') {
-                    testPath.push(part);
-                } else {
+            // Validate each segment is a real directory
+            for (let i = 1; i <= testPath.length; i++) {
+                const node = this._getNode(testPath.slice(0, i));
+                if (!node || typeof node !== 'object') {
                     return { error: `cd: ${path}: No such directory` };
                 }
             }
@@ -248,7 +227,6 @@ const Kernel = {
         flags: JSON.parse(sessionStorage.getItem('driver_flags') || '{}'),
         _stateMaps: {},
         _currentStates: JSON.parse(sessionStorage.getItem('driver_states') || '{}'),
-        _triggers: [],
         _registry: {},
 
         discover(id) {
@@ -274,8 +252,6 @@ const Kernel = {
                 }
             }
 
-            this.checkTriggers('discovery', id);
-            this.checkTriggers('count', Object.keys(this.discoveries).length);
             EventBus.emit('discovery:made', {
                 id,
                 timestamp: this.discoveries[id],
@@ -344,14 +320,25 @@ const Kernel = {
             return info;
         },
 
-        checkTriggers(type, value) {
-            for (const t of this._triggers) {
-                if (t.type !== type) continue;
-                if (t.match !== value) continue;
-                if (t.once && sessionStorage.getItem('trigger_' + t.type + '_' + t.match)) continue;
-                if (t.once) sessionStorage.setItem('trigger_' + t.type + '_' + t.match, '1');
-                if (t.effect) runGlitchEffect(t.effect, t.effectOpts || {});
-                if (t.callback) t.callback(Kernel.driver);
+        registerTriggers(triggers) {
+            for (const t of triggers) {
+                const eventType = t.type === 'discovery' ? 'discovery:made' :
+                                  t.type === 'command' ? 'command:executed' :
+                                  t.type === 'file_read' ? 'file:read' :
+                                  t.type === 'count' ? 'discovery:made' : null;
+                if (!eventType) continue;
+                const handler = (detail) => {
+                    const value = t.type === 'discovery' ? detail.id :
+                                  t.type === 'command' ? detail.command :
+                                  t.type === 'file_read' ? detail.name :
+                                  t.type === 'count' ? detail.count : null;
+                    if (value !== t.match) return;
+                    if (t.once && sessionStorage.getItem('trigger_' + t.type + '_' + t.match)) return;
+                    if (t.once) sessionStorage.setItem('trigger_' + t.type + '_' + t.match, '1');
+                    if (t.effect) runGlitchEffect(t.effect, t.effectOpts || {});
+                    if (t.callback) t.callback(Kernel.driver);
+                };
+                EventBus.on(eventType, handler);
             }
         },
 
@@ -426,7 +413,7 @@ const Kernel = {
             }
             if (def.directories) Kernel.fs.mergeFileTree(def.directories);
             if (def.manPages) Kernel.fs.mergeManPages(def.manPages);
-            if (def.triggers) this._triggers.push(...def.triggers);
+            if (def.triggers) this.registerTriggers(def.triggers);
             if (def.patches) {
                 if (def.patches.hiddenFiles) {
                     for (const [file, patchFn] of Object.entries(def.patches.hiddenFiles)) {
@@ -437,7 +424,6 @@ const Kernel = {
         },
 
         reset() {
-            this._triggers.length = 0;
             EventBus.reset();
         },
     },

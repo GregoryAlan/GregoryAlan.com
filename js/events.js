@@ -1,8 +1,7 @@
 // ─── EventBus ───────────────────────────────────────────────
 //
-// Pub/sub event system. Coexists with Kernel.driver.checkTriggers()
-// — new code subscribes via EventBus.on(), existing triggers
-// continue working unchanged.
+// Pub/sub event system. All triggers (discovery, command, file_read)
+// are registered as EventBus listeners via Kernel.driver.registerTriggers().
 //
 // Depends on: nothing (loads before kernel.js)
 

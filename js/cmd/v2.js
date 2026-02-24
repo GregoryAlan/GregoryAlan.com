@@ -174,3 +174,26 @@ const v2CommandsPack = {
 };
 
 Kernel.driver.declareDriver(v2CommandsPack);
+
+// ─── Tab Completions ────────────────────────────────────────
+
+Shell.registerCompletion('pkg', (argPrefix, parts) => {
+    if (parts.length === 2) {
+        return Shell.completeFromList(argPrefix, ['update', 'list', 'install', 'installed']);
+    }
+    if (parts.length === 3 && parts[1] === 'install') {
+        const installed = typeof getInstalledPackages === 'function' ? getInstalledPackages() : [];
+        return pkgRegistry
+            .map(p => p.name)
+            .filter(n => !installed.includes(n) && n.startsWith(parts[2]))
+            .map(n => 'install ' + n);
+    }
+    return [];
+});
+
+Shell.registerCompletion('mount', (argPrefix) => {
+    if (!Kernel.driver.has('rf0-mount-failed')) {
+        return Shell.completeFromList(argPrefix, ['/dev/rf0']);
+    }
+    return [];
+});

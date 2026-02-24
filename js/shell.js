@@ -11,9 +11,11 @@ const Shell = {
 
     _commands: {},
     _hiddenCommands: new Set(),
+    _completions: {},
 
     register(name, fn) { this._commands[name] = fn; },
     unregister(name) { delete this._commands[name]; },
+    registerCompletion(name, fn) { this._completions[name] = fn; },
 
     listCommands() { return Object.keys(this._commands); },
 
@@ -38,7 +40,6 @@ const Shell = {
         if (this._commands[command]) {
             const parsed = parseArgs(args);
             const result = this._commands[command](args, null, parsed);
-            Kernel.driver.checkTriggers('command', command);
             EventBus.emit('command:executed', { command, args, parsed, output: result });
             return result;
         }
@@ -62,7 +63,6 @@ const Shell = {
             const result = this._commands[command](args, stdin, parsed);
             if (result === null) return null;
 
-            Kernel.driver.checkTriggers('command', command);
             EventBus.emit('command:executed', { command, args, parsed, output: result });
             stdin = this.stripHTML(result) || '';
         }
@@ -110,6 +110,52 @@ const Shell = {
     _tabIndex: -1,
     _tabOriginal: '',
 
+    // Shared completion helper: complete filesystem paths.
+    // filter: 'dirs' (directories only), 'readable' (readable files),
+    //         'external' (HTML files marked as 'file')
+    completePath(argPrefix, filter) {
+        // Path-with-slash: resolve directory portion, list matching entries
+        if (argPrefix.includes('/')) {
+            const lastSlash = argPrefix.lastIndexOf('/');
+            const dirPart = argPrefix.slice(0, lastSlash + 1);
+            const node = Kernel.fs._getNode(Kernel.fs._resolve(dirPart));
+            if (!node || typeof node !== 'object') return [];
+            return Object.entries(node)
+                .filter(([, v]) => this._matchFilter(v, filter))
+                .map(([name]) => dirPart + name)
+                .filter(c => c.startsWith(argPrefix));
+        }
+
+        // No slash: list from current directory (+ flat stores for readable at root)
+        let candidates = [];
+        if (filter === 'readable' && Kernel.fs._cwd.length === 0) {
+            candidates = Object.keys(Kernel.fs._textFiles);
+            Object.keys(Kernel.fs._hiddenFiles).forEach(f => {
+                if (Kernel.fs.isVisible(f)) candidates.push(f);
+            });
+        } else {
+            const dir = Kernel.fs.getCurrentDir();
+            if (dir && typeof dir === 'object') {
+                for (const [name, value] of Object.entries(dir)) {
+                    if (this._matchFilter(value, filter)) candidates.push(name);
+                }
+            }
+        }
+        return candidates.filter(c => c.startsWith(argPrefix));
+    },
+
+    _matchFilter(value, filter) {
+        if (filter === 'dirs') return typeof value === 'object';
+        if (filter === 'external') return value === 'file';
+        // 'readable': string content (not external 'file') + visible gated functions
+        return (typeof value === 'string' && value !== 'file')
+            || (typeof value === 'function' && Kernel.fs.isNodeVisible(value));
+    },
+
+    completeFromList(argPrefix, candidates) {
+        return candidates.filter(c => c.startsWith(argPrefix));
+    },
+
     getCompletions(text) {
         const parts = text.split(/\s+/);
         if (parts.length <= 1) {
@@ -119,122 +165,9 @@ const Shell = {
 
         const cmd = parts[0].toLowerCase();
         const argPrefix = parts.slice(1).join(' ');
-        let candidates = [];
-
-        if (cmd === 'cd') {
-            // Path-with-slash: resolve directory portion, list subdirs
-            if (argPrefix.includes('/')) {
-                const lastSlash = argPrefix.lastIndexOf('/');
-                const dirPart = argPrefix.slice(0, lastSlash + 1);
-                const prefix = argPrefix.slice(lastSlash + 1);
-                const pathArr = Kernel.fs._resolve(dirPart);
-                const node = Kernel.fs._getNode(pathArr);
-                if (node && typeof node === 'object') {
-                    candidates = Object.entries(node)
-                        .filter(([, v]) => typeof v === 'object')
-                        .map(([name]) => dirPart + name);
-                }
-                return candidates.filter(c => c.startsWith(argPrefix));
-            }
-            const dir = Kernel.fs.getCurrentDir();
-            if (typeof dir === 'object' && dir !== null) {
-                candidates = Object.entries(dir)
-                    .filter(([, v]) => typeof v === 'object')
-                    .map(([name]) => name);
-            }
-        } else if (cmd === 'cat') {
-            // Path-with-slash: resolve directory portion, list readable entries
-            if (argPrefix.includes('/')) {
-                const lastSlash = argPrefix.lastIndexOf('/');
-                const dirPart = argPrefix.slice(0, lastSlash + 1);
-                const pathArr = Kernel.fs._resolve(dirPart);
-                const node = Kernel.fs._getNode(pathArr);
-                if (node && typeof node === 'object') {
-                    candidates = Object.entries(node)
-                        .filter(([, v]) => typeof v === 'string' && v !== 'file'
-                            || typeof v === 'function' && Kernel.fs.isNodeVisible(v))
-                        .map(([name]) => dirPart + name);
-                }
-                return candidates.filter(c => c.startsWith(argPrefix));
-            }
-            if (Kernel.fs._cwd.length === 0) {
-                // Root: flat stores
-                candidates = Object.keys(Kernel.fs._textFiles);
-                Object.keys(Kernel.fs._hiddenFiles).forEach(f => {
-                    if (Kernel.fs.isVisible(f)) candidates.push(f);
-                });
-            } else {
-                // Subdirectory: readable entries from current dir node
-                const dir = Kernel.fs.getCurrentDir();
-                if (dir && typeof dir === 'object') {
-                    for (const [name, value] of Object.entries(dir)) {
-                        if (typeof value === 'string' && value !== 'file') candidates.push(name);
-                        else if (typeof value === 'function' && Kernel.fs.isNodeVisible(value)) candidates.push(name);
-                    }
-                }
-            }
-        } else if (cmd === 'open') {
-            const dir = Kernel.fs.getCurrentDir();
-            if (typeof dir === 'object' && dir !== null) {
-                candidates = Object.entries(dir)
-                    .filter(([, v]) => v === 'file')
-                    .map(([name]) => name);
-            }
-        } else if (cmd === 'man') {
-            candidates = Object.keys(Kernel.fs._manPages);
-        } else if (cmd === 'pkg') {
-            if (parts.length === 2) {
-                candidates = ['update', 'list', 'install', 'installed'];
-            } else if (parts.length === 3 && parts[1] === 'install') {
-                const pkgPrefix = parts[2];
-                const installed = typeof getInstalledPackages === 'function' ? getInstalledPackages() : [];
-                candidates = (typeof pkgRegistry !== 'undefined' ? pkgRegistry : [])
-                    .map(p => p.name)
-                    .filter(n => !installed.includes(n) && n.startsWith(pkgPrefix))
-                    .map(n => 'install ' + n);
-            } else {
-                return [];
-            }
-        } else if (cmd === 'mount') {
-            if (!Kernel.driver.has('rf0-mount-failed')) {
-                candidates = ['/dev/rf0'];
-            }
-        } else if (cmd === 'grep' || cmd === 'wc' || cmd === 'head') {
-            // Path-with-slash support
-            if (argPrefix.includes('/')) {
-                const lastSlash = argPrefix.lastIndexOf('/');
-                const dirPart = argPrefix.slice(0, lastSlash + 1);
-                const pathArr = Kernel.fs._resolve(dirPart);
-                const node = Kernel.fs._getNode(pathArr);
-                if (node && typeof node === 'object') {
-                    candidates = Object.entries(node)
-                        .filter(([, v]) => typeof v === 'string' && v !== 'file'
-                            || typeof v === 'function' && Kernel.fs.isNodeVisible(v))
-                        .map(([name]) => dirPart + name);
-                }
-                return candidates.filter(c => c.startsWith(argPrefix));
-            }
-            if (Kernel.fs._cwd.length === 0) {
-                candidates = Object.keys(Kernel.fs._textFiles);
-                Object.keys(Kernel.fs._hiddenFiles).forEach(f => {
-                    if (Kernel.fs.isVisible(f)) candidates.push(f);
-                });
-            } else {
-                const dir = Kernel.fs.getCurrentDir();
-                if (dir && typeof dir === 'object') {
-                    for (const [name, value] of Object.entries(dir)) {
-                        if (typeof value === 'string' && value !== 'file') candidates.push(name);
-                        else if (typeof value === 'function' && Kernel.fs.isNodeVisible(value)) candidates.push(name);
-                    }
-                }
-            }
-        } else if (cmd === 'uname') {
-            candidates = ['-a', '-s', '-r', '-v', '-m', '-n'];
-        } else {
-            return [];
-        }
-
-        return candidates.filter(c => c.startsWith(argPrefix));
+        const completionFn = this._completions[cmd];
+        if (completionFn) return completionFn(argPrefix, parts);
+        return [];
     },
 
     cycleTab(text) {

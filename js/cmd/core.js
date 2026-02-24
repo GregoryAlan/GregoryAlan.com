@@ -98,18 +98,6 @@ const coreCommands = {
         if (!args) return 'cat: missing file operand';
         const content = Kernel.fs.read(args);
         if (content === null) return `cat: ${args}: No such file or directory`;
-        // Fire triggers for hidden files (flat store)
-        if (args in Kernel.fs._hiddenFiles) {
-            Kernel.driver.checkTriggers('file_read', args);
-        }
-        // Fire triggers for gated tree files (function nodes)
-        const pathArr = Kernel.fs._resolve(args);
-        const node = Kernel.fs._getNode(pathArr);
-        if (typeof node === 'function') {
-            const fullPath = '/' + pathArr.join('/');
-            Kernel.driver.checkTriggers('file_read', fullPath);
-        }
-        EventBus.emit('file:read', { path: args, content });
         return content.replace(/\n/g, '<br>');
     },
 
@@ -241,6 +229,13 @@ Local Time: ${new Date().toLocaleString()}`;
         return out.trimEnd();
     },
 };
+
+// ─── Tab Completions ────────────────────────────────────────
+
+Shell.registerCompletion('cd', (argPrefix) => Shell.completePath(argPrefix, 'dirs'));
+Shell.registerCompletion('cat', (argPrefix) => Shell.completePath(argPrefix, 'readable'));
+Shell.registerCompletion('open', (argPrefix) => Shell.completePath(argPrefix, 'external'));
+Shell.registerCompletion('man', (argPrefix) => Shell.completeFromList(argPrefix, Object.keys(Kernel.fs._manPages)));
 
 // v1.0-specific commands (firmware monitor)
 const v1Commands = {

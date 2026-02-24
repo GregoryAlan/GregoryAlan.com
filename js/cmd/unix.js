@@ -292,3 +292,10 @@ const v1_1CommandsPack = {
             + '       help(1), ls(1), cat(1)',
     },
 };
+
+// ─── Tab Completions ────────────────────────────────────────
+
+Shell.registerCompletion('grep', (argPrefix) => Shell.completePath(argPrefix, 'readable'));
+Shell.registerCompletion('wc', (argPrefix) => Shell.completePath(argPrefix, 'readable'));
+Shell.registerCompletion('head', (argPrefix) => Shell.completePath(argPrefix, 'readable'));
+Shell.registerCompletion('uname', (argPrefix) => Shell.completeFromList(argPrefix, ['-a', '-s', '-r', '-v', '-m', '-n']));

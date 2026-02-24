@@ -85,27 +85,11 @@ const theSignalDriver = {
     // finger: removed — greg-corp.js owns the superset (profiles + root + guest)
     commands: {
         ps: (args) => {
-            const basic =
-                'PID TTY      TIME CMD\n'
-              + '  1 tty1 00:00:00 init\n'
-              + `${String(Math.floor(Math.random()*800)+100).padStart(3)} tty1 00:00:00 bash\n`
-              + `${String(Math.floor(Math.random()*800)+100).padStart(3)} tty1 00:00:00 ps`;
-
-            if (args === 'aux' || args === '-aux') {
-                const u = Shell.env.USER;
-                let out = 'USER  PID %CPU %MEM    VSZ   RSS TTY  STAT CMD\n'
-                     + 'root    1  0.0  0.1   4372  1024 ?    Ss   init\n'
-                     + 'root    2  0.0  0.0      0     0 ?    S    [kthreadd]\n'
-                     + 'root   47  0.0  0.1   7232  1536 ?    Ss   sshd\n'
-                     + 'root   63  0.0  0.0   3024   512 ?    Ss   cron\n'
-                     + u + ' '.repeat(Math.max(1, 6 - u.length)) + '184  0.0  0.2   5648  2048 tty1 Ss   bash\n'
-                     + u + ' '.repeat(Math.max(1, 6 - u.length)) + '201  0.0  0.1   3472   768 tty1 R+   ps aux';
-                if (Kernel.driver.flags.contact) {
-                    out += '\n<span class="timestamp-anomaly">???     0  0.0  0.0      0     0 tty0 R    /dev/rf0</span>';
-                }
-                return out;
+            const base = v1_1CommandsPack.commands.ps(args);
+            if ((args === 'aux' || args === '-aux') && Kernel.driver.flags.contact) {
+                return base + '\n<span class="timestamp-anomaly">???     0  0.0  0.0      0     0 tty0 R    /dev/rf0</span>';
             }
-            return basic;
+            return base;
         },
 
         w: (args) => {
@@ -151,45 +135,20 @@ const theSignalDriver = {
         dmesg: () => Kernel.fs.read('/var/log/kern.log'),
 
         decode: (args, stdin) => {
-            if (!args && !stdin) return 'Usage: decode --hex &lt;data&gt; | decode --b64 &lt;data&gt;';
             const parts = (args || '').split(/\s+/).filter(Boolean);
-            const flag = parts[0];
             const data = parts.slice(1).join('') || (stdin ? stdin.trim() : '');
-
-            if (flag === '--hex') {
-                if (data.toLowerCase().startsWith('4e4f524d')) {
-                    Kernel.driver.discover('rf-executed');
-                    return 'Decoding hex...\n\n'
-                        + 'ELF binary detected in input\n'
-                        + 'mapped segment at 0x847\n'
-                        + '<span style="color:#f55">segfault at 0x847: unexpected exec in rx buffer</span>';
-                }
-                try {
-                    const decoded = data.match(/.{2}/g).map(h => String.fromCharCode(parseInt(h, 16))).join('');
-                    return 'Decoding hex...\n\n> ' + decoded;
-                } catch(e) {
-                    return 'decode: invalid hex data';
-                }
+            if (parts[0] === '--hex' && data.toLowerCase().startsWith('4e4f524d')) {
+                Kernel.driver.discover('rf-executed');
+                return 'Decoding hex...\n\n'
+                    + 'ELF binary detected in input\n'
+                    + 'mapped segment at 0x847\n'
+                    + '<span style="color:#f55">segfault at 0x847: unexpected exec in rx buffer</span>';
             }
-
-            if (flag === '--b64') {
-                try {
-                    return 'Decoding base64...\n\n> ' + atob(data);
-                } catch(e) {
-                    return 'decode: invalid base64 data';
-                }
-            }
-
-            return 'decode: unknown flag. Use --hex or --b64';
+            return binTools.commands.decode(args, stdin);
         },
 
         strings: (args, stdin) => {
-            if (stdin) {
-                const matches = stdin.match(/[\x20-\x7E]{4,}/g);
-                return matches ? matches.join('\n') : '';
-            }
-            if (!args) return 'Usage: strings &lt;file&gt;';
-            if (args === '.rf0.buf') {
+            if (!stdin && args === '.rf0.buf') {
                 Kernel.driver.discover('rf-strings');
                 return 'Extracting readable strings from .rf0.buf...\n\n'
                     + 'ELF\n'
@@ -200,7 +159,7 @@ const theSignalDriver = {
                     + 'PID 0\n'
                     + 'handshake';
             }
-            return 'strings: ' + args + ': No such file';
+            return binTools.commands.strings(args, stdin);
         },
     },
 
