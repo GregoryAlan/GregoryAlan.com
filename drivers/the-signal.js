@@ -165,13 +165,13 @@ const theSignalDriver = {
 
                 const messages = ManifestLoader.getSequence('signal-connect');
                 messages.forEach(({ text, delay }) => {
-                    setTimeout(() => {
+                    Terminal.addTrackedTimeout(() => {
                         Terminal.appendSystemLine(text);
                     }, delay);
                 });
 
                 // Act 4 climax — "hello?"
-                setTimeout(() => {
+                Terminal.addTrackedTimeout(() => {
                     Terminal.appendSystemLine('<span style="color:#5f5">' + ManifestLoader.getNarrativeOutput('contact-message') + '</span>');
                     state.discover('contact-made');
                 }, 16000);

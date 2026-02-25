@@ -171,9 +171,12 @@ Local Time: ${new Date().toLocaleString()}`;
     },
 
     reboot: (args) => {
+        if (Terminal._animating) return 'System is busy...';
         const force = args === '-f';
         const nextVer = getNextVersion(force);
         Kernel.session.remove('bootDone');
+        Terminal._animating = true;
+        Terminal.clearTrackedTimeouts();
         setTimeout(() => {
             Terminal.clearOutput();
             Terminal.el.terminal.style.display = 'none';
@@ -188,13 +191,21 @@ Local Time: ${new Date().toLocaleString()}`;
                 renderMOTD();
                 Terminal.updatePrompt();
                 Terminal.runBootSequence().then(() => {
+                    Terminal._animating = false;
+                    Terminal.el.input.disabled = false;
+                    Terminal.el.input.focus();
+                }).catch(() => {
+                    Terminal._animating = false;
                     Terminal.el.input.disabled = false;
                     Terminal.el.input.focus();
                 });
             };
 
             if (nextVer && nextVer > Kernel.driver.getVersion()) {
-                Terminal.runUpdateSequence(Kernel.driver.getVersion(), nextVer).then(doReboot);
+                Terminal.runUpdateSequence(Kernel.driver.getVersion(), nextVer).then(doReboot).catch(() => {
+                    Terminal.el.input.disabled = false;
+                    Terminal.el.input.focus();
+                });
             } else {
                 doReboot();
             }

@@ -56,6 +56,8 @@ function runGlitchEffect(name, opts) {
             setTimeout(() => line.remove(), 6000);
         },
         promptCorruption() {
+            if (effects._promptCorrupting) return;
+            effects._promptCorrupting = true;
             const original = Terminal.el.prompt.textContent;
             let count = 0;
             const interval = setInterval(() => {
@@ -64,6 +66,7 @@ function runGlitchEffect(name, opts) {
                 if (count > 8) {
                     clearInterval(interval);
                     Terminal.el.prompt.textContent = original;
+                    effects._promptCorrupting = false;
                 }
             }, 150);
         },

@@ -10,6 +10,11 @@ function _safeParse(key) {
     catch { return {}; }
 }
 
+function _persist(key, value) {
+    try { sessionStorage.setItem(key, JSON.stringify(value)); }
+    catch (e) { console.warn('[Kernel] sessionStorage write failed:', key, e); }
+}
+
 const Kernel = {
 
     // ─── Filesystem ─────────────────────────────────────────
@@ -212,7 +217,20 @@ const Kernel = {
         removeTextFile(name) { delete this._textFiles[name]; },
         addHiddenFile(name, content) { this._hiddenFiles[name] = content; },
         addManPage(name, content) { this._manPages[name] = content; },
-        mergeFileTree(tree) { Object.assign(this._fileTree, tree); },
+        mergeFileTree(tree) {
+            const merge = (target, source) => {
+                for (const key of Object.keys(source)) {
+                    if (typeof source[key] === 'object' && source[key] !== null
+                        && typeof target[key] === 'object' && target[key] !== null
+                        && !Array.isArray(source[key])) {
+                        merge(target[key], source[key]);
+                    } else {
+                        target[key] = source[key];
+                    }
+                }
+            };
+            merge(this._fileTree, tree);
+        },
         mergeManPages(pages) { Object.assign(this._manPages, pages); },
 
         reset() {
@@ -237,7 +255,7 @@ const Kernel = {
         discover(id) {
             if (this.discoveries[id]) return;
             this.discoveries[id] = Date.now();
-            sessionStorage.setItem('driver_discoveries', JSON.stringify(this.discoveries));
+            _persist('driver_discoveries', this.discoveries);
 
             for (const [driverId, stateMap] of Object.entries(this._stateMaps)) {
                 const current = this._currentStates[driverId];
@@ -246,7 +264,7 @@ const Kernel = {
                     const next = stateDef.transitions[id];
                     const prev = current;
                     this._currentStates[driverId] = next;
-                    sessionStorage.setItem('driver_states', JSON.stringify(this._currentStates));
+                    _persist('driver_states', this._currentStates);
                     const nextDef = stateMap[next];
                     if (nextDef?.flags) {
                         for (const [k, v] of Object.entries(nextDef.flags)) {
@@ -268,7 +286,7 @@ const Kernel = {
 
         setFlag(k, v) {
             this.flags[k] = v;
-            sessionStorage.setItem('driver_flags', JSON.stringify(this.flags));
+            _persist('driver_flags', this.flags);
         },
 
         getVersion() { return parseFloat(this.flags.version || '1.0'); },
@@ -278,7 +296,7 @@ const Kernel = {
             this._stateMaps[driverId] = stateMap;
             if (!(driverId in this._currentStates)) {
                 this._currentStates[driverId] = 'idle';
-                sessionStorage.setItem('driver_states', JSON.stringify(this._currentStates));
+                _persist('driver_states', this._currentStates);
             }
         },
 
@@ -339,7 +357,10 @@ const Kernel = {
                                   t.type === 'count' ? detail.count : null;
                     if (value !== t.match) return;
                     if (t.once && sessionStorage.getItem('trigger_' + t.type + '_' + t.match)) return;
-                    if (t.once) sessionStorage.setItem('trigger_' + t.type + '_' + t.match, '1');
+                    if (t.once) {
+                        try { sessionStorage.setItem('trigger_' + t.type + '_' + t.match, '1'); }
+                        catch (e) { /* best-effort persistence */ }
+                    }
                     if (t.effect) runGlitchEffect(t.effect, t.effectOpts || {});
                     if (t.callback) t.callback(Kernel.driver);
                 };
@@ -430,6 +451,13 @@ const Kernel = {
 
         reset() {
             EventBus.reset();
+            // Clear once-trigger keys so effects can replay after reboot
+            for (let i = sessionStorage.length - 1; i >= 0; i--) {
+                const key = sessionStorage.key(i);
+                if (key && key.startsWith('trigger_')) {
+                    sessionStorage.removeItem(key);
+                }
+            }
         },
     },
 
@@ -453,7 +481,10 @@ const Kernel = {
 
     session: {
         get(key) { return sessionStorage.getItem(key); },
-        set(key, val) { sessionStorage.setItem(key, val); },
+        set(key, val) {
+            try { sessionStorage.setItem(key, val); }
+            catch (e) { console.warn('[Kernel] sessionStorage write failed:', key, e); }
+        },
         remove(key) { sessionStorage.removeItem(key); },
         clear() { sessionStorage.clear(); },
     },

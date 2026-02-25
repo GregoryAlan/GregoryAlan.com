@@ -92,8 +92,9 @@ const gregCorpDriver = {
                 if (match.discover) {
                     Kernel.driver.discover(match.discover);
                 }
-                const lastLogin = profile.fingerInfo.split('\n')
-                    .find(l => l.startsWith('Last login:'));
+                const lastLogin = profile.fingerInfo
+                    ? profile.fingerInfo.split('\n').find(l => l.startsWith('Last login:'))
+                    : null;
                 Terminal.appendSystemLine(lastLogin || 'Last login: unknown');
                 Terminal.updatePrompt();
             });
@@ -145,7 +146,7 @@ const gregCorpDriver = {
     triggers: [
         { type: 'discovery', match: 'complaint-found', effect: 'screenFlicker', once: true,
             callback: () => {
-                setTimeout(() => {
+                Terminal.addTrackedTimeout(() => {
                     Terminal.appendSystemLine('<span class="timestamp-anomaly">' + ManifestLoader.getNarrativeOutput('complaint-echo') + '</span>');
                 }, 1500);
             }

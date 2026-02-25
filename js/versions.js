@@ -176,6 +176,7 @@ function renderMOTD() {
 
     if (ver < 1.1) {
         const motd = ManifestLoader.getMOTD('v1.0-rom');
+        if (!motd) { motdEl.innerHTML = '<div class="motd">GregOS ROM</div>'; return; }
         let html = '';
         for (const line of motd.lines) {
             html += '<div class="motd">' + (line || '&nbsp;') + '</div>';
@@ -193,6 +194,7 @@ function renderMOTD() {
     if (ver >= 2.0) {
         // v2.0 — isometric GC logo + system info sidebar
         const motd = ManifestLoader.getMOTD('v2.0-system');
+        if (!motd) { motdEl.innerHTML = '<div class="motd">GregOS v2.0</div>'; return; }
         const logo = motd.logo;
         const d = motd.info;
         const info = [
@@ -225,6 +227,7 @@ function renderMOTD() {
 
     // v1.1 — corporate workstation banner
     const motd = ManifestLoader.getMOTD('v1.1-system');
+    if (!motd) { motdEl.innerHTML = '<div class="motd">GregOS 1.1</div>'; return; }
     const rule = '==================================================';
     motdEl.innerHTML =
         '<div class="motd">GregOS 1.1 (tty1)</div>'

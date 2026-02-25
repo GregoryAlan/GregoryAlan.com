@@ -17,10 +17,26 @@ const Terminal = {
     },
 
     _pendingAuth: null,
+    _animating: false,
+    _pendingTimeouts: [],
 
     // ─── Rendering ──────────────────────────────────────────
 
     _esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); },
+
+    addTrackedTimeout(fn, delay) {
+        const id = setTimeout(() => {
+            this._pendingTimeouts = this._pendingTimeouts.filter(t => t !== id);
+            fn();
+        }, delay);
+        this._pendingTimeouts.push(id);
+        return id;
+    },
+
+    clearTrackedTimeouts() {
+        for (const id of this._pendingTimeouts) clearTimeout(id);
+        this._pendingTimeouts = [];
+    },
 
     addOutput(cmd, result) {
         const cmdHtml = `<div><span class="prompt">${Shell.getPrompt()}</span> <span class="command">${this._esc(cmd)}</span></div>`;
@@ -268,6 +284,9 @@ const Terminal = {
     // ─── Animations ─────────────────────────────────────────
 
     async runRmAnimation() {
+        if (this._animating) return;
+        this._animating = true;
+        this.clearTrackedTimeouts();
         const rmLines = ManifestLoader.getSequence('rm-rf');
         const rmDiv = document.createElement('div');
         rmDiv.className = 'output rm-animation';
@@ -354,12 +373,20 @@ const Terminal = {
         this.el.bootScreen.style.display = '';
         this.el.bootScreen.style.opacity = '1';
         this.runBootSequence().then(() => {
+            this._animating = false;
+            this.el.input.disabled = false;
+            this.el.input.focus();
+        }).catch(() => {
+            this._animating = false;
             this.el.input.disabled = false;
             this.el.input.focus();
         });
     },
 
     async runMountCrash() {
+        if (this._animating) return;
+        this._animating = true;
+        this.clearTrackedTimeouts();
         this.el.input.disabled = true;
 
         const crashLines = ManifestLoader.getSequence('mount-crash');
@@ -395,6 +422,11 @@ const Terminal = {
         this.updatePrompt();
 
         this.runBootSequence().then(() => {
+            this._animating = false;
+            this.el.input.disabled = false;
+            this.el.input.focus();
+        }).catch(() => {
+            this._animating = false;
             this.el.input.disabled = false;
             this.el.input.focus();
         });

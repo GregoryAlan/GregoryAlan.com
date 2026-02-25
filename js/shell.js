@@ -30,20 +30,25 @@ const Shell = {
     // ─── Execution ──────────────────────────────────────────
 
     exec(cmd) {
-        if (cmd.includes('|')) return this.execPipeline(cmd);
+        try {
+            if (cmd.includes('|')) return this.execPipeline(cmd);
 
-        const parts = cmd.trim().split(/\s+/);
-        const command = parts[0].toLowerCase();
-        const args = parts.slice(1).join(' ');
+            const parts = cmd.trim().split(/\s+/);
+            const command = parts[0].toLowerCase();
+            const args = parts.slice(1).join(' ');
 
-        if (!command) return '';
-        if (this._commands[command]) {
-            const parsed = parseArgs(args);
-            const result = this._commands[command](args, null, parsed);
-            EventBus.emit('command:executed', { command, args, parsed, output: result });
-            return result;
+            if (!command) return '';
+            if (this._commands[command]) {
+                const parsed = parseArgs(args);
+                const result = this._commands[command](args, null, parsed);
+                EventBus.emit('command:executed', { command, args, parsed, output: result });
+                return result;
+            }
+            return `${command}: command not found. Type 'help' for available commands.`;
+        } catch (e) {
+            console.error('[Shell] exec error:', e);
+            return 'internal error: ' + (e.message || 'unknown');
         }
-        return `${command}: command not found. Type 'help' for available commands.`;
     },
 
     execPipeline(cmd) {
