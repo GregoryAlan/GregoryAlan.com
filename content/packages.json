@@ -1,0 +1,13 @@
+{
+    "id": "packages",
+    "description": "Analysis tool package registry — single source for pkg list/install",
+
+    "packages": [
+        { "name": "decode",  "version": "1.2.0", "size": "12K", "desc": "Hex/base64 decoder" },
+        { "name": "rot13",   "version": "1.0.0", "size": "4K",  "desc": "ROT13 cipher" },
+        { "name": "freq",    "version": "1.1.0", "size": "8K",  "desc": "Letter frequency analysis" },
+        { "name": "entropy", "version": "2.0.1", "size": "6K",  "desc": "Shannon entropy calculator" },
+        { "name": "crc",     "version": "1.0.0", "size": "5K",  "desc": "CRC32 checksum" },
+        { "name": "strings", "version": "1.3.0", "size": "10K", "desc": "Extract printable strings" }
+    ]
+}

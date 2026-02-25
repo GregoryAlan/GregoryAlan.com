@@ -87,7 +87,7 @@ const theSignalDriver = {
         ps: (args) => {
             const base = v1_1CommandsPack.commands.ps(args);
             if ((args === 'aux' || args === '-aux') && Kernel.driver.flags.contact) {
-                return base + '\n<span class="timestamp-anomaly">???     0  0.0  0.0      0     0 tty0 R    /dev/rf0</span>';
+                return base + '\n<span class="timestamp-anomaly">' + ManifestLoader.getNarrativeOutput('ps-anomaly') + '</span>';
             }
             return base;
         },
@@ -104,7 +104,7 @@ const theSignalDriver = {
                 return ' ' + h + ':' + m + ' up 1 day, 3:14, 2 users, load average: 0.00, 0.01, 0.05\n'
                     + 'USER     TTY      FROM             LOGIN@   IDLE   WHAT\n'
                     + uPad + ' tty1     -                ' + h + ':' + m + '   0.00s  /bin/bash\n'
-                    + '???      tty0     0.0.0.0          03:14    0.00s  /dev/rf0';
+                    + ManifestLoader.getNarrativeOutput('w-intruder-line');
             }
 
             Kernel.driver.discover('checked-alone');
@@ -123,7 +123,7 @@ const theSignalDriver = {
             if (Kernel.driver.flags.contact) {
                 Kernel.driver.discover('intruder-last');
                 return u + ' tty1         ' + d + ' ' + t + '   still logged in\n'
-                    + '<span class="timestamp-anomaly">???      tty0         Jan  0 00:00  - still logged in</span>\n\n'
+                    + '<span class="timestamp-anomaly">' + ManifestLoader.getNarrativeOutput('last-anomaly') + '</span>\n\n'
                     + 'wtmp begins ' + d + ' 00:00:00';
             }
 
@@ -172,7 +172,7 @@ const theSignalDriver = {
 
                 // Act 4 climax — "hello?"
                 setTimeout(() => {
-                    Terminal.appendSystemLine('<span style="color:#5f5">hello?</span>');
+                    Terminal.appendSystemLine('<span style="color:#5f5">' + ManifestLoader.getNarrativeOutput('contact-message') + '</span>');
                     state.discover('contact-made');
                 }, 16000);
             }
@@ -194,12 +194,7 @@ const theSignalDriver = {
         hiddenFiles: {
             '.bash_history': (existing) => {
                 if (!Kernel.driver.has('rf0-mount-failed')) return existing;
-                const extra = [
-                    'dmesg',
-                    'cat .rf0.buf',
-                    'strings .rf0.buf',
-                    'decode --hex 4e4f524d',
-                ];
+                const extra = ManifestLoader.getHistoryPatch();
                 const lines = existing.split('\n');
                 const nextNum = lines.length + 1;
                 const newLines = extra.map((cmd, i) => '  ' + (nextNum + i) + '  ' + cmd);

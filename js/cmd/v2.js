@@ -8,15 +8,11 @@
 //             the-signal.js (theSignalDriver)
 
 // ─── Package Metadata ───────────────────────────────────────
+// Package registry loaded from content/packages.json via ManifestLoader.
 
-const pkgRegistry = [
-    { name: 'decode',  version: '1.2.0', size: '12K', desc: 'Hex/base64 decoder' },
-    { name: 'rot13',   version: '1.0.0', size: '4K',  desc: 'ROT13 cipher' },
-    { name: 'freq',    version: '1.1.0', size: '8K',  desc: 'Letter frequency analysis' },
-    { name: 'entropy', version: '2.0.1', size: '6K',  desc: 'Shannon entropy calculator' },
-    { name: 'crc',     version: '1.0.0', size: '5K',  desc: 'CRC32 checksum' },
-    { name: 'strings', version: '1.3.0', size: '10K', desc: 'Extract printable strings' },
-];
+function getPkgRegistry() {
+    return ManifestLoader.getPackages();
+}
 
 // ─── Package Install Logic ──────────────────────────────────
 
@@ -86,9 +82,10 @@ const v2CommandsPack = {
 
             if (sub === 'update') {
                 Kernel.driver.setFlag('pkg-initialized', true);
+                const registry = getPkgRegistry();
                 return 'Synchronizing package repository...\n'
                     + 'Reading package lists... done\n'
-                    + `${pkgRegistry.length} packages available.`;
+                    + `${registry.length} packages available.`;
             }
 
             if (sub === 'list') {
@@ -99,7 +96,8 @@ const v2CommandsPack = {
                 let out = 'Available packages:\n\n'
                     + '  NAME        VERSION   SIZE   DESCRIPTION\n'
                     + '  \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n';
-                for (const pkg of pkgRegistry) {
+                const registry = getPkgRegistry();
+                for (const pkg of registry) {
                     const tag = installed.includes(pkg.name) ? ' [installed]' : '';
                     out += `  ${pkg.name.padEnd(10)}  ${pkg.version.padEnd(8)}  ${pkg.size.padEnd(5)}  ${pkg.desc}${tag}\n`;
                 }
@@ -114,7 +112,7 @@ const v2CommandsPack = {
                     return 'pkg: repository not initialized. Run \'pkg update\' first.';
                 }
 
-                const meta = pkgRegistry.find(p => p.name === pkgName);
+                const meta = getPkgRegistry().find(p => p.name === pkgName);
                 if (!meta) return `pkg: package '${pkgName}' not found. Run 'pkg list' to see available packages.`;
 
                 const installed = getInstalledPackages();
@@ -133,7 +131,7 @@ const v2CommandsPack = {
                 if (installed.length === 0) return 'No packages installed.';
                 return 'Installed packages:\n\n'
                     + installed.map(name => {
-                        const meta = pkgRegistry.find(p => p.name === name);
+                        const meta = getPkgRegistry().find(p => p.name === name);
                         return `  ${name}${meta ? ' ' + meta.version : ''}`;
                     }).join('\n');
             }
@@ -183,7 +181,7 @@ Shell.registerCompletion('pkg', (argPrefix, parts) => {
     }
     if (parts.length === 3 && parts[1] === 'install') {
         const installed = typeof getInstalledPackages === 'function' ? getInstalledPackages() : [];
-        return pkgRegistry
+        return getPkgRegistry()
             .map(p => p.name)
             .filter(n => !installed.includes(n) && n.startsWith(parts[2]))
             .map(n => 'install ' + n);

@@ -2,6 +2,30 @@
     "id": "v2.0-system",
     "description": "v2.0 system files, narrative seeds (static), and overrides",
 
+    "motd": {
+        "logo": [
+            "      ___           ___     ",
+            "     /\\  \\         /\\  \\    ",
+            "    /::\\  \\       /::\\  \\   ",
+            "   /:/\\:\\  \\     /:/\\:\\  \\  ",
+            "  /:/  \\:\\  \\   /:/  \\:\\  \\ ",
+            " /:/__/_\\:\\__\\ /:/__/ \\:\\__\\",
+            " \\:\\  /\\ \\/__/ \\:\\  \\  \\/__/",
+            "  \\:\\ \\:\\__\\    \\:\\  \\      ",
+            "   \\:\\/:/  /     \\:\\  \\     ",
+            "    \\::/  /       \\:\\__\\    ",
+            "     \\/__/         \\/__/    "
+        ],
+        "info": {
+            "title": "GregOS 2.0-dev",
+            "kernel": "0.9.851-greg",
+            "branch": "dev/transform-pipeline",
+            "channel": "unstable",
+            "daemons": "4 active"
+        },
+        "pkgHint": "1 package repository configured. Run 'pkg update' to synchronize."
+    },
+
     "textFiles": {
         "welcome.txt": "Welcome to GregOS 2.0-dev\nDevelopment build \u2014 not for production use.\nAll activity may be monitored and recorded.",
 

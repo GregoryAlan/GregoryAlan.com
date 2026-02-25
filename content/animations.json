@@ -1,0 +1,50 @@
+{
+    "id": "animations",
+    "description": "Terminal animation sequences — rm -rf, kernel panic, update",
+
+    "sequences": {
+        "rm-rf": [
+            { "text": "removed '/usr/lib/libz.so.1'", "delay": 120 },
+            { "text": "removed '/usr/lib/libssl.so.3'", "delay": 120 },
+            { "text": "removed '/usr/lib/libcrypto.so.3'", "delay": 120 },
+            { "text": "removed '/usr/bin/grep'", "delay": 120 },
+            { "text": "removed '/usr/bin/awk'", "delay": 120 },
+            { "text": "removed directory '/usr/share/man/man1'", "delay": 120 },
+            { "text": "removed '/etc/passwd'", "delay": 120 },
+            { "text": "removed '/etc/hostname'", "delay": 120 },
+            { "text": "removed '/var/log/syslog'", "delay": 120 },
+            { "text": "rm: cannot remove '/proc/1/status': Operation not permitted", "delay": 120, "style": "color:var(--error)" },
+            { "text": "rm: cannot remove '/sys/class/net/eth0': Operation not permitted", "delay": 120, "style": "color:var(--error)" },
+            { "text": "removed '/home/guest/.bash_history'", "delay": 120 },
+            { "text": "removed '/usr/bin/ls'", "delay": 120 },
+            { "text": "removed '/usr/bin/cat'", "delay": 120 },
+            { "text": "removed '/sbin/init'", "delay": 120 },
+            { "text": "rm: error while loading shared libraries: libc.so.6: cannot open shared object file", "delay": 120, "style": "color:var(--error)" }
+        ],
+
+        "kernel-panic": [
+            { "text": "", "delay": 200 },
+            { "text": "Kernel panic - not syncing: Attempted to kill init! exitcode=0x00000009", "delay": 200, "style": "color:var(--warn);font-weight:bold" },
+            { "text": "", "delay": 200 },
+            { "text": "CPU: 0 PID: 1 Comm: init Not tainted", "delay": 200, "style": "color:var(--error)" },
+            { "text": "Call Trace:", "delay": 200, "style": "color:var(--error)" },
+            { "text": " [<ffffffff8107a1b2>] panic+0x1a2/0x1f7", "delay": 200, "style": "color:var(--error)" },
+            { "text": " [<ffffffff810791d3>] do_exit+0xa13/0xa20", "delay": 200, "style": "color:var(--error)" },
+            { "text": " [<ffffffff81079293>] do_group_exit+0x53/0xd0", "delay": 200, "style": "color:var(--error)" },
+            { "text": "", "delay": 200 },
+            { "text": "---[ end Kernel panic - not syncing: Attempted to kill init! ]---", "delay": 200, "style": "color:var(--warn);font-weight:bold" }
+        ],
+
+        "update": [
+            { "text": "Current version: {fromVer}", "delay": 400 },
+            { "text": "Update available: v{toVer}", "delay": 600 },
+            { "text": "", "delay": 300 },
+            { "text": "Downloading update .......... OK", "delay": 800 },
+            { "text": "Verifying checksum .......... OK", "delay": 800 },
+            { "text": "Installing .......... OK", "delay": 800 },
+            { "text": "", "delay": 300 },
+            { "text": "System updated to v{toVer}", "delay": 400 },
+            { "text": "Rebooting into new firmware...", "delay": 600 }
+        ]
+    }
+}

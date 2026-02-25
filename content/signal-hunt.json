@@ -58,6 +58,17 @@
             { "text": "kernel panic - not syncing: device fault in rf0 driver", "delay": 0, "style": "color:var(--warn);font-weight:bold" }
         ],
 
+    "narrativeOutputs": {
+        "ps-anomaly": "???     0  0.0  0.0      0     0 tty0 R    /dev/rf0",
+        "w-intruder-line": "???      tty0     0.0.0.0          03:14    0.00s  /dev/rf0",
+        "last-anomaly": "???      tty0         Jan  0 00:00  - still logged in",
+        "contact-message": "hello?",
+        "finger-root-corrupted": "Login: root                             Name: {garble}\nDirectory: /dev/null                    Shell: /dev/null\nLast login: <span class=\"timestamp-anomaly\">Jan  0 00:00</span> from <span class=\"timestamp-anomaly\">0.0.0.0</span>\nNo mail.\nNo plan.",
+        "complaint-echo": "CASE STILL OPEN"
+    },
+
+    "historyPatch": ["dmesg", "cat .rf0.buf", "strings .rf0.buf", "decode --hex 4e4f524d"],
+
         "signal-connect": [
             { "text": "rf0: connecting to 0.0.0.0:4119", "delay": 2000 },
             { "text": "rf0: SYN sent ................ ACK", "delay": 4500 },

@@ -10,7 +10,7 @@ This is Phase I territory — everything here passes the sysadmin test. No super
 
 <!-- contract
 status: implemented
-impl: drivers/greg-corp.js (gregCorpProfiles, gregCorpHomeFiles)
+impl: content/gregcorp-profiles.json (profiles, treeFiles), drivers/greg-corp.js
 last-synced: 2026-02-22
 -->
 
@@ -36,7 +36,7 @@ last-synced: 2026-02-22
 
 <!-- contract
 status: implemented
-impl: drivers/greg-corp.js:gregCorpProfiles.dhollis, gregCorpHomeFiles['/home/dhollis/*']
+impl: content/gregcorp-profiles.json:profiles.dhollis, content/gregcorp-profiles.json:treeFiles['/home/dhollis/*']
 last-synced: 2026-02-22
 -->
 

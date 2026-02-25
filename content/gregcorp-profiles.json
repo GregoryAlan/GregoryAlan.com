@@ -1,6 +1,28 @@
 {
     "id": "gregcorp-profiles",
     "description": "GregCorp employee home directories and mail",
+
+    "profiles": {
+        "dhollis": {
+            "username": "dhollis",
+            "uid": 1002,
+            "fullName": "Diane Hollis",
+            "title": "Director, Human Resources & Administration",
+            "department": "Human Resources",
+            "era": "1997",
+            "shell": "/bin/bash",
+            "homeDir": "/home/dhollis",
+            "hostname": "gregcorp.internal",
+            "passwords": [
+                { "value": "password" }
+            ],
+            "fingerInfo": "Login: dhollis                          Name: Diane Hollis\nDirectory: /home/dhollis                Shell: /bin/bash\nTitle: Director, Human Resources & Administration\nLast login: Wed Oct 15 08:47:00 1997 on tty2\nPlan: Q4 benefits enrollment \u2014 deadline Nov 15."
+        },
+        "guest": {
+            "fingerTemplate": "Login: guest                            Name: Visitor\nDirectory: /home/guest                  Shell: /bin/bash\nLast login: {date}\nNo plan."
+        }
+    },
+
     "treeFiles": {
         "/home/dhollis/.bashrc": {
             "content": "# .bashrc - Diane Hollis\nexport TERM=vt100\nexport EDITOR=vi\nalias ll='ls -la'\nalias pers='ls personnel/'\nalias pending='ls .pending/'\nPS1='dhollis@gregcorp:$PWD$ '"

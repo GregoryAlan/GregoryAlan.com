@@ -335,13 +335,11 @@ When the player `cat`s this file, discovery `rf-found` fires automatically.
 ### 5e. Adding a New Employee Profile
 
 1. [ ] Write the profile in `greg-corp-storyline.md` with all fields
-2. [ ] Add personnel record content to `content/gregcorp-profiles.json`
-3. [ ] Hand off to Developer for:
-   - Profile object in `drivers/greg-corp.js` (`gregCorpProfiles`)
-   - Password(s) and any discovery flags
-   - Home directory content and `su` behavior
-4. [ ] Add to SYNC.md handoff queue
-5. [ ] Test: `su <username>`, verify prompt, CWD, environment, file access
+2. [ ] Add profile metadata to `content/gregcorp-profiles.json` (`profiles` key — username, passwords, fingerInfo, etc.)
+3. [ ] Add home directory content to `content/gregcorp-profiles.json` (`treeFiles` key)
+4. [ ] Hand off to Developer for any discovery flags or special `su` behavior in `drivers/greg-corp.js`
+5. [ ] Add to SYNC.md handoff queue
+6. [ ] Test: `su <username>`, verify prompt, CWD, environment, file access
 
 ---
 

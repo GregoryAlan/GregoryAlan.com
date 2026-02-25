@@ -233,17 +233,11 @@ const Terminal = {
     },
 
     async runUpdateSequence(fromVer, toVer) {
-        const lines = [
-            { text: `Current version: ${fromVer}`, delay: 400 },
-            { text: `Update available: v${toVer}`, delay: 600 },
-            { text: '', delay: 300 },
-            { text: 'Downloading update .......... OK', delay: 800 },
-            { text: 'Verifying checksum .......... OK', delay: 800 },
-            { text: 'Installing .......... OK', delay: 800 },
-            { text: '', delay: 300 },
-            { text: `System updated to v${toVer}`, delay: 400 },
-            { text: 'Rebooting into new firmware...', delay: 600 },
-        ];
+        const template = ManifestLoader.getSequence('update');
+        const lines = template.map(entry => ({
+            text: entry.text.replace('{fromVer}', fromVer).replace('{toVer}', toVer),
+            delay: entry.delay,
+        }));
 
         let skipped = false;
         const skipHandler = () => { skipped = true; };
@@ -268,24 +262,7 @@ const Terminal = {
     // ─── Animations ─────────────────────────────────────────
 
     async runRmAnimation() {
-        const rmLines = [
-            { text: "removed '/usr/lib/libz.so.1'", style: '' },
-            { text: "removed '/usr/lib/libssl.so.3'", style: '' },
-            { text: "removed '/usr/lib/libcrypto.so.3'", style: '' },
-            { text: "removed '/usr/bin/grep'", style: '' },
-            { text: "removed '/usr/bin/awk'", style: '' },
-            { text: "removed directory '/usr/share/man/man1'", style: '' },
-            { text: "removed '/etc/passwd'", style: '' },
-            { text: "removed '/etc/hostname'", style: '' },
-            { text: "removed '/var/log/syslog'", style: '' },
-            { text: "rm: cannot remove '/proc/1/status': Operation not permitted", style: 'color:var(--error)' },
-            { text: "rm: cannot remove '/sys/class/net/eth0': Operation not permitted", style: 'color:var(--error)' },
-            { text: "removed '/home/guest/.bash_history'", style: '' },
-            { text: "removed '/usr/bin/ls'", style: '' },
-            { text: "removed '/usr/bin/cat'", style: '' },
-            { text: "removed '/sbin/init'", style: '' },
-            { text: "rm: error while loading shared libraries: libc.so.6: cannot open shared object file", style: 'color:var(--error)' },
-        ];
+        const rmLines = ManifestLoader.getSequence('rm-rf');
         const rmDiv = document.createElement('div');
         rmDiv.className = 'output rm-animation';
         this.el.output.appendChild(rmDiv);
@@ -297,21 +274,10 @@ const Terminal = {
             line.textContent = entry.text;
             rmDiv.appendChild(line);
             this.el.input.scrollIntoView({ block: 'end' });
-            await new Promise(r => setTimeout(r, 120));
+            await new Promise(r => setTimeout(r, entry.delay || 120));
         }
 
-        const panicLines = [
-            { text: '', style: '' },
-            { text: 'Kernel panic - not syncing: Attempted to kill init! exitcode=0x00000009', style: 'color:var(--warn);font-weight:bold' },
-            { text: '', style: '' },
-            { text: 'CPU: 0 PID: 1 Comm: init Not tainted', style: 'color:var(--error)' },
-            { text: 'Call Trace:', style: 'color:var(--error)' },
-            { text: ' [<ffffffff8107a1b2>] panic+0x1a2/0x1f7', style: 'color:var(--error)' },
-            { text: ' [<ffffffff810791d3>] do_exit+0xa13/0xa20', style: 'color:var(--error)' },
-            { text: ' [<ffffffff81079293>] do_group_exit+0x53/0xd0', style: 'color:var(--error)' },
-            { text: '', style: '' },
-            { text: '---[ end Kernel panic - not syncing: Attempted to kill init! ]---', style: 'color:var(--warn);font-weight:bold' },
-        ];
+        const panicLines = ManifestLoader.getSequence('kernel-panic');
 
         for (const entry of panicLines) {
             const line = document.createElement('div');
@@ -319,7 +285,7 @@ const Terminal = {
             line.textContent = entry.text;
             rmDiv.appendChild(line);
             this.el.input.scrollIntoView({ block: 'end' });
-            await new Promise(r => setTimeout(r, 200));
+            await new Promise(r => setTimeout(r, entry.delay || 200));
         }
 
         await new Promise(r => setTimeout(r, 1500));

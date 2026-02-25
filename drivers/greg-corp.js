@@ -12,33 +12,15 @@
 
 // ─── Profile Registry ──────────────────────────────────────
 // spec: greg-corp-storyline.md > Characters
+// Profile metadata loaded from content/gregcorp-profiles.json via ManifestLoader.
 
-const gregCorpProfiles = {
+function getGregCorpProfiles() {
+    return ManifestLoader.getProfiles();
+}
 
-    dhollis: {
-        username: 'dhollis',
-        uid: 1002,
-        fullName: 'Diane Hollis',
-        title: 'Director, Human Resources & Administration',
-        department: 'Human Resources',
-        era: '1997',
-        shell: '/bin/bash',
-        homeDir: '/home/dhollis',
-        hostname: 'gregcorp.internal',
-        passwords: [
-            { value: 'password' },
-        ],
-
-        fingerInfo:
-            'Login: dhollis                          Name: Diane Hollis\n'
-            + 'Directory: /home/dhollis                Shell: /bin/bash\n'
-            + 'Title: Director, Human Resources & Administration\n'
-            + 'Last login: Wed Oct 15 08:47:00 1997 on tty2\n'
-            + 'Plan: Q4 benefits enrollment — deadline Nov 15.',
-    },
-};
-
-// Home directory content loaded from content/gregcorp-profiles.json
+function getGregCorpProfile(name) {
+    return ManifestLoader.getProfile(name);
+}
 
 // ─── Driver Definition ──────────────────────────────────────
 // spec: greg-corp-storyline.md > Additional Commands
@@ -86,7 +68,7 @@ const gregCorpDriver = {
                 return 'su: account greg is locked (executive hold — contact board secretary)';
             }
 
-            const profile = gregCorpProfiles[username];
+            const profile = getGregCorpProfile(username);
 
             if (!profile) {
                 return 'su: unknown user \'' + username + '\'';
@@ -130,18 +112,14 @@ const gregCorpDriver = {
             if (args === 'root') {
                 if (Kernel.driver.flags.contact) {
                     Kernel.driver.discover('intruder-finger');
-                    return 'Login: root                             Name: ' + garble(12) + '\n'
-                        + 'Directory: /dev/null                    Shell: /dev/null\n'
-                        + 'Last login: <span class="timestamp-anomaly">Jan  0 00:00</span> from <span class="timestamp-anomaly">0.0.0.0</span>\n'
-                        + 'No mail.\n'
-                        + 'No plan.';
+                    return ManifestLoader.getNarrativeOutput('finger-root-corrupted').replace('{garble}', garble(12));
                 }
                 return 'finger: root: no such user';
             }
 
             // Profile lookup
-            const profile = gregCorpProfiles[args];
-            if (profile) {
+            const profile = getGregCorpProfile(args);
+            if (profile && profile.fingerInfo) {
                 if (!Kernel.driver.has('contact-made')) {
                     return 'finger: ' + args + ': no such user';
                 }
@@ -149,6 +127,10 @@ const gregCorpDriver = {
             }
 
             if (args === 'guest') {
+                const guestProfile = getGregCorpProfile('guest');
+                if (guestProfile && guestProfile.fingerTemplate) {
+                    return guestProfile.fingerTemplate.replace('{date}', new Date().toDateString());
+                }
                 return 'Login: guest                            Name: Visitor\n'
                     + 'Directory: /home/guest                  Shell: /bin/bash\n'
                     + 'Last login: ' + new Date().toDateString() + '\n'
@@ -164,7 +146,7 @@ const gregCorpDriver = {
         { type: 'discovery', match: 'complaint-found', effect: 'screenFlicker', once: true,
             callback: () => {
                 setTimeout(() => {
-                    Terminal.appendSystemLine('<span class="timestamp-anomaly">CASE STILL OPEN</span>');
+                    Terminal.appendSystemLine('<span class="timestamp-anomaly">' + ManifestLoader.getNarrativeOutput('complaint-echo') + '</span>');
                 }, 1500);
             }
         },
