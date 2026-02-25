@@ -109,6 +109,7 @@ const ManifestLoader = {
             return this._cache[url].id;
         }
         const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`manifest fetch ${url}: ${resp.status}`);
         const manifest = await resp.json();
         this._cache[url] = manifest;
         this.load(manifest);
@@ -121,6 +122,7 @@ const ManifestLoader = {
         await Promise.all(urls.map(async (url) => {
             try {
                 const resp = await fetch(url);
+                if (!resp.ok) throw new Error(`manifest fetch ${url}: ${resp.status}`);
                 this._cache[url] = await resp.json();
             } catch (e) {
                 console.error('[ManifestLoader] Failed to fetch ' + url, e);
@@ -129,7 +131,7 @@ const ManifestLoader = {
     },
 
     getSequence(id) {
-        return this._sequences[id] || null;
+        return this._sequences[id] || [];
     },
 
     getPackages() {

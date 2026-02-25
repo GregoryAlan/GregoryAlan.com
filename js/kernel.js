@@ -5,6 +5,11 @@
 //
 // Depends on: events.js (EventBus), glitch.js (runGlitchEffect)
 
+function _safeParse(key) {
+    try { return JSON.parse(sessionStorage.getItem(key) || '{}'); }
+    catch { return {}; }
+}
+
 const Kernel = {
 
     // ─── Filesystem ─────────────────────────────────────────
@@ -223,10 +228,10 @@ const Kernel = {
     // ─── Driver Engine ──────────────────────────────────────
 
     driver: {
-        discoveries: JSON.parse(sessionStorage.getItem('driver_discoveries') || '{}'),
-        flags: JSON.parse(sessionStorage.getItem('driver_flags') || '{}'),
+        discoveries: _safeParse('driver_discoveries'),
+        flags: _safeParse('driver_flags'),
         _stateMaps: {},
-        _currentStates: JSON.parse(sessionStorage.getItem('driver_states') || '{}'),
+        _currentStates: _safeParse('driver_states'),
         _registry: {},
 
         discover(id) {

@@ -80,7 +80,7 @@ const v1_1CommandsPack = {
             } else {
                 if (!fileName) return 'wc: missing operand';
                 content = Kernel.fs.read(fileName);
-                if (!content) return `wc: ${fileName}: No such file or directory`;
+                if (content === null) return `wc: ${fileName}: No such file or directory`;
                 label = ' ' + fileName;
             }
 
@@ -107,7 +107,7 @@ const v1_1CommandsPack = {
             } else {
                 if (!fileName) return 'head: missing operand';
                 content = Kernel.fs.read(fileName);
-                if (!content) return `head: ${fileName}: No such file or directory`;
+                if (content === null) return `head: ${fileName}: No such file or directory`;
             }
 
             return content.split('\n').slice(0, n).join('\n');
@@ -141,7 +141,7 @@ const v1_1CommandsPack = {
             const targets = {};
             if (fileName) {
                 const content = Kernel.fs.read(fileName);
-                if (!content) return `grep: ${fileName}: No such file or directory`;
+                if (content === null) return `grep: ${fileName}: No such file or directory`;
                 targets[fileName] = content;
             } else {
                 for (const [name, content] of Object.entries(Kernel.fs._textFiles)) {

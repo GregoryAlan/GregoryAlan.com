@@ -20,8 +20,10 @@ const Terminal = {
 
     // ─── Rendering ──────────────────────────────────────────
 
+    _esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); },
+
     addOutput(cmd, result) {
-        const cmdHtml = `<div><span class="prompt">${Shell.getPrompt()}</span> <span class="command">${cmd}</span></div>`;
+        const cmdHtml = `<div><span class="prompt">${Shell.getPrompt()}</span> <span class="command">${this._esc(cmd)}</span></div>`;
         const resultHtml = result ? `<div class="output">${result.replace(/\n/g, '<br>')}</div>` : '';
         this.el.output.innerHTML += cmdHtml + resultHtml;
         requestAnimationFrame(() => {
@@ -207,22 +209,24 @@ const Terminal = {
         document.addEventListener('keydown', skipHandler);
         document.addEventListener('touchstart', skipHandler);
 
-        for (const line of lines) {
-            if (skipped) break;
-            if (line.append) {
-                const last = this.el.bootScreen.lastElementChild;
-                if (last) last.textContent += line.text;
-            } else {
-                const div = document.createElement('div');
-                div.textContent = line.text;
-                if (line.style) div.style.cssText = line.style;
-                this.el.bootScreen.appendChild(div);
+        try {
+            for (const line of lines) {
+                if (skipped) break;
+                if (line.append) {
+                    const last = this.el.bootScreen.lastElementChild;
+                    if (last) last.textContent += line.text;
+                } else {
+                    const div = document.createElement('div');
+                    div.textContent = line.text;
+                    if (line.style) div.style.cssText = line.style;
+                    this.el.bootScreen.appendChild(div);
+                }
+                await new Promise(r => setTimeout(r, line.delay));
             }
-            await new Promise(r => setTimeout(r, line.delay));
+        } finally {
+            document.removeEventListener('keydown', skipHandler);
+            document.removeEventListener('touchstart', skipHandler);
         }
-
-        document.removeEventListener('keydown', skipHandler);
-        document.removeEventListener('touchstart', skipHandler);
 
         this.el.bootScreen.style.opacity = '0';
         await new Promise(r => setTimeout(r, 400));
@@ -244,16 +248,18 @@ const Terminal = {
         document.addEventListener('keydown', skipHandler);
         document.addEventListener('touchstart', skipHandler);
 
-        for (const line of lines) {
-            if (skipped) break;
-            const div = document.createElement('div');
-            div.textContent = line.text;
-            this.el.bootScreen.appendChild(div);
-            await new Promise(r => setTimeout(r, line.delay));
+        try {
+            for (const line of lines) {
+                if (skipped) break;
+                const div = document.createElement('div');
+                div.textContent = line.text;
+                this.el.bootScreen.appendChild(div);
+                await new Promise(r => setTimeout(r, line.delay));
+            }
+        } finally {
+            document.removeEventListener('keydown', skipHandler);
+            document.removeEventListener('touchstart', skipHandler);
         }
-
-        document.removeEventListener('keydown', skipHandler);
-        document.removeEventListener('touchstart', skipHandler);
 
         await new Promise(r => setTimeout(r, 400));
         this.el.bootScreen.innerHTML = '';
