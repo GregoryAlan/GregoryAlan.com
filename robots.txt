@@ -18,7 +18,11 @@ Allow: /status
 Allow: /rom/
 Allow: /pkg/
 Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /.well-known/
 Disallow: /dev/rf0
 Disallow: /js/
 Disallow: /content/
 Disallow: /drivers/
+
+Sitemap: https://gregoryalan.com/sitemap.xml

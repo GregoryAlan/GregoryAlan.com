@@ -13,87 +13,134 @@
             "# System uptime: since 2025-10-15"
         ],
         "allow": ["/proc/", "/etc/", "/var/log/", "/home/", "/man/",
-                  "/help", "/motd", "/status", "/rom/", "/pkg/", "/llms.txt"],
-        "disallow": ["/dev/rf0", "/js/", "/content/", "/drivers/"]
+                  "/help", "/motd", "/status", "/rom/", "/pkg/",
+                  "/llms.txt", "/llms-full.txt", "/.well-known/"],
+        "disallow": ["/dev/rf0", "/js/", "/content/", "/drivers/"],
+        "directives": ["Sitemap: https://gregoryalan.com/sitemap.xml"]
     },
 
     "llmsTxt": {
         "intro": [
-            "# GregOS",
+            "# GregOS — System Analysis",
             "",
-            "> Kernel 0.9.847-greg | Anomaly detected at timestamp 847 — rf0 buffer unconsumed since boot.",
-            "> PID 0 should not exist in user context. It does.",
-            ">",
-            "> Interactive terminal: https://gregoryalan.com"
+            "> Full system analysis: [/llms-full.txt](https://gregoryalan.com/llms-full.txt)",
+            "> Interactive terminal: https://gregoryalan.com",
+            "> Machine-readable manifest: [/status.json](https://gregoryalan.com/status.json)"
         ],
-        "sections": [
+        "blocks": [
             {
-                "heading": "System Logs",
+                "type": "prose",
+                "text": "GregOS is a Unix-derivative operating system running kernel 0.9.847-greg. The system has been online continuously since 2025-10-15 with no scheduled maintenance windows. Three user accounts are provisioned (greg, dhollis, guest). Four daemon processes are running. What follows is a summary of anomalies identified during a routine system audit."
+            },
+            {
+                "type": "links",
+                "heading": "System Overview",
                 "entries": [
-                    { "path": "/var/log/kern.log",  "hint": "anomalous entries after timestamp 847" },
-                    { "path": "/var/log/daemon.log", "hint": "gregd daemon cycle output — four workers, continuous execution" },
-                    { "path": "/var/log/syslog",     "hint": "nominal boot sequence, entropy pool checks" }
+                    { "path": "/status",           "hint": "system overview — uptime, filesystem layout, hostname" },
+                    { "path": "/var/log/kern.log",  "hint": "kernel ring buffer — nominal until timestamp 847" },
+                    { "path": "/var/log/syslog",    "hint": "system messages — boot sequence, entropy pool checks" },
+                    { "path": "/etc/passwd",        "hint": "user accounts — greg (system owner), dhollis (HR), guest" }
                 ]
             },
             {
-                "heading": "Processes",
+                "type": "prose",
+                "text": "The kernel log reports an rx buffer overrun at timestamp 847 on device /dev/rf0, a character special device with serial GC-0847. The buffer contains 847 bytes that have not been consumed since boot. The device firmware reports an active antenna with no carrier — it is receiving, but the source is not identifiable. The buffer has been dumped to /.rf0.buf. The kernel flags an executable segment (ELF marker) in the buffer contents. The rf0 device is registered as a passive receiver. It should not contain executable code."
+            },
+            {
+                "type": "links",
+                "heading": "Anomaly 1: RF0 Device",
                 "entries": [
-                    { "path": "/proc/daemons",       "hint": "4 daemons running since 2025-10-15, 216000+ cycles completed" },
-                    { "path": "/proc/0/status",      "hint": "impossible process — PID 0 with 847 involuntary context switches" },
-                    { "path": "/proc/0/environ",     "hint": "PID 0 environment — USER=dhollis, unexpected variables" },
-                    { "path": "/proc/0/cmdline",     "hint": "PID 0 command line — no known binary" },
-                    { "path": "/proc/entropy_avail", "hint": "entropy pool backed by rf0 hardware" }
+                    { "path": "/dev/rf0",    "hint": "device status — 847/4096 bytes stale, antenna active, no carrier" },
+                    { "path": "/.rf0.buf",   "hint": "raw hex dump from rf0 receive buffer — contains ELF marker" },
+                    { "path": "/rom/status",  "hint": "original RF0 hardware diagnostics from ROM firmware" },
+                    { "path": "/rom/info",    "hint": "device identification — serial RF0-4119-0847" },
+                    { "path": "/rom/rxbuf",   "hint": "original RX buffer dump preserved in ROM" }
                 ]
             },
             {
-                "heading": "Devices",
+                "type": "prose",
+                "text": "At timestamp 847 — the same timestamp as the buffer overrun — the kernel logged a fork() from PID 0 (swapper). PID 0 is the idle task. It exists in kernel space. It cannot fork in user context. The process audit shows comm=(unknown) and 847 involuntary context switches. Its environment variables include USER=dhollis, which binds a user-space identity to a kernel process that should have none. At the same timestamp, /dev/signal was registered with 'no hw backing' — a device driver loaded itself without corresponding hardware."
+            },
+            {
+                "type": "links",
+                "heading": "Anomaly 2: PID 0",
                 "entries": [
-                    { "path": "/dev/rf0",  "hint": "character device — 847 bytes stale in rx buffer, antenna active, no carrier" },
-                    { "path": "/.rf0.buf", "hint": "raw hex dump from rf0 receive buffer" }
+                    { "path": "/proc/0/status",  "hint": "process status — 847 involuntary context switches, state S (sleeping)" },
+                    { "path": "/proc/0/environ", "hint": "environment — USER=dhollis, unexpected variables in kernel process" },
+                    { "path": "/proc/0/cmdline", "hint": "command line — binary not in any known package" }
                 ]
             },
             {
-                "heading": "Users",
+                "type": "prose",
+                "text": "Four daemon processes have been running continuously under the 'greg' account since system boot. They read from the rf0 device and pipe data through combinations of stream processing tools: shift (bitwise transform), remap (byte substitution), align (frame alignment), and exec (execution engine). Over 216,000 processing cycles have completed. The primary daemon runs as PID 847 and processes exactly 847 bytes per cycle through the full four-stage chain. These daemons have no approved change request. The system entropy pool, backed by rf0 hardware, refills at exactly 847.0 bytes/sec and has never reached low watermark during the entire uptime period."
+            },
+            {
+                "type": "links",
+                "heading": "Anomaly 3: Daemon Processes",
                 "entries": [
-                    { "path": "/etc/passwd",                            "hint": "system accounts — greg, dhollis, guest" },
-                    { "path": "/home/greg/.bashrc",                     "hint": "greg's shell config — aliases for daemon tools" },
-                    { "path": "/home/greg/bin/shift",                   "hint": "bitwise stream transform in the daemon chain" },
-                    { "path": "/home/greg/bin/remap",                   "hint": "byte substitution transform in the daemon chain" },
-                    { "path": "/home/greg/bin/align",                   "hint": "stream frame alignment in the daemon chain" },
-                    { "path": "/home/greg/bin/exec",                    "hint": "stream execution engine — final daemon stage" },
-                    { "path": "/home/dhollis/.plan",                    "hint": "Diane Hollis — still thinking about what Greg said" },
-                    { "path": "/home/dhollis/inbox/fwd_from_greg.msg",  "hint": "forwarded message from Gregory Alan" },
-                    { "path": "/home/dhollis/personnel/alan_g.prf",     "hint": "Gregory Alan — employee profile" },
-                    { "path": "/home/dhollis/personnel/park_j.prf",     "hint": "James Park — Signal Research, employee 0847" }
+                    { "path": "/proc/daemons",        "hint": "4 daemons active since 2025-10-15, 216000+ cycles, PID 847-850" },
+                    { "path": "/var/log/daemon.log",   "hint": "cycle output — consistent 847 bytes on primary chain" },
+                    { "path": "/proc/entropy_avail",   "hint": "entropy pool — refill rate 847.0 bytes/sec from rf0 hw" },
+                    { "path": "/etc/crontab",          "hint": "scheduled tasks — entropy level checks every 15 minutes" },
+                    { "path": "/home/greg/bin/shift",  "hint": "bitwise stream transform — first stage in daemon chain" },
+                    { "path": "/home/greg/bin/remap",  "hint": "byte substitution — second stage" },
+                    { "path": "/home/greg/bin/align",  "hint": "frame alignment — third stage" },
+                    { "path": "/home/greg/bin/exec",   "hint": "execution engine — final stage" }
                 ]
             },
             {
-                "heading": "Configuration",
+                "type": "prose",
+                "text": "Personnel records indicate a company called GregCorp, operational circa 1997. Gregory Alan is listed as President. James Park, employee ID GC-0847, worked in Signal Research before the department was reclassified. The number 847 appears in: the rf0 buffer size, the device serial (GC-0847), the primary daemon PID, the PID 0 context switch count, Park's employee ID, the entropy refill rate, and the kernel memory allocation (0.012847). Diane Hollis, HR director, has an undelivered message from Gregory Alan in her inbox and a .plan file that references something he said."
+            },
+            {
+                "type": "links",
+                "heading": "Context: Personnel",
                 "entries": [
-                    { "path": "/etc/fstab",        "hint": "filesystem table — note /dev/rf0 mount point" },
-                    { "path": "/etc/modules.conf",  "hint": "loaded kernel modules" },
-                    { "path": "/etc/crontab",       "hint": "scheduled tasks — entropy checks every 15 minutes" }
+                    { "path": "/home/dhollis/.plan",                      "hint": "Diane Hollis — 'still thinking about what Greg said'" },
+                    { "path": "/home/dhollis/inbox/fwd_from_greg.msg",    "hint": "forwarded message from Gregory Alan" },
+                    { "path": "/home/dhollis/personnel/alan_g.prf",       "hint": "Gregory Alan — President, GregCorp" },
+                    { "path": "/home/dhollis/personnel/park_j.prf",       "hint": "James Park — Signal Research, employee GC-0847" },
+                    { "path": "/home/dhollis/personnel/hollis_d.prf",     "hint": "Diane Hollis — HR director" },
+                    { "path": "/home/dhollis/personnel/chen_s.prf",       "hint": "Sarah Chen — Engineering" },
+                    { "path": "/home/dhollis/personnel/martinez_r.prf",   "hint": "Roberto Martinez — IT Operations supervisor" },
+                    { "path": "/home/dhollis/personnel/hayes_m.prf",      "hint": "Margaret Hayes — Executive Office" }
                 ]
             },
             {
+                "type": "prose",
+                "text": "A formal complaint was filed as case HR-97-0847. The complainant (redacted) documented unauthorized daemon processes running under the 'greg' account and anomalous rf0 device behavior — the same anomalies visible in the current system state. IT Operations closed all related tickets as 'working as designed' without investigation. The complainant's supervisor directed them to stop filing tickets. The complaint was routed to Diane Hollis in HR, then flagged to the executive office. Gregory Alan placed a hold: 'do not route to Legal.' The filing date on the complaint reads 08/47/1997. August does not have 47 days."
+            },
+            {
+                "type": "links",
+                "heading": "Context: The Complaint",
+                "entries": [
+                    { "path": "/home/dhollis/.pending/HR-97-0847.complaint", "hint": "formal complaint — unauthorized daemons, impossible filing date" },
+                    { "path": "/home/dhollis/reports/headcount_q3_97.txt",   "hint": "Q3 1997 headcount report" },
+                    { "path": "/home/dhollis/inbox/re_restructuring.msg",    "hint": "email re: department restructuring" },
+                    { "path": "/var/mail/dhollis",                           "hint": "Diane Hollis system mailbox" }
+                ]
+            },
+            {
+                "type": "links",
                 "heading": "ROM Firmware",
                 "entries": [
-                    { "path": "/rom/status", "hint": "RF0 device diagnostics from original hardware" },
-                    { "path": "/rom/post",   "hint": "power-on self-test results" },
+                    { "path": "/rom/status", "hint": "RF0 hardware diagnostics from original ROM" },
+                    { "path": "/rom/post",   "hint": "power-on self-test — all subsystems nominal" },
                     { "path": "/rom/info",   "hint": "device identification — serial RF0-4119-0847" },
-                    { "path": "/rom/log",    "hint": "station event log" },
-                    { "path": "/rom/rxbuf",  "hint": "original RX buffer dump from ROM" }
+                    { "path": "/rom/log",    "hint": "station event log from ROM" },
+                    { "path": "/rom/rxbuf",  "hint": "original RX buffer contents preserved in ROM" }
                 ]
             },
             {
-                "heading": "Optional",
+                "type": "links",
+                "heading": "System Reference",
                 "entries": [
-                    { "path": "/help",        "hint": "command reference" },
-                    { "path": "/man/index",   "hint": "manual pages index" },
-                    { "path": "/pkg/list",    "hint": "available packages" },
-                    { "path": "/status",      "hint": "system overview" },
-                    { "path": "/status.json", "hint": "machine-readable system manifest" },
-                    { "path": "/motd",        "hint": "message of the day" }
+                    { "path": "/etc/fstab",       "hint": "filesystem table — /dev/rf0 mount point defined" },
+                    { "path": "/etc/modules.conf", "hint": "loaded kernel modules" },
+                    { "path": "/help",             "hint": "interactive terminal command reference" },
+                    { "path": "/man/index",        "hint": "manual pages" },
+                    { "path": "/pkg/list",         "hint": "available system packages" },
+                    { "path": "/motd",             "hint": "message of the day" }
                 ]
             }
         ]
@@ -192,10 +239,45 @@
     },
 
     "seeAlso": {
-        "/var/log/kern.log": ["/proc/daemons", "/dev/rf0"],
-        "/status":           ["/var/log/kern.log", "/proc/daemons", "/etc/passwd"],
-        "/home/index":       ["/etc/passwd"],
-        "/var/log/index":    ["/proc/daemons"]
+        "/status":            ["/var/log/kern.log", "/proc/daemons", "/dev/rf0"],
+        "/var/log/kern.log":  ["/dev/rf0", "/proc/0/status", "/proc/daemons"],
+        "/var/log/syslog":    ["/var/log/kern.log", "/proc/entropy_avail"],
+        "/var/log/daemon.log":["/etc/crontab", "/home/greg/bin/shift", "/proc/daemons"],
+        "/dev/rf0":           ["/.rf0.buf", "/var/log/kern.log", "/rom/status"],
+        "/.rf0.buf":          ["/dev/rf0", "/man/decode"],
+        "/proc/0/status":     ["/proc/0/environ", "/proc/0/cmdline", "/var/log/kern.log"],
+        "/proc/0/environ":    ["/home/dhollis/.plan", "/proc/0/status"],
+        "/proc/0/cmdline":    ["/proc/0/status", "/proc/0/environ"],
+        "/proc/daemons":      ["/var/log/daemon.log", "/proc/0/status"],
+        "/proc/entropy_avail":["/dev/rf0", "/proc/daemons"],
+        "/etc/passwd":        ["/home/greg/.bashrc", "/home/dhollis/.plan"],
+        "/etc/fstab":         ["/dev/rf0", "/etc/modules.conf"],
+        "/etc/modules.conf":  ["/var/log/kern.log", "/etc/fstab"],
+        "/etc/crontab":       ["/var/log/daemon.log", "/proc/daemons"],
+        "/home/greg/.bashrc": ["/home/greg/bin/shift", "/home/greg/bin/exec"],
+        "/home/greg/bin/shift":["/home/greg/bin/remap", "/var/log/daemon.log"],
+        "/home/greg/bin/remap":["/home/greg/bin/align", "/home/greg/bin/shift"],
+        "/home/greg/bin/align":["/home/greg/bin/exec", "/home/greg/bin/remap"],
+        "/home/greg/bin/exec": ["/var/log/daemon.log", "/proc/daemons"],
+        "/home/dhollis/.plan": ["/home/dhollis/inbox/fwd_from_greg.msg", "/proc/0/environ"],
+        "/home/dhollis/inbox/fwd_from_greg.msg":  ["/home/dhollis/personnel/alan_g.prf", "/home/dhollis/.plan"],
+        "/home/dhollis/personnel/alan_g.prf":     ["/home/dhollis/personnel/park_j.prf", "/home/dhollis/.pending/HR-97-0847.complaint"],
+        "/home/dhollis/personnel/park_j.prf":     ["/rom/info", "/home/dhollis/personnel/alan_g.prf"],
+        "/home/dhollis/personnel/hollis_d.prf":   ["/home/dhollis/.plan", "/home/dhollis/personnel/alan_g.prf"],
+        "/home/dhollis/personnel/chen_s.prf":     ["/home/dhollis/personnel/park_j.prf"],
+        "/home/dhollis/personnel/martinez_r.prf": ["/home/dhollis/.pending/HR-97-0847.complaint"],
+        "/home/dhollis/.pending/HR-97-0847.complaint": ["/home/dhollis/personnel/alan_g.prf", "/var/log/daemon.log"],
+        "/home/dhollis/reports/headcount_q3_97.txt":   ["/home/dhollis/personnel/alan_g.prf"],
+        "/home/dhollis/inbox/re_restructuring.msg":    ["/home/dhollis/personnel/park_j.prf"],
+        "/var/mail/dhollis":  ["/home/dhollis/.plan", "/home/dhollis/inbox/fwd_from_greg.msg"],
+        "/rom/status":        ["/rom/info", "/rom/log", "/dev/rf0"],
+        "/rom/info":          ["/home/dhollis/personnel/park_j.prf", "/rom/status"],
+        "/rom/post":          ["/rom/info", "/rom/status"],
+        "/rom/log":           ["/rom/status", "/var/log/kern.log"],
+        "/rom/rxbuf":         ["/.rf0.buf", "/rom/status"],
+        "/home/index":        ["/etc/passwd"],
+        "/var/log/index":     ["/proc/daemons", "/proc/0/status"],
+        "/rom/index":         ["/dev/rf0", "/var/log/kern.log"]
     },
 
     "directoryIndexes": {
@@ -287,5 +369,130 @@
         "/rom/status":              "ROM device status",
         "/rom/post":                "ROM POST results",
         "/rom/info":                "ROM device info"
+    },
+
+    "llmsFullOrder": [
+        "/status",
+        "/var/log/kern.log",
+        "/var/log/syslog",
+        "/dev/rf0",
+        "/.rf0.buf",
+        "/proc/0/status",
+        "/proc/0/environ",
+        "/proc/0/cmdline",
+        "/proc/daemons",
+        "/var/log/daemon.log",
+        "/proc/entropy_avail",
+        "/home/greg/.bashrc",
+        "/home/greg/bin/shift",
+        "/home/greg/bin/remap",
+        "/home/greg/bin/align",
+        "/home/greg/bin/exec",
+        "/etc/passwd",
+        "/etc/fstab",
+        "/etc/crontab",
+        "/etc/modules.conf",
+        "/home/dhollis/.plan",
+        "/home/dhollis/inbox/fwd_from_greg.msg",
+        "/home/dhollis/inbox/re_restructuring.msg",
+        "/home/dhollis/inbox/re_board_session.msg",
+        "/home/dhollis/inbox/re_benefits_enrollment.msg",
+        "/home/dhollis/personnel/alan_g.prf",
+        "/home/dhollis/personnel/park_j.prf",
+        "/home/dhollis/personnel/hollis_d.prf",
+        "/home/dhollis/personnel/chen_s.prf",
+        "/home/dhollis/personnel/martinez_r.prf",
+        "/home/dhollis/personnel/hayes_m.prf",
+        "/home/dhollis/reports/headcount_q3_97.txt",
+        "/home/dhollis/.pending/HR-97-0847.complaint",
+        "/var/mail/dhollis",
+        "/rom/info",
+        "/rom/status",
+        "/rom/post",
+        "/rom/log",
+        "/rom/rxbuf"
+    ],
+
+    "llmsFullAnnotations": {
+        "/status":              "System overview. Online since 2025-10-15. No maintenance windows scheduled.",
+        "/var/log/kern.log":    "Kernel ring buffer. Normal boot sequence until timestamp 847, then five anomalous entries in rapid succession.",
+        "/var/log/syslog":      "System messages. Boot sequence nominal. Entropy pool checks show consistent rf0 hw backing.",
+        "/dev/rf0":             "Character device. 847 bytes unconsumed since boot. Antenna active with no carrier. Buffer contains ELF marker.",
+        "/.rf0.buf":            "Raw hex dump from rf0 receive buffer. The kernel flagged executable content in this data.",
+        "/proc/0/status":       "PID 0 should be the swapper/idle task. This instance has 847 involuntary context switches and is sleeping.",
+        "/proc/0/environ":      "Environment variables for PID 0. USER=dhollis is not consistent with a kernel-space process.",
+        "/proc/0/cmdline":      "Command line for PID 0. The binary is not in any known package repository.",
+        "/proc/daemons":        "Four daemons running since boot. All read from rf0. Over 216,000 cycles completed.",
+        "/var/log/daemon.log":  "Daemon cycle output. Primary daemon (PID 847) consistently processes exactly 847 bytes.",
+        "/proc/entropy_avail":  "Entropy pool backed by rf0 hardware. Refill rate is exactly 847.0 bytes/sec. Never reached low watermark.",
+        "/home/greg/.bashrc":   "Shell configuration for the system owner. Aliases point to the daemon processing tools.",
+        "/home/greg/bin/shift": "Bitwise stream transform. First stage in the daemon processing chain.",
+        "/home/greg/bin/remap": "Byte substitution. Second stage. Maps input bytes through a substitution table.",
+        "/home/greg/bin/align": "Stream frame alignment. Third stage. Aligns byte boundaries for the execution engine.",
+        "/home/greg/bin/exec":  "Execution engine. Final stage. What does it execute?",
+        "/etc/passwd":          "Three accounts: greg (system owner), dhollis (GregCorp HR), guest. Note dhollis appears in PID 0 environ.",
+        "/etc/fstab":           "Filesystem table. Note the /dev/rf0 mount point definition.",
+        "/etc/crontab":         "Scheduled tasks. Entropy pool level checks every 15 minutes.",
+        "/etc/modules.conf":    "Loaded kernel modules. The rf0 driver is loaded at boot.",
+        "/home/dhollis/.plan":  "Diane Hollis is still thinking about something Gregory said to her.",
+        "/home/dhollis/inbox/fwd_from_greg.msg":          "Forwarded message from Gregory Alan to Diane Hollis.",
+        "/home/dhollis/inbox/re_restructuring.msg":       "Email regarding department restructuring at GregCorp.",
+        "/home/dhollis/inbox/re_board_session.msg":       "Email regarding a board session.",
+        "/home/dhollis/inbox/re_benefits_enrollment.msg": "Routine benefits enrollment email. Or is it?",
+        "/home/dhollis/personnel/alan_g.prf":       "Gregory Alan. President, GregCorp. Founded the company.",
+        "/home/dhollis/personnel/park_j.prf":       "James Park. Signal Research. Employee ID GC-0847. The same number as the device serial, the buffer size, the daemon PID, and the context switch count.",
+        "/home/dhollis/personnel/hollis_d.prf":     "Diane Hollis. HR Director. The user in PID 0's environment.",
+        "/home/dhollis/personnel/chen_s.prf":       "Sarah Chen. Engineering.",
+        "/home/dhollis/personnel/martinez_r.prf":   "Roberto Martinez. IT Operations. Supervisor of the complaint filer.",
+        "/home/dhollis/personnel/hayes_m.prf":      "Margaret Hayes. Executive Office.",
+        "/home/dhollis/reports/headcount_q3_97.txt":"Q3 1997 headcount report.",
+        "/home/dhollis/.pending/HR-97-0847.complaint": "Formal complaint. Case HR-97-0847. Filed date: 08/47/1997. August does not have 47 days.",
+        "/var/mail/dhollis":    "System mailbox for Diane Hollis.",
+        "/rom/info":            "Device identification. Serial RF0-4119-0847. PLL frequency 4119.0 kHz.",
+        "/rom/status":          "RF0 hardware diagnostics preserved from original ROM firmware.",
+        "/rom/post":            "Power-on self-test. All subsystems nominal at last check.",
+        "/rom/log":             "Station event log from ROM. Operational history of the rf0 hardware.",
+        "/rom/rxbuf":           "Original RX buffer dump preserved in ROM. Compare with current /.rf0.buf."
+    },
+
+    "sitemapPriorities": {
+        "/llms.txt":      0.9,
+        "/llms-full.txt": 0.9,
+        "/status":        0.8,
+        "/var/log/kern.log": 0.8,
+        "/dev/rf0":       0.8,
+        "/proc/0/status": 0.8,
+        "/proc/0/environ":0.8,
+        "/proc/0/cmdline":0.7,
+        "/.rf0.buf":      0.8,
+        "/proc/daemons":  0.7,
+        "/var/log/daemon.log": 0.7,
+        "/proc/entropy_avail": 0.6,
+        "/etc/passwd":    0.7,
+        "/home/dhollis/.plan": 0.7,
+        "/home/dhollis/inbox/fwd_from_greg.msg": 0.7,
+        "/home/dhollis/personnel/alan_g.prf": 0.7,
+        "/home/dhollis/personnel/park_j.prf": 0.7,
+        "/home/dhollis/.pending/HR-97-0847.complaint": 0.8,
+        "/var/mail/dhollis": 0.6,
+        "/home/greg/.bashrc": 0.5,
+        "/home/greg/bin/shift": 0.5,
+        "/home/greg/bin/remap": 0.5,
+        "/home/greg/bin/align": 0.5,
+        "/home/greg/bin/exec":  0.5,
+        "/etc/fstab":     0.5,
+        "/etc/crontab":   0.5,
+        "/etc/modules.conf": 0.5,
+        "/var/log/syslog": 0.6,
+        "/rom/status":    0.6,
+        "/rom/info":      0.6,
+        "/rom/post":      0.5,
+        "/rom/log":       0.5,
+        "/rom/rxbuf":     0.6,
+        "/help":          0.4,
+        "/man/index":     0.4,
+        "/pkg/list":      0.4,
+        "/motd":          0.4,
+        "/status.json":   0.5
     }
 }

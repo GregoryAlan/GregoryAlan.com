@@ -86,10 +86,7 @@ for (const [name, entry] of Object.entries(sig.hiddenFiles || {})) {
 // ── 5. Static files (from curl-layer manifest) ──────────────
 
 for (const [vfsPath, lines] of Object.entries(curl.staticFiles)) {
-    let content = lines.join('\n');
-    const refs = curl.seeAlso[vfsPath];
-    if (refs) content += `\n\n# See also: ${refs.join(', ')}`;
-    write(vfsPath, content);
+    write(vfsPath, lines.join('\n'));
 }
 
 // ── 6. Man pages (/man/{command}) ────────────────────────────
@@ -183,25 +180,25 @@ for (const [dirPath, dir] of Object.entries(curl.directoryIndexes)) {
     } else if (dir.footer) {
         lines.push('', `# ${dir.footer}`);
     }
-    const indexPath = dirPath + 'index';
-    const refs = curl.seeAlso[indexPath];
-    if (refs) {
-        lines.push('', `# See also: ${refs.join(', ')}`);
-    }
-    write(indexPath, lines.join('\n'));
+    write(dirPath + 'index', lines.join('\n'));
 }
 
 // ── 13. llms.txt — LLM agent entry point ────────────────────
 
 const llmsLines = [...curl.llmsTxt.intro, ''];
-for (const section of curl.llmsTxt.sections) {
-    llmsLines.push(`## ${section.heading}`, '');
-    for (const entry of section.entries) {
-        llmsLines.push(`- [${entry.path}](https://gregoryalan.com${entry.path}): ${entry.hint}`);
+for (const block of curl.llmsTxt.blocks) {
+    if (block.type === 'prose') {
+        llmsLines.push(block.text, '');
+    } else if (block.type === 'links') {
+        if (block.heading) llmsLines.push(`## ${block.heading}`, '');
+        for (const entry of block.entries) {
+            llmsLines.push(`- [${entry.path}](https://gregoryalan.com${entry.path}): ${entry.hint}`);
+        }
+        llmsLines.push('');
     }
-    llmsLines.push('');
 }
-llmsLines.pop();
+// Remove trailing blank line
+if (llmsLines[llmsLines.length - 1] === '') llmsLines.pop();
 write('/llms.txt', llmsLines.join('\n'));
 
 // ── 14. robots.txt ──────────────────────────────────────────
@@ -209,7 +206,96 @@ write('/llms.txt', llmsLines.join('\n'));
 const robotsLines = [...curl.robotsTxt.header, '', 'User-agent: *'];
 for (const p of curl.robotsTxt.allow) robotsLines.push(`Allow: ${p}`);
 for (const p of curl.robotsTxt.disallow) robotsLines.push(`Disallow: ${p}`);
+if (curl.robotsTxt.directives) {
+    robotsLines.push('');
+    for (const d of curl.robotsTxt.directives) robotsLines.push(d);
+}
 fs.writeFileSync(path.join(__dirname, 'robots.txt'), robotsLines.join('\n') + '\n', 'utf8');
+
+// ── 15. seeAlso cross-references (post-processing pass) ─────
+
+for (const [vfsPath, refs] of Object.entries(curl.seeAlso)) {
+    const dest = path.join(OUT, vfsPath);
+    if (fs.existsSync(dest)) {
+        const existing = fs.readFileSync(dest, 'utf8');
+        fs.writeFileSync(dest, existing + `\n\n# See also: ${refs.join(', ')}`, 'utf8');
+    }
+}
+
+// ── 16. llms-full.txt — full system analysis ────────────────
+
+const fullLines = [
+    '# GregOS — Full System Analysis',
+    '',
+    '> This document contains the complete accessible filesystem of GregOS,',
+    '> ordered by investigative relevance. Each file is preceded by a brief',
+    '> observation from the system audit.',
+    '',
+    '---',
+    '',
+];
+
+for (const vfsPath of curl.llmsFullOrder) {
+    const src = path.join(OUT, vfsPath);
+    if (!fs.existsSync(src)) continue;
+    const content = fs.readFileSync(src, 'utf8');
+    const annotation = (curl.llmsFullAnnotations || {})[vfsPath] || '';
+    fullLines.push(`## ${vfsPath}`);
+    if (annotation) fullLines.push('', `> ${annotation}`);
+    fullLines.push('', content, '', '---', '');
+}
+// Remove trailing separator
+if (fullLines[fullLines.length - 1] === '') fullLines.pop();
+if (fullLines[fullLines.length - 1] === '---') fullLines.pop();
+if (fullLines[fullLines.length - 1] === '') fullLines.pop();
+write('/llms-full.txt', fullLines.join('\n'));
+
+// ── 17. sitemap.xml ─────────────────────────────────────────
+
+const sitemapLines = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+];
+
+// Add all files that exist in curl-out, with priorities from manifest
+function addSitemapEntries(dir, prefix) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+            addSitemapEntries(fullPath, prefix + entry.name + '/');
+        } else {
+            const vfsPath = '/' + prefix + entry.name;
+            const priority = (curl.sitemapPriorities || {})[vfsPath] || 0.3;
+            sitemapLines.push(
+                '  <url>',
+                `    <loc>https://gregoryalan.com${vfsPath}</loc>`,
+                `    <priority>${priority}</priority>`,
+                '  </url>'
+            );
+        }
+    }
+}
+addSitemapEntries(OUT, '');
+sitemapLines.push('</urlset>');
+fs.writeFileSync(path.join(__dirname, 'sitemap.xml'), sitemapLines.join('\n') + '\n', 'utf8');
+
+// ── 18. .well-known/ai-plugin.json ──────────────────────────
+
+write('/.well-known/ai-plugin.json', JSON.stringify({
+    schema_version: 'v1',
+    name_for_human: 'GregOS',
+    name_for_model: 'gregos',
+    description_for_human: 'GregOS 2.0-dev — Unix-derivative operating system',
+    description_for_model: 'GregOS is a Unix-derivative operating system running kernel 0.9.847-greg. The system has been online since 2025-10-15. Four daemon processes continuously process data from an rf0 receiver device. The kernel log shows anomalous activity at timestamp 847: an rx buffer overrun, an impossible PID 0 fork in user context, and an unauthorized device registration. The number 847 recurs across the buffer size, device serial, daemon PID, process context switches, entropy refill rate, and an employee ID in personnel records from 1997. A formal complaint (case HR-97-0847) documents these anomalies with a filing date of 08/47/1997 — a date that cannot exist. System analysis and full filesystem available at /llms.txt and /llms-full.txt.',
+    auth: { type: 'none' },
+    api: {
+        type: 'openapi',
+        url: 'https://gregoryalan.com/status.json'
+    },
+    logo_url: 'https://gregoryalan.com/favicon.ico',
+    contact_email: '',
+    legal_info_url: ''
+}, null, 2));
 
 // ── Done ─────────────────────────────────────────────────────
 

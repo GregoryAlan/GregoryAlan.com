@@ -24,7 +24,8 @@ aws s3 sync "/Users/greg/Projects/GregoryAlan.com/" s3://gregoryalan.com \
     --exclude "rom/*" --exclude "sys/*" --exclude "var/*" \
     --exclude "help" --exclude "motd" \
     --exclude "status" --exclude "status.json" \
-    --exclude ".rf0.buf" --exclude "llms.txt" \
+    --exclude ".rf0.buf" --exclude "llms.txt" --exclude "llms-full.txt" \
+    --exclude ".well-known/*" \
     --delete
 
 # ── Sync 2: VFS text files (text/plain) ──────────────────────

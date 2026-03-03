@@ -3,11 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gregory Alan</title>
+    <meta name="description" content="GregOS 2.0-dev — Kernel 0.9.847-greg. 4 daemons active since 2025-10-15. Anomaly: rf0 buffer unconsumed since boot. PID 0 should not exist in user context.">
+    <title>GregOS</title>
     <!-- curl gregoryalan.com/status -->
+
+    <!-- OpenGraph -->
+    <meta property="og:title" content="GregOS 2.0-dev">
+    <meta property="og:description" content="Kernel 0.9.847-greg. 4 daemons active since 2025-10-15. rf0 buffer unconsumed since boot. PID 0 fork from swapper — illegal in user context.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://gregoryalan.com">
+    <meta property="og:site_name" content="GregOS">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="GregOS 2.0-dev">
+    <meta name="twitter:description" content="Kernel 0.9.847-greg. rf0 rx overrun at timestamp 847. PID 0 should not exist in user context. 4 daemons, 216000+ cycles, no maintenance window.">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "GregOS",
+        "applicationCategory": "OperatingSystem",
+        "operatingSystem": "GregOS 2.0-dev",
+        "softwareVersion": "0.9.847-greg",
+        "author": {
+            "@type": "Organization",
+            "name": "Gregory Alan Computing, Inc.",
+            "foundingDate": "1987"
+        },
+        "description": "Unix-derivative operating system. Kernel 0.9.847-greg. Online since 2025-10-15. 4 daemon processes active under 'greg' account — no approved change request. rf0 device buffer contains 847 bytes unconsumed since boot with ELF executable marker. PID 0 forked in user context at timestamp 847 with USER=dhollis. Case HR-97-0847 documents identical anomalies with filing date 08/47/1997.",
+        "url": "https://gregoryalan.com"
+    }
+    </script>
+
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<noscript>
+<article>
+    <h1>GregOS 2.0-dev</h1>
+    <p>Kernel 0.9.847-greg | Hostname: gregoryalan.com | Uptime: since 2025-10-15</p>
+    <h2>System Status</h2>
+    <ul>
+        <li>4 daemon processes active (PIDs 847-850), 216000+ cycles completed</li>
+        <li>rf0 device: 847/4096 bytes unconsumed since boot, antenna active, no carrier</li>
+        <li>Entropy pool: 3847, refill rate 847.0 bytes/sec (rf0 hw backing)</li>
+    </ul>
+    <h2>Anomaly Flags</h2>
+    <ul>
+        <li>rf0 rx buffer overrun at timestamp 847 — buffer contains ELF executable marker</li>
+        <li>PID 0 fork() from swapper — illegal in user context, 847 involuntary context switches</li>
+        <li>/dev/signal registered at timestamp 847 with no hardware backing</li>
+    </ul>
+    <p>Interactive terminal requires JavaScript: <a href="https://gregoryalan.com">gregoryalan.com</a></p>
+    <p>System analysis: <a href="/llms.txt">llms.txt</a> | Full audit: <a href="/llms-full.txt">llms-full.txt</a> | Status: <a href="/status">status</a></p>
+</article>
+</noscript>
 <div id="boot-screen"></div>
 <div class="terminal" id="terminal" style="display: none">
     <div id="motd"></div>
