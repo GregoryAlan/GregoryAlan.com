@@ -1,1 +1,2 @@
 # Project-specific ignores only (see ~/.gitignore_global for common patterns)
+curl-out/
