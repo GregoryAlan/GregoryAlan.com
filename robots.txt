@@ -1,2 +1,24 @@
+# GregOS 2.0-dev (kernel 0.9.847-greg)
+# gregoryalan.com
+#
+# STATUS: ANOMALY — rf0 buffer unconsumed since boot
+# See /var/log/kern.log
+#
+# System uptime: since 2025-10-15
+
 User-agent: *
-Disallow: /
+Allow: /proc/
+Allow: /etc/
+Allow: /var/log/
+Allow: /home/
+Allow: /man/
+Allow: /help
+Allow: /motd
+Allow: /status
+Allow: /rom/
+Allow: /pkg/
+Allow: /llms.txt
+Disallow: /dev/rf0
+Disallow: /js/
+Disallow: /content/
+Disallow: /drivers/
