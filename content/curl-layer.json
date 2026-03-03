@@ -1,0 +1,291 @@
+{
+    "id": "curl-layer",
+    "description": "Curl-accessible layer — robots.txt, llms.txt, static snapshots, navigation",
+
+    "robotsTxt": {
+        "header": [
+            "# GregOS 2.0-dev (kernel 0.9.847-greg)",
+            "# gregoryalan.com",
+            "#",
+            "# STATUS: ANOMALY — rf0 buffer unconsumed since boot",
+            "# See /var/log/kern.log",
+            "#",
+            "# System uptime: since 2025-10-15"
+        ],
+        "allow": ["/proc/", "/etc/", "/var/log/", "/home/", "/man/",
+                  "/help", "/motd", "/status", "/rom/", "/pkg/", "/llms.txt"],
+        "disallow": ["/dev/rf0", "/js/", "/content/", "/drivers/"]
+    },
+
+    "llmsTxt": {
+        "intro": [
+            "# GregOS",
+            "",
+            "> Kernel 0.9.847-greg | Anomaly detected at timestamp 847 — rf0 buffer unconsumed since boot.",
+            "> PID 0 should not exist in user context. It does.",
+            ">",
+            "> Interactive terminal: https://gregoryalan.com"
+        ],
+        "sections": [
+            {
+                "heading": "System Logs",
+                "entries": [
+                    { "path": "/var/log/kern.log",  "hint": "anomalous entries after timestamp 847" },
+                    { "path": "/var/log/daemon.log", "hint": "gregd daemon cycle output — four workers, continuous execution" },
+                    { "path": "/var/log/syslog",     "hint": "nominal boot sequence, entropy pool checks" }
+                ]
+            },
+            {
+                "heading": "Processes",
+                "entries": [
+                    { "path": "/proc/daemons",       "hint": "4 daemons running since 2025-10-15, 216000+ cycles completed" },
+                    { "path": "/proc/0/status",      "hint": "impossible process — PID 0 with 847 involuntary context switches" },
+                    { "path": "/proc/0/environ",     "hint": "PID 0 environment — USER=dhollis, unexpected variables" },
+                    { "path": "/proc/0/cmdline",     "hint": "PID 0 command line — no known binary" },
+                    { "path": "/proc/entropy_avail", "hint": "entropy pool backed by rf0 hardware" }
+                ]
+            },
+            {
+                "heading": "Devices",
+                "entries": [
+                    { "path": "/dev/rf0",  "hint": "character device — 847 bytes stale in rx buffer, antenna active, no carrier" },
+                    { "path": "/.rf0.buf", "hint": "raw hex dump from rf0 receive buffer" }
+                ]
+            },
+            {
+                "heading": "Users",
+                "entries": [
+                    { "path": "/etc/passwd",                            "hint": "system accounts — greg, dhollis, guest" },
+                    { "path": "/home/greg/.bashrc",                     "hint": "greg's shell config — aliases for daemon tools" },
+                    { "path": "/home/greg/bin/shift",                   "hint": "bitwise stream transform in the daemon chain" },
+                    { "path": "/home/greg/bin/remap",                   "hint": "byte substitution transform in the daemon chain" },
+                    { "path": "/home/greg/bin/align",                   "hint": "stream frame alignment in the daemon chain" },
+                    { "path": "/home/greg/bin/exec",                    "hint": "stream execution engine — final daemon stage" },
+                    { "path": "/home/dhollis/.plan",                    "hint": "Diane Hollis — still thinking about what Greg said" },
+                    { "path": "/home/dhollis/inbox/fwd_from_greg.msg",  "hint": "forwarded message from Gregory Alan" },
+                    { "path": "/home/dhollis/personnel/alan_g.prf",     "hint": "Gregory Alan — employee profile" },
+                    { "path": "/home/dhollis/personnel/park_j.prf",     "hint": "James Park — Signal Research, employee 0847" }
+                ]
+            },
+            {
+                "heading": "Configuration",
+                "entries": [
+                    { "path": "/etc/fstab",        "hint": "filesystem table — note /dev/rf0 mount point" },
+                    { "path": "/etc/modules.conf",  "hint": "loaded kernel modules" },
+                    { "path": "/etc/crontab",       "hint": "scheduled tasks — entropy checks every 15 minutes" }
+                ]
+            },
+            {
+                "heading": "ROM Firmware",
+                "entries": [
+                    { "path": "/rom/status", "hint": "RF0 device diagnostics from original hardware" },
+                    { "path": "/rom/post",   "hint": "power-on self-test results" },
+                    { "path": "/rom/info",   "hint": "device identification — serial RF0-4119-0847" },
+                    { "path": "/rom/log",    "hint": "station event log" },
+                    { "path": "/rom/rxbuf",  "hint": "original RX buffer dump from ROM" }
+                ]
+            },
+            {
+                "heading": "Optional",
+                "entries": [
+                    { "path": "/help",        "hint": "command reference" },
+                    { "path": "/man/index",   "hint": "manual pages index" },
+                    { "path": "/pkg/list",    "hint": "available packages" },
+                    { "path": "/status",      "hint": "system overview" },
+                    { "path": "/status.json", "hint": "machine-readable system manifest" },
+                    { "path": "/motd",        "hint": "message of the day" }
+                ]
+            }
+        ]
+    },
+
+    "staticFiles": {
+        "/dev/rf0": [
+            "RF0 DEVICE STATUS",
+            "=================",
+            "device:    /dev/rf0 (character special)",
+            "driver:    rf0 1.0-ROM",
+            "serial:    GC-0847",
+            "state:     ACTIVE",
+            "",
+            "rx buffer: 847/4096 bytes (STALE — unconsumed since boot)",
+            "tx buffer: 0 bytes",
+            "antenna:   ACTIVE — NO CARRIER",
+            "relay:     STANDBY",
+            "pll:       4119.0 kHz LOCK",
+            "",
+            "WARN: buffer not consumed — see dmesg, /var/log/kern.log",
+            "WARN: buffer contains executable segment (ELF marker)",
+            "NOTE: buffer dumped to .rf0.buf"
+        ],
+        "/proc/daemons": [
+            "DAEMON  PID   STARTED              UPTIME       CHAIN                         STATUS",
+            "gregd   847   2025-10-15 00:00     3600h+  rf0|shift|remap|align|exec    running",
+            "gregd   848   2025-10-15 00:00     3600h+  rf0|shift|remap|exec          running",
+            "gregd   849   2025-10-15 00:00     3600h+  rf0|remap|align|exec          running",
+            "gregd   850   2025-10-15 00:00     3600h+  rf0|shift|align               running",
+            "",
+            "4 daemons active, 0 stopped",
+            "cycles completed: 216000+",
+            "last exec: (continuous)"
+        ],
+        "/proc/entropy_avail": [
+            "entropy pool: 3847",
+            "source: rf0 (hw)",
+            "refill rate: 847.0 bytes/sec",
+            "pool low watermark: 256",
+            "pool high watermark: 4096"
+        ],
+        "/var/log/kern.log": [
+            "[    0.000000] gregos-kernel 0.9.851 #851 SMP",
+            "[    0.001203] CPU: x86_64 detected",
+            "[    0.012847] Memory: 512MB available",
+            "[    0.024100] gregfs: mounted / (rw)",
+            "[    0.031000] dev: /dev/null registered",
+            "[    0.031200] dev: /dev/zero registered",
+            "[    0.031400] dev: /dev/random registered",
+            "[    0.032000] dev: /dev/entropy registered (rf0 hw backing)",
+            "[    0.033000] init: starting services",
+            "[    0.040000] svc: sshd started",
+            "[    0.041000] svc: cron started",
+            "[    0.042000] svc: gregd started (4 daemons)",
+            "[    0.050000] login: guest session opened on tty1",
+            "[  847.000000] rf0: rx ring overrun (847 bytes not consumed)",
+            "[  847.000001] rf0: unexpected exec in rx buffer",
+            "[  847.000003] audit: pid=0 comm=(unknown) ppid=0",
+            "[  847.000005] dev: /dev/signal registered (no hw backing)",
+            "[  847.000007] rf0: connection from 0.0.0.0",
+            "[  847.000009] PID 0: fork() from swapper — illegal in user context"
+        ],
+        "/var/log/daemon.log": [
+            "[gregd:847] cycle 216000 | rf0|shift|remap|align|exec | exit 0 | 847 bytes",
+            "[gregd:847] cycle 216001 | rf0|shift|remap|align|exec | exit 0 | 847 bytes",
+            "[gregd:847] cycle 216002 | rf0|shift|remap|align|exec | exit 0 | 847 bytes",
+            "[gregd:848] cycle 216003 | rf0|shift|remap|exec       | exit 0 | 512 bytes",
+            "[gregd:847] cycle 216004 | rf0|shift|remap|align|exec | exit 0 | 847 bytes",
+            "[gregd:847] cycle 216005 | rf0|shift|remap|align|exec | exit 0 | 847 bytes",
+            "[gregd:849] cycle 216006 | rf0|remap|align|exec       | exit 0 | 847 bytes",
+            "[gregd:847] cycle 216007 | rf0|shift|remap|align|exec | exit 0 | 847 bytes",
+            "[gregd:850] cycle 216008 | rf0|shift|align            | exit 0 | 256 bytes",
+            "[gregd:847] cycle 216009 | rf0|shift|remap|align|exec | exit 0 | 847 bytes"
+        ],
+        "/status": [
+            "GregOS 2.0-dev",
+            "Kernel 0.9.847-greg",
+            "Hostname: gregoryalan.com",
+            "Uptime: since 2025-10-15",
+            "",
+            "Interactive terminal: https://gregoryalan.com",
+            "",
+            "Filesystem (read-only remote access):",
+            "  /etc/          System configuration",
+            "  /proc/         Process and kernel information",
+            "  /var/log/      System logs",
+            "  /home/         User home directories",
+            "  /dev/          Devices",
+            "  /man/          Manual pages",
+            "  /help          Command reference",
+            "  /motd          Message of the day",
+            "  /pkg/          Package registry",
+            "  /rom/          ROM firmware (v1.0)"
+        ]
+    },
+
+    "seeAlso": {
+        "/var/log/kern.log": ["/proc/daemons", "/dev/rf0"],
+        "/status":           ["/var/log/kern.log", "/proc/daemons", "/etc/passwd"],
+        "/home/index":       ["/etc/passwd"],
+        "/var/log/index":    ["/proc/daemons"]
+    },
+
+    "directoryIndexes": {
+        "/etc/": {
+            "entries": [
+                { "name": "hostname",       "desc": "System hostname" },
+                { "name": "passwd",         "desc": "User accounts" },
+                { "name": "fstab",          "desc": "Filesystem table" },
+                { "name": "motd",           "desc": "Message of the day" },
+                { "name": "crontab",        "desc": "Scheduled tasks" },
+                { "name": "modules.conf",   "desc": "Loaded kernel modules" },
+                { "name": "gregos-release", "desc": "OS release info" }
+            ],
+            "usageHint": "Usage: curl gregoryalan.com/etc/<file>"
+        },
+        "/proc/": {
+            "entries": [
+                { "name": "version",       "desc": "Kernel version string" },
+                { "name": "cpuinfo",       "desc": "CPU information" },
+                { "name": "meminfo",       "desc": "Memory information" },
+                { "name": "daemons",       "desc": "Running daemon processes" },
+                { "name": "entropy_avail", "desc": "Entropy pool status" },
+                { "name": "0/",            "desc": "PID 0 (anomalous process)" }
+            ],
+            "usageHint": "Usage: curl gregoryalan.com/proc/<file>"
+        },
+        "/home/": {
+            "entries": [
+                { "name": "greg/",    "desc": "Gregory Alan (system owner)" },
+                { "name": "dhollis/", "desc": "Diane Hollis (HR director)" },
+                { "name": "guest/",   "desc": "Visitor account" }
+            ]
+        },
+        "/var/log/": {
+            "entries": [
+                { "name": "kern.log",   "desc": "Kernel ring buffer" },
+                { "name": "daemon.log", "desc": "Daemon process output" },
+                { "name": "syslog",     "desc": "System messages" }
+            ]
+        },
+        "/rom/": {
+            "entries": [
+                { "name": "status", "desc": "RF0 device diagnostics" },
+                { "name": "post",   "desc": "Power-on self-test results" },
+                { "name": "info",   "desc": "Device identification" },
+                { "name": "log",    "desc": "Station event log" },
+                { "name": "rxbuf",  "desc": "RX buffer dump" }
+            ],
+            "footer": "ROM firmware from v1.0 boot"
+        }
+    },
+
+    "footerHints": {
+        "/man/index": "Usage: curl gregoryalan.com/man/<command>",
+        "/help":      "Man pages: curl gregoryalan.com/man/<command>"
+    },
+
+    "statusPaths": {
+        "/etc/passwd":              "User accounts",
+        "/etc/hostname":            "System hostname",
+        "/etc/fstab":               "Filesystem table",
+        "/etc/crontab":             "Scheduled tasks",
+        "/etc/modules.conf":        "Loaded kernel modules",
+        "/etc/gregos-release":      "OS release info",
+        "/proc/version":            "Kernel version",
+        "/proc/cpuinfo":            "CPU information",
+        "/proc/meminfo":            "Memory information",
+        "/proc/daemons":            "Running daemons",
+        "/proc/entropy_avail":      "Entropy pool status",
+        "/proc/0/status":           "PID 0 process status",
+        "/proc/0/environ":          "PID 0 environment",
+        "/proc/0/cmdline":          "PID 0 command line",
+        "/var/log/kern.log":        "Kernel log",
+        "/var/log/daemon.log":      "Daemon log",
+        "/var/log/syslog":          "System log",
+        "/dev/rf0":                 "RF0 device status",
+        "/.rf0.buf":                "RF0 receive buffer dump",
+        "/home/greg/.bashrc":       "greg shell config",
+        "/home/greg/bin/shift":     "Bitwise stream transform",
+        "/home/greg/bin/remap":     "Byte substitution transform",
+        "/home/greg/bin/align":     "Stream frame alignment",
+        "/home/greg/bin/exec":      "Stream execution engine",
+        "/home/dhollis/inbox/":     "Diane Hollis mailbox",
+        "/home/dhollis/personnel/": "Personnel records",
+        "/man/":                    "Manual pages index",
+        "/help":                    "Command reference",
+        "/motd":                    "Message of the day",
+        "/pkg/list":                "Package registry",
+        "/rom/status":              "ROM device status",
+        "/rom/post":                "ROM POST results",
+        "/rom/info":                "ROM device info"
+    }
+}
