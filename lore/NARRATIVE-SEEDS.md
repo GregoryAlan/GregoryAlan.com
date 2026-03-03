@@ -22,9 +22,9 @@ Each file entry includes:
 
 <!-- contract
 status: implemented
-impl: js/versions.js (v1_1Seeds, narrativeSeeds), drivers/the-signal.js, js/cmd/unix.js, js/cmd/bin-tools.js
-last-synced: 2026-02-22
-notes: Reference table. Values verified against code 2026-02-22. Kernel 847/851 split is correctly implemented per version layer.
+impl: content/v1.1-system.json, content/v2.0-system.json, content/computed-seeds.js, drivers/the-signal.js, js/cmd/unix.js, js/cmd/bin-tools.js
+last-synced: 2026-02-24
+notes: Reference table. Values verified against code 2026-02-22. Kernel 847/851 split is correctly implemented per version layer. Static seeds moved from js/versions.js to content/*.json; dynamic seeds in content/computed-seeds.js.
 -->
 
 Values already set in the codebase. All content must match these exactly.
@@ -58,8 +58,8 @@ The central narrative thread. A visitor who follows it discovers: Gregory built 
 
 <!-- contract
 status: implemented
-impl: js/versions.js:narrativeSeeds['/etc/crontab']
-last-synced: 2026-02-22
+impl: content/v2.0-system.json:treeFiles['/etc/crontab']
+last-synced: 2026-02-24
 -->
 
 **Type:** Static
@@ -72,7 +72,7 @@ The most important file in the system after `.rf0.buf`.
 
 # system maintenance
 0  3   *   *   *    root   /usr/sbin/logrotate /etc/logrotate.conf
-15 *   *   *   *    root   /usr/bin/entropy-check >> /var/log/syslog 2>&1
+*/15 * *   *   *    root   /usr/bin/entropy-check >> /var/log/syslog 2>&1
 
 # ── greg's daemon chain ──────────────────────────────
 */1 *  *   *   *    greg   /home/greg/bin/shift < /dev/entropy | /home/greg/bin/remap | /home/greg/bin/align | /home/greg/bin/exec >> /var/log/daemon.log 2>&1
@@ -95,8 +95,8 @@ The most important file in the system after `.rf0.buf`.
 
 <!-- contract
 status: implemented
-impl: js/versions.js:narrativeSeeds['/proc/daemons']
-last-synced: 2026-02-22
+impl: content/computed-seeds.js:computedNarrativeSeeds['/proc/daemons']
+last-synced: 2026-02-24
 -->
 
 **Type:** Dynamic. Always visible at v2.0.
@@ -138,8 +138,8 @@ NOTE: chain 847 exit code anomaly — see /var/log/daemon.log
 
 <!-- contract
 status: implemented
-impl: js/versions.js:narrativeSeeds['/var/log/daemon.log']
-last-synced: 2026-02-22
+impl: content/computed-seeds.js:computedNarrativeSeeds['/var/log/daemon.log']
+last-synced: 2026-02-24
 -->
 
 **Type:** Dynamic. Always visible at v2.0. The execution log where the anomaly lives.
@@ -188,8 +188,8 @@ NOTE: clustering detected — see /home/greg/bin/exec --analyze
 
 <!-- contract
 status: implemented
-impl: js/versions.js:narrativeSeeds['/home/greg/bin/shift'], ['/home/greg/bin/remap'], ['/home/greg/bin/align'], ['/home/greg/bin/exec']
-last-synced: 2026-02-22
+impl: content/v2.0-system.json:treeFiles['/home/greg/bin/shift'], ['/home/greg/bin/remap'], ['/home/greg/bin/align'], ['/home/greg/bin/exec']
+last-synced: 2026-02-24
 -->
 
 **Type:** Static. Four tools, presented as bare usage/help text. No personal comments. No commentary. Tools are tools.
@@ -234,8 +234,8 @@ A secondary thread. The hardware entropy pool that feeds the daemon pipeline doe
 
 <!-- contract
 status: implemented
-impl: js/versions.js:narrativeSeeds['/proc/entropy_avail']
-last-synced: 2026-02-22
+impl: content/computed-seeds.js:computedNarrativeSeeds['/proc/entropy_avail']
+last-synced: 2026-02-24
 -->
 
 **Type:** Dynamic. Always visible.
@@ -265,8 +265,8 @@ WARNING: pool has not reached low watermark in 847+ hours
 
 <!-- contract
 status: implemented
-impl: js/versions.js:narrativeSeeds['/var/log/syslog']
-last-synced: 2026-02-22
+impl: content/v2.0-system.json:treeFiles['/var/log/syslog']
+last-synced: 2026-02-24
 -->
 
 **Type:** Static.
@@ -299,31 +299,28 @@ Files that describe the kernel-level infrastructure Gregory built to support the
 
 <!-- contract
 status: implemented
-impl: js/versions.js:narrativeSeeds['/etc/modules.conf']
-last-synced: 2026-02-22
+impl: content/v2.0-system.json:treeFiles['/etc/modules.conf']
+last-synced: 2026-02-24
 -->
 
 **Type:** Static.
 
 ```
-# /etc/modules.conf - module load order
+# /etc/modules.conf - module autoload list
 #
-# Core devices
-rf0         /lib/modules/0.9.851/rf0.ko         # SDR hardware entropy source
-entropy     (built-in)                           # entropy pool management
+# Modules loaded at boot. Built-in modules (entropy, transform)
+# are compiled into the kernel and not listed here.
+#
+# See modprobe.d/gregos.conf for module parameters.
 
-# Extended pipeline (added 0.9.2)
-transform   (built-in)                           # sys_transform(), sys_chain_exec()
-
-# Post-pipeline (added 0.9.3)
-signal      /lib/modules/0.9.851/signal.ko       # depends: transform, entropy
+rf0             # SDR hardware entropy source (/dev/entropy backing)
+signal          # depends: transform, entropy
 ```
 
 **What this tells the visitor:**
-- The `signal` module was the last thing added to the kernel (0.9.3)
-- It depends on both `transform` and `entropy` — it needs the full pipeline
-- The version jumps (0.9.2, 0.9.3) match the kernel version history
-- `signal.ko` exists as a loadable module, not built-in — it's separable, optional, added after the fact
+- `signal` depends on both `transform` and `entropy` — it needs the full pipeline
+- The header reveals that `entropy` and `transform` are built into the kernel itself, while `rf0` and `signal` are loadable — added after the core was built
+- `signal` is separable, optional, added after the fact
 
 ### /etc/gregos-release
 
@@ -350,9 +347,8 @@ The `-dev` suffix and `unstable` channel mark this as a development build — v2
 
 <!-- contract
 status: implemented
-impl: js/versions.js:narrativeSeeds['/var/log/kern.log']
-last-synced: 2026-02-22
-notes: Code uses color:var(--error) CSS variable instead of spec's color:#f55. Functionally equivalent.
+impl: content/computed-seeds.js:computedNarrativeSeeds['/var/log/kern.log']
+last-synced: 2026-02-24
 -->
 
 **Type:** Dynamic. Boot messages that extend after contact.
@@ -384,11 +380,11 @@ Clean boot. Every line standard. The detail worth noticing: `svc: gregd started 
 [  847.000001] rf0: unexpected exec in rx buffer
 [  847.000003] audit: pid=0 comm=(unknown) ppid=0
 [  847.000005] dev: /dev/signal registered (no hw backing)
-[  847.000007] signal: mount /dev/signal type=chardev (rw)
-[  847.000009] <span style="color:#f55">PID 0: fork() from swapper — illegal in user context</span>
+[  847.000007] rf0: <span style="color:#f55">connection from 0.0.0.0</span>
+[  847.000009] PID 0: <span style="color:#f55">fork() from swapper — illegal in user context</span>
 ```
 
-Complements what `dmesg` already shows, with additional detail: the signal device mount type, and the specific kernel error about PID 0 forking from the swapper task — something the kernel was never built to allow.
+Complements what `dmesg` already shows, with additional detail: the remote connection origin (echoing the relay target), and the specific kernel error about PID 0 forking from the swapper task — something the kernel was never built to allow.
 
 ---
 
@@ -400,8 +396,8 @@ Files that establish Gregory as a real person who lived on this system.
 
 <!-- contract
 status: implemented
-impl: js/versions.js:narrativeSeeds['/home/greg/.bashrc']
-last-synced: 2026-02-22
+impl: content/v2.0-system.json:treeFiles['/home/greg/.bashrc']
+last-synced: 2026-02-24
 -->
 
 **Type:** Static.
@@ -430,9 +426,9 @@ alias chaintest='shift < /dev/entropy | remap | align | exec 2>/dev/null; echo $
 
 <!-- contract
 status: implemented
-impl: All thread paths verified against js/versions.js narrativeSeeds and drivers/the-signal.js
-last-synced: 2026-02-22
-notes: Design reference. Individual file implementations tracked in their own contracts above.
+impl: All thread paths verified against content/*.json, content/computed-seeds.js, and drivers/the-signal.js
+last-synced: 2026-02-24
+notes: Design reference. Individual file implementations tracked in their own contracts above. Static seeds in content/*.json, dynamic seeds in content/computed-seeds.js.
 -->
 
 These threads connect files to each other, rewarding visitors who explore systematically:

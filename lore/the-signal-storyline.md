@@ -189,7 +189,13 @@ This is part of the descent. Gregory didn't disable the check carelessly. He dis
 
 No hardware checks (those happened at power-on). No ASCII art. No "GregBIOS".
 
-**MOTD** — single line: `Type 'help' for diagnostics.` — the boot already identified the device.
+**MOTD:**
+
+| Line | Expected |
+|------|----------|
+| 1 | `POST: 6/7 OK, 1 WARN` |
+| 2 | *(blank)* |
+| 3 | `type 'help' for commands` |
 
 **Prompt** — should be `rf0>` (bare ROM monitor, no path)
 
@@ -197,44 +203,44 @@ No hardware checks (those happened at power-on). No ASCII art. No "GregBIOS".
 
 | Command | Expected Output |
 |---------|----------------|
-| `help` | Lists exactly 7 commands: `cat`, `clear`, `help`, `ls`, `reboot`, `rm`, `status` (sorted). No `cd`, `pwd`, `open`, `whoami`, `history`, `sudo`, `man`. No "Text files:" line. |
-| `ls` | Shows only `broadcast.log` and `status.txt`. No directories. |
-| `cat broadcast.log` | Terse device log: `init from ROM`, `ant0: ACTIVE`, `rx0: 847 bytes buffered (unconsumed)`, `rx0: checksum FAIL`. |
-| `cat status.txt` | Register-dump style: `firmware: 1.0-ROM`, `signal: NOMINAL`, `update: AVAILABLE`. |
-| `status` | Live diagnostics: `RF0 DIAGNOSTICS`, `rf: 847.0MHz LOCK`, `rx buf: 847 bytes (unconsumed)`, `uptime: 847h 14m`. |
+| `help` | Lists exactly 8 commands: `clear`, `help`, `info`, `log`, `post`, `reboot`, `rxbuf`, `status` (sorted). Header reads `Commands:` (not `Available commands:`). No `ls`, `cat`, `cd`, `rm`, `man`. No "Text files:" line. |
+| `status` | Register-dump diagnostics: `RF0 DIAGNOSTICS`, `firmware: 1.0-ROM`, `rf: 847.0MHz LOCK`, `rx buf: 847 bytes (unconsumed)`, `uptime: 847h 14m`, `update: AVAILABLE`. |
+| `post` | POST results table: `ROM 1.0 OK`, `RAM 512K OK`, `ADC 12-bit OK`, `PLL 4119.0 kHz LOCK`, `ANT ACTIVE — NO CARRIER`, `FIFO 847/4096 WARN — NOT CONSUMED`, `RELAY STANDBY`. Summary: `6/7 OK, 1 WARN`. |
+| `info` | Device identification: `model: RF0-CR (crystal receiver)`, `serial: GC-0847`, `mfg: Gregory Alan Computing, Inc.`, `mfg_date: 1987`, `pll_freq: 4119.0 kHz`. |
+| `log` | Station event log with timestamps: `init from ROM`, `ant0: ACTIVE`, `relay: STANDBY`, gap (`[............]`), `rx0: 847 bytes buffered (unconsumed)`, `rx0: checksum FAIL — pkt held`, gap, `End of log.` |
+| `rxbuf` | Raw hex dump of rx FIFO: `847/4096 bytes (STALE)`, hex at offsets 0000–0040, asterisk (zero-fill), relay target at 0190–01a0, asterisk, end at 034e, `checksum: FAIL`. |
 | `cd games` | `cd: command not found. Type 'help' for available commands.` |
-| `whoami` | `whoami: command not found...` |
-| `history` | `history: command not found...` |
-| `man decode` | `man: command not found...` |
+| `ls` | `ls: command not found. Type 'help' for available commands.` |
+| `cat` | `cat: command not found. Type 'help' for available commands.` |
+| `whoami` | `whoami: command not found. Type 'help' for available commands.` |
+| `man decode` | `man: command not found. Type 'help' for available commands.` |
 
-**Tab completion** — typing `c` then Tab should cycle `cat`/`clear` only. Typing `s` then Tab should complete `status`. No `cd`, `sudo`.
+**Tab completion** — typing `c` then Tab should complete `clear`. Typing `s` then Tab should complete `status`. No `cd`, `cat`, `ls`, `sudo`.
 
-**Reboot without exploration:**
-
-| Command | Expected Output |
-|---------|----------------|
-| `reboot` | Should reboot into v1.0 again (no update). Same ROM boot, same prompt. No update animation. |
-
-### Phase 2: v1.0 → v1.1 Update
-
-From v1.0, do some exploration first:
+**Reboot:**
 
 | Command | Expected Output |
 |---------|----------------|
-| `cat broadcast.log` | *(station log)* |
-| `reboot` | **Update animation** appears: `Current version: 1`, `Update available: v1.1`, downloading/verifying/installing with dots, `System updated to v1.1`, `Rebooting into new firmware...`. Then v1.1 boot sequence. |
+| `reboot` | **Update animation** plays: `Current version: 1`, `Update available: v1.1`, downloading/verifying/installing with dots, `System updated to v1.1`, `Rebooting into new firmware...`. Then v1.1 boot sequence. Any reboot at v1.0 advances — there is no exploration gate. |
 
-**v1.1 boot sequence** — brief with branding:
+### Phase 2: v1.1 Workstation
+
+After the v1.0 → v1.1 update plays, the system reboots into a full OS.
+
+**v1.1 boot sequence:**
 
 | Line | Expected |
 |------|----------|
-| 1 | `GregBIOS (C) 2026 Gregory Alan Computing` |
-| 2 | *(blank)* |
-| 3 | `Loading GregOS v1.1 ...` |
-| 4 | *(blank)* |
-| 5 | `Starting terminal ...` |
+| 1 | `GregBIOS 1.2 (C) 1987 Gregory Alan Computing` |
+| 2 | `POST: CPU — OK` |
+| 3 | `POST: Memory — OK` |
+| 4 | `POST: sda1 — gregfs mounted` |
+| 5 | *(blank)* |
+| 6 | `Loading gregos-kernel 0.9.847 ...` |
+| 7 | *(blank)* |
+| 8 | `Starting terminal ...` |
 
-**MOTD** — should show `GregOS 1.1 (tty1)`, login info, ASCII art "GREGORY ALAN", "Developer & Creator", and `Type 'help'`.
+**MOTD** — should show `GregOS 1.1 (tty1)`, login info, ASCII art "GREGORY ALAN", `C O M P U T I N G ,   I N C .`, copyright banner, and `Type 'help' for available commands.`
 
 **Prompt** — should be `guest@gregoryalan.com:~$`
 
@@ -242,16 +248,16 @@ From v1.0, do some exploration first:
 
 | Command | Expected Output |
 |---------|----------------|
-| `help` | Full command list including `cd`, `pwd`, `open`, `whoami`, `history`, `sudo`, `man`. Also shows `Text files:` line. No `status` command. No bin tools (`decode`, `rot13`, etc.). |
-| `ls` | Text files (`welcome.txt`, `version.txt`, `contact.txt`, `about.txt`) + directories (`games/`, `drafts/`). No `bin/`. No `broadcast.log` or `status.txt`. |
-| `cat welcome.txt` | `Welcome to GregOS 1.1...` |
+| `help` | `Available commands:` header. Full command list including `cd`, `pwd`, `open`, `whoami`, `history`, `sudo`, `man`. No `status`, `post`, `info`, `log`, `rxbuf` (firmware commands removed). No bin tools (`decode`, `rot13`, etc.). |
+| `ls` | Text files (`welcome.txt`, `version.txt`, `contact.txt`, `about.txt`) + directories (`games/`, `drafts/`). No `bin/`. |
+| `cat welcome.txt` | `GregOS 1.1 — Guest Terminal` with directory listing and command hints. |
 | `cd games` | Works — prompt changes to `guest@gregoryalan.com:~/games$` |
-| `ls` | Game HTML files |
-| `cd ..` | Back to root |
-| `whoami` | OS, browser, resolution info |
-| `status` | `status: command not found...` |
-| `decode --hex 48656c6c6f` | `decode: command not found...` |
-| `dmesg` | `dmesg: command not found...` |
+| `ls` | Game HTML files (`beary-time.html`, `ice-runner.html`, `taipei-climber.html`). |
+| `cd ..` | Back to root. |
+| `whoami` | OS, browser, resolution, local time. |
+| `status` | `status: command not found. Type 'help' for available commands.` |
+| `decode --hex 48656c6c6f` | `decode: command not found. Type 'help' for available commands.` |
+| `dmesg` | `dmesg: command not found. Type 'help' for available commands.` |
 
 **The breadcrumb trail to v2.0:**
 
@@ -259,7 +265,7 @@ From v1.0, do some exploration first:
 |---------|----------------|
 | `history` | Shows `.bash_history` entries from previous user. Last two entries: `cat version.txt`, `reboot -f`. |
 | `cat version.txt` | Normal header (`GregOS v1.1`, `Build: 2026.01.22`, `Kernel: 0.9.847-greg`, `Update: available`) followed by an anomalous update manifest: `timestamp: 2091-11-15T03:14:00Z`, `checksum: a7 3f ?? ??`, `source: rf0`. The 2091 date is impossible — this system was built in 2026. |
-| `reboot` | Just reboots into v1.1 again. No update. Plain reboot doesn't advance. |
+| `reboot` | Just reboots into v1.1 again. No update. Plain reboot doesn't advance from v1.1. |
 | `reboot -f` | **Update animation**: `Current version: 1.1`, `Update available: v2.0`, download/verify/install, then **full v2.0 boot** with hardware detection, device registration, etc. |
 
 ### Phase 3: v2.0 Verification
@@ -286,7 +292,7 @@ From v1.0, do some exploration first:
 | Command | Expected Output |
 |---------|----------------|
 | `ls -a` | Hidden files including `.rf0.buf`. No `.node` yet. |
-| `cat .rf0.buf` | `rf0: rx ring overrun (847 bytes not consumed)`, hex dump with ELF header, `4e4f524d` at offset 0020, `[354 bytes dropped]`, relay target at 0190–01a0, timestamp `-12` (red), `origin: unknown`. **screenFlicker** fires. |
+| `cat .rf0.buf` | `rf0: rx ring overrun (847 bytes not consumed)`, hex dump with ELF header, `4e4f524d` at offset 0020, `[336 bytes dropped]`, relay target at 0190–01a0, `timestamp: 1970-01-01T00:00:00.012Z`, `origin: unknown`. **screenFlicker** fires. |
 
 #### Act 2: Alone
 
@@ -323,7 +329,7 @@ From v1.0, do some exploration first:
 | `w` | **2 users** — `guest` on `tty1` and `???` on `tty0` from `0.0.0.0` running `/dev/rf0`. **crtBand** fires. |
 | `finger root` | Redacted name (█ blocks), `/dev/null` shell, last login `Jan  0 00:00` from `0.0.0.0` (red). **promptCorruption** fires. |
 | `last` | `guest` still logged in, plus red anomalous line: `???` on tty0 from `Jan  0 00:00`. **screenTear** fires. |
-| `dmesg` | Original 13 boot lines plus rf0 entries: `rx ring overrun`, `unexpected exec in rx buffer`, `audit: pid=0`, `tx 847 bytes`, red `connection from 0.0.0.0`, red `PID 0: state=running`. |
+| `dmesg` | Original 13 boot lines plus rf0 entries: `rx ring overrun`, `unexpected exec in rx buffer`, `audit: pid=0`, `dev: /dev/signal registered`, red `connection from 0.0.0.0`, red `PID 0: fork() from swapper — illegal in user context`. |
 | `ls -a` | `.node` now visible. |
 | `cat .node` | Netstat-style table — rf0 protocol, `guest@tty1` local, redacted `████████@tty0` foreign, ESTABLISHED, PID 0. rtt `-3ms` (red). |
 | `strings .rf0.buf` | `NORMAL SYSTEM OPERATION IS A LIE`, `relay --target=0.0.0.0:4119 --persist`, etc. **textCorruption** fires. |
@@ -334,7 +340,7 @@ From v1.0, do some exploration first:
 2. Scanlines and dark background should persist if contact was made.
 3. `w` should still show 2 users.
 4. Glitch triggers with `once: true` should **not** re-fire.
-5. **Page refresh at v1.0** — if version is 1.0 in sessionStorage and bootDone is set, should skip boot and load v1.0 ROM with correct prompt and MOTD.
+5. **Page refresh at v1.0** — if version is 1.0 in sessionStorage and bootDone is set, should skip boot and load v1.0 ROM: `rf0>` prompt, firmware MOTD (`POST: 6/7 OK, 1 WARN`), firmware commands only.
 
 ### Phase 6: Factory Reset (`rm -rf /`)
 
@@ -344,10 +350,9 @@ From any version (preferably v2.0 with Signal contact active):
 |------|----------|
 | `rm -rf /` | Kernel panic animation plays (file removal lines, red errors, panic message). |
 | *(after panic)* | Screen goes black. Garbled characters appear, flicker, disappear. |
-| *(after garble)* | Boots into **v1.0 ROM**. Full reset — device banner (2 lines), `rf0>` prompt, single-line MOTD. |
-| `help` | Only 7 commands. No bin tools, no Signal commands. |
-| `ls` | Only `broadcast.log` and `status.txt`. |
-| `w` | `w: command not found...` |
+| *(after garble)* | Boots into **v1.0 ROM**. Full reset — device banner (2 lines), `rf0>` prompt, firmware MOTD (`POST: 6/7 OK, 1 WARN`). |
+| `help` | Only 8 firmware commands (`clear`, `help`, `info`, `log`, `post`, `reboot`, `rxbuf`, `status`). No `ls`, `cat`, `w`, `decode`. |
+| `w` | `w: command not found. Type 'help' for available commands.` |
 | *(DevTools)* | `sessionStorage` should be nearly empty (only version=1 flag). All discoveries and trigger flags cleared. |
 | *(visual)* | No scanlines. No dark background. Clean terminal. |
 
@@ -355,17 +360,15 @@ From any version (preferably v2.0 with Signal contact active):
 
 | Test | Expected |
 |------|----------|
+| `reboot` at v1.0 | Always advances to v1.1 with update animation. No exploration gate. |
+| `reboot -f` at v1.0 | Same as plain reboot — `-f` has no special effect at v1.0. |
 | `reboot` at v1.1 | No update animation. Reboots into v1.1 again. Plain reboot never advances from v1.1. |
 | `reboot -f` at v1.1 | Update animation, advances to v2.0. |
 | `reboot` at v2.0 | No update animation. Reboots with v2.0 boot sequence. All content preserved. |
 | `reboot -f` at v2.0 | Same as plain reboot — no v2.1 yet, `-f` has no effect. |
-| `reboot -f` at v1.0 | Same as plain reboot — `-f` only matters at v1.1. Exploration gate still applies. |
 | Skip boot (keypress) | Boot animation stops immediately, terminal appears. Works at all versions. |
 | Skip update animation | Update text stops, proceeds to boot. Version still advances correctly. |
 | `rm -rf /*` | Same as `rm -rf /` — triggers factory reset. |
 | `rm anything-else` | `rm: Permission denied` |
-| Tab at v1.0 | Only completes v1.0 commands. No `cd`, `decode`, etc. |
-| `cat` at v1.0 | Only tab-completes `broadcast.log` and `status.txt`. |
-| Multiple reboot from v1.0 without exploration | Should not advance — stays at v1.0 each time. |
-| Reboot from v1.0 after running `status` | Should advance to v1.1 (exploration detected via `ran-status` discovery). |
-| Reboot from v1.0 after 3+ commands | Should advance to v1.1 (history.length >= 3). |
+| Tab at v1.0 | Only completes firmware commands. No `cd`, `cat`, `ls`, `decode`. |
+| Unrecognized command at v1.0 | `<cmd>: command not found. Type 'help' for available commands.` |
