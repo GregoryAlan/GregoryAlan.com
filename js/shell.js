@@ -44,6 +44,13 @@ const Shell = {
                 EventBus.emit('command:executed', { command, args, parsed, output: result });
                 return result;
             }
+            // Easter egg lookup — after real commands, before "not found"
+            const egg = ManifestLoader.getEasterEgg(cmd.trim());
+            if (egg && Kernel.driver.evaluateGate(egg.gate || null, Kernel.driver)) {
+                if (egg.discover) Kernel.driver.discover(egg.discover);
+                if (egg.glitch) runGlitchEffect(egg.glitch, egg.glitchOpts || {});
+                return egg.response;
+            }
             return `${command}: command not found. Type 'help' for available commands.`;
         } catch (e) {
             console.error('[Shell] exec error:', e);

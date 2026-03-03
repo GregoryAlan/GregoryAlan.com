@@ -1,0 +1,53 @@
+{
+    "id": "easter-eggs",
+    "description": "Hidden responses for unexpected inputs",
+
+    "_schema": {
+        "_note": "Reference only — not processed by the loader. Copy an entry from easterEggs and edit it.",
+        "fields": {
+            "response":   "REQUIRED — text returned to terminal",
+            "gate":       "optional — gate expression (omit = always active)",
+            "discover":   "optional — discovery ID to fire on trigger",
+            "glitch":     "optional — visual effect name",
+            "glitchOpts": "optional — object of options for the glitch effect"
+        },
+        "glitch_effects": [
+            "screenFlicker   — brief screen flash (300ms)",
+            "heavyFlicker    — intense screen flash (500ms)",
+            "scanlines       — CRT scanline overlay (10s, or persistent with glitchOpts.persistent)",
+            "crtBand         — horizontal band sweep (3s)",
+            "phantomLine     — ghost text line (glitchOpts.texts: ['...'])",
+            "promptCorruption — corrupts the prompt briefly",
+            "textCorruption  — garbles last output line (2s)",
+            "screenTear      — horizontal offset distortion (400ms)",
+            "majorGlitch     — combo: heavyFlicker + screenTear + phantomLine + crtBand"
+        ],
+        "gate_syntax": [
+            "\"version:1.1\"           — requires kernel version >= 1.1",
+            "\"contact-made\"          — requires this discovery ID",
+            "\"flag:pkg-initialized\"  — requires this flag to be set",
+            "\"the-signal:contacted\"  — requires driver state in or past 'contacted'",
+            "\"!contact-made\"         — negation (discovery NOT made)",
+            "[\"version:2.0\", \"contact-made\"]  — array = ALL must pass"
+        ],
+        "match_keys": [
+            "\"exact input\"         — matches only this exact string",
+            "\"*===D*\"              — wildcard: * matches any characters",
+            "\"sudo *\"              — matches anything starting with 'sudo '",
+            "\"* please\"            — matches anything ending with ' please'"
+        ],
+        "template": {
+            "response": "Your response text here",
+            "gate": null,
+            "discover": null,
+            "glitch": null,
+            "glitchOpts": {}
+        }
+    },
+
+    "easterEggs": {
+        "*===D*": {
+            "response": "command not found. What the fuck kind of site do you think this is?!"
+        }
+    }
+}

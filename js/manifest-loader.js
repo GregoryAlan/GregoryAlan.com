@@ -17,6 +17,8 @@ const ManifestLoader = {
     _motd: {},      // manifest-id → motd content object
     _narrativeOutputs: {}, // id → string (driver narrative text)
     _historyPatch: [],     // extra .bash_history commands
+    _easterEggs: {},         // exact input → egg def
+    _easterEggPatterns: [],  // [{regex, def}] for wildcard keys
 
     // Load a parsed manifest object (synchronous).
     load(manifest) {
@@ -86,6 +88,17 @@ const ManifestLoader = {
 
         if (manifest.historyPatch) {
             this._historyPatch = this._historyPatch.concat(manifest.historyPatch);
+        }
+
+        if (manifest.easterEggs) {
+            for (const [key, def] of Object.entries(manifest.easterEggs)) {
+                if (key.includes('*')) {
+                    const escaped = key.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+                    this._easterEggPatterns.push({ regex: new RegExp('^' + escaped + '$'), def });
+                } else {
+                    this._easterEggs[key] = def;
+                }
+            }
         }
 
         this._loaded.push(manifest.id);
@@ -158,6 +171,16 @@ const ManifestLoader = {
         return this._historyPatch;
     },
 
+    getEasterEgg(input) {
+        // Fast path: exact match
+        if (this._easterEggs[input]) return this._easterEggs[input];
+        // Slow path: wildcard patterns
+        for (const p of this._easterEggPatterns) {
+            if (p.regex.test(input)) return p.def;
+        }
+        return null;
+    },
+
     // Clear loaded state (called during version reset).
     // Cache persists — manifests don't need re-fetching on reboot.
     reset() {
@@ -169,5 +192,7 @@ const ManifestLoader = {
         this._motd = {};
         this._narrativeOutputs = {};
         this._historyPatch = [];
+        this._easterEggs = {};
+        this._easterEggPatterns = [];
     },
 };

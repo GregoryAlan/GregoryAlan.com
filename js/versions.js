@@ -33,6 +33,7 @@ const MANIFEST_URLS = [
     'content/animations.json',
     'content/man-pages.json',
     'content/help-descriptions.json',
+    'content/easter-eggs.json',
 ];
 
 // ─── Version Manifest ───────────────────────────────────────
@@ -54,6 +55,7 @@ const VERSION_MANIFEST = [
             ManifestLoader.loadCached('content/v1.0-rom.json');
             ManifestLoader.loadCached('content/animations.json');
             ManifestLoader.loadCached('content/help-descriptions.json');
+            ManifestLoader.loadCached('content/easter-eggs.json');
         },
     },
     {
