@@ -6,11 +6,121 @@
 //
 // Depends on: nothing (loads before shell.js)
 
+// Shell-level tokenizer: single-pass character scanner that produces
+// pipeline stages of resolved tokens. Handles double quotes (with
+// backslash escapes), single quotes (literal), backslash escapes
+// outside quotes, and pipe splitting.
+//
+// Returns: { stages: Array<Array<{ value: string, quoted: boolean }>> }
+function shellTokenize(raw) {
+    const stages = [[]];
+    if (!raw || !raw.trim()) return { stages };
+
+    const str = raw;
+    let i = 0;
+
+    while (i < str.length) {
+        // Skip whitespace between tokens
+        if (str[i] === ' ' || str[i] === '\t') { i++; continue; }
+
+        // Pipe: start a new stage
+        if (str[i] === '|') {
+            stages.push([]);
+            i++;
+            continue;
+        }
+
+        // Double-quoted string
+        if (str[i] === '"') {
+            let token = '';
+            i++; // skip opening quote
+            while (i < str.length && str[i] !== '"') {
+                if (str[i] === '\\' && i + 1 < str.length) {
+                    const next = str[i + 1];
+                    if (next === '"' || next === '\\') {
+                        token += next;
+                        i += 2;
+                        continue;
+                    }
+                }
+                token += str[i];
+                i++;
+            }
+            i++; // skip closing quote
+            stages[stages.length - 1].push({ value: token, quoted: true });
+            continue;
+        }
+
+        // Single-quoted string (no escape processing)
+        if (str[i] === "'") {
+            let token = '';
+            i++; // skip opening quote
+            while (i < str.length && str[i] !== "'") {
+                token += str[i];
+                i++;
+            }
+            i++; // skip closing quote
+            stages[stages.length - 1].push({ value: token, quoted: true });
+            continue;
+        }
+
+        // Unquoted token
+        let token = '';
+        let wasEscaped = false;
+        while (i < str.length && str[i] !== ' ' && str[i] !== '\t' && str[i] !== '|') {
+            // Backslash escape outside quotes
+            if (str[i] === '\\' && i + 1 < str.length) {
+                token += str[i + 1];
+                wasEscaped = true;
+                i += 2;
+                continue;
+            }
+            // Quote starts mid-token: switch to quoted parsing and append
+            if (str[i] === '"') {
+                i++;
+                while (i < str.length && str[i] !== '"') {
+                    if (str[i] === '\\' && i + 1 < str.length) {
+                        const next = str[i + 1];
+                        if (next === '"' || next === '\\') {
+                            token += next;
+                            i += 2;
+                            continue;
+                        }
+                    }
+                    token += str[i];
+                    i++;
+                }
+                i++; // skip closing quote
+                wasEscaped = true;
+                continue;
+            }
+            if (str[i] === "'") {
+                i++;
+                while (i < str.length && str[i] !== "'") {
+                    token += str[i];
+                    i++;
+                }
+                i++; // skip closing quote
+                wasEscaped = true;
+                continue;
+            }
+            token += str[i];
+            i++;
+        }
+        stages[stages.length - 1].push({ value: token, quoted: wasEscaped });
+    }
+
+    return { stages };
+}
+
 // valueFlags: optional array of single-char flags that consume the next
 // token as their value (e.g. ['n'] for `head -n 3`). All other single-char
 // flags are treated as boolean. This avoids the ambiguity where
 // `grep -n 847 file` would incorrectly eat the pattern as -n's value.
-function parseArgs(raw, valueFlags) {
+//
+// preTokenized: optional string[] — when provided, skip internal tokenizer
+// and run flag-parsing directly on these pre-resolved tokens.
+function parseArgs(raw, valueFlags, preTokenized) {
     const _valueFlags = new Set(valueFlags || []);
     const result = {
         positional: [],
@@ -18,41 +128,46 @@ function parseArgs(raw, valueFlags) {
         raw: raw || '',
     };
 
-    if (!raw || !raw.trim()) {
+    if (!preTokenized && (!raw || !raw.trim())) {
         result._ = result.positional;
         return result;
     }
 
-    // Tokenize: respect quoted strings, preserve bare '-'
-    const tokens = [];
-    let i = 0;
-    const str = raw.trim();
+    // Use pre-tokenized input if provided, otherwise tokenize internally
+    let tokens;
+    if (preTokenized) {
+        tokens = preTokenized.map(v => ({ value: v, quoted: false }));
+    } else {
+        tokens = [];
+        let i = 0;
+        const str = raw.trim();
 
-    while (i < str.length) {
-        // Skip whitespace
-        if (str[i] === ' ' || str[i] === '\t') { i++; continue; }
+        while (i < str.length) {
+            // Skip whitespace
+            if (str[i] === ' ' || str[i] === '\t') { i++; continue; }
 
-        // Quoted string
-        if (str[i] === '"' || str[i] === "'") {
-            const quote = str[i];
+            // Quoted string
+            if (str[i] === '"' || str[i] === "'") {
+                const quote = str[i];
+                let token = '';
+                i++; // skip opening quote
+                while (i < str.length && str[i] !== quote) {
+                    token += str[i];
+                    i++;
+                }
+                i++; // skip closing quote
+                tokens.push({ value: token, quoted: true });
+                continue;
+            }
+
+            // Unquoted token
             let token = '';
-            i++; // skip opening quote
-            while (i < str.length && str[i] !== quote) {
+            while (i < str.length && str[i] !== ' ' && str[i] !== '\t') {
                 token += str[i];
                 i++;
             }
-            i++; // skip closing quote
-            tokens.push({ value: token, quoted: true });
-            continue;
+            tokens.push({ value: token, quoted: false });
         }
-
-        // Unquoted token
-        let token = '';
-        while (i < str.length && str[i] !== ' ' && str[i] !== '\t') {
-            token += str[i];
-            i++;
-        }
-        tokens.push({ value: token, quoted: false });
     }
 
     // Parse tokens into flags and positionals

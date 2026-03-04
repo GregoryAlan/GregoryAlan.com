@@ -94,11 +94,16 @@ const coreCommands = {
         return '/' + (Kernel.fs._cwd.length ? Kernel.fs._cwd.join('/') : '');
     },
 
-    cat: (args) => {
-        if (!args) return 'cat: missing file operand';
-        const content = Kernel.fs.read(args);
-        if (content === null) return `cat: ${args}: No such file or directory`;
-        return content.replace(/\n/g, '<br>');
+    cat: (args, stdin, parsed) => {
+        parsed = parsed || parseArgs(args || '');
+        if (parsed.positional.length === 0) return 'cat: missing file operand';
+        const results = [];
+        for (const file of parsed.positional) {
+            const content = Kernel.fs.read(file);
+            if (content === null) { results.push(`cat: ${file}: No such file or directory`); }
+            else { results.push(content.replace(/\n/g, '<br>')); }
+        }
+        return results.join('<br>');
     },
 
     open: (args) => {

@@ -31,15 +31,23 @@ const Shell = {
 
     exec(cmd) {
         try {
-            if (cmd.includes('|')) return this.execPipeline(cmd);
+            const { stages } = shellTokenize(cmd);
 
-            const parts = cmd.trim().split(/\s+/);
-            const command = parts[0].toLowerCase();
-            const args = parts.slice(1).join(' ');
+            // Multi-stage pipeline
+            if (stages.length > 1) return this._execStages(stages);
 
-            if (!command) return '';
+            // Single command
+            const tokens = stages[0];
+            if (!tokens.length) return '';
+
+            const command = tokens[0].value.toLowerCase();
+            const argTokens = tokens.slice(1);
+
             if (this._commands[command]) {
-                const parsed = parseArgs(args);
+                const expanded = this._expandGlobs(argTokens);
+                const argValues = expanded.map(t => t.value);
+                const args = argValues.join(' ');
+                const parsed = parseArgs(args, undefined, argValues);
                 const result = this._commands[command](args, null, parsed);
                 EventBus.emit('command:executed', { command, args, parsed, output: result });
                 return result;
@@ -58,20 +66,22 @@ const Shell = {
         }
     },
 
-    execPipeline(cmd) {
-        const stages = cmd.split('|').map(s => s.trim()).filter(Boolean);
+    _execStages(stages) {
         let stdin = null;
 
-        for (const stage of stages) {
-            const parts = stage.split(/\s+/);
-            const command = parts[0].toLowerCase();
-            const args = parts.slice(1).join(' ');
+        for (const tokens of stages) {
+            if (!tokens.length) continue;
+            const command = tokens[0].value.toLowerCase();
+            const argTokens = tokens.slice(1);
 
             if (!this._commands[command]) {
                 return `${command}: command not found`;
             }
 
-            const parsed = parseArgs(args);
+            const expanded = this._expandGlobs(argTokens);
+            const argValues = expanded.map(t => t.value);
+            const args = argValues.join(' ');
+            const parsed = parseArgs(args, undefined, argValues);
             const result = this._commands[command](args, stdin, parsed);
             if (result === null) return null;
 
@@ -87,6 +97,69 @@ const Shell = {
         return str
             .replace(/<br\s*\/?>/gi, '\n')
             .replace(/<[^>]+>/g, '');
+    },
+
+    // ─── Glob Expansion ─────────────────────────────────────
+
+    _expandGlobs(tokens) {
+        const result = [];
+        for (const tok of tokens) {
+            if (tok.quoted || (!/[*?]/.test(tok.value))) {
+                result.push(tok);
+                continue;
+            }
+            // Path-component globs deferred
+            if (tok.value.includes('/')) {
+                result.push(tok);
+                continue;
+            }
+            const matches = this._globMatch(tok.value);
+            if (matches.length) {
+                matches.sort();
+                for (const m of matches) result.push({ value: m, quoted: false });
+            } else {
+                // No matches: pass through literally (POSIX behavior)
+                result.push(tok);
+            }
+        }
+        return result;
+    },
+
+    _globMatch(pattern) {
+        const startsWithDot = pattern.startsWith('.');
+        // Convert glob to regex: escape regex chars, then translate * and ?
+        const reStr = '^' + pattern
+            .replace(/([.+^${}()|[\]\\])/g, '\\$1')
+            .replace(/\*/g, '.*')
+            .replace(/\?/g, '.') + '$';
+        const re = new RegExp(reStr);
+
+        const candidates = [];
+        const isRoot = Kernel.fs._cwd.length === 0;
+
+        // Enumerate from current directory (mirrors completePath logic)
+        if (isRoot) {
+            // Flat stores at root
+            for (const f of Object.keys(Kernel.fs._textFiles)) {
+                candidates.push(f);
+            }
+            for (const f of Object.keys(Kernel.fs._hiddenFiles)) {
+                if (Kernel.fs.isVisible(f)) candidates.push(f);
+            }
+        }
+        const dir = Kernel.fs.getCurrentDir();
+        if (dir && typeof dir === 'object') {
+            for (const [name, value] of Object.entries(dir)) {
+                // Skip gated functions that aren't visible
+                if (typeof value === 'function' && !Kernel.fs.isNodeVisible(value)) continue;
+                candidates.push(name);
+            }
+        }
+
+        return candidates.filter(name => {
+            if (name.startsWith('.') && !startsWithDot) return false;
+            return re.test(name);
+        });
     },
 
     // ─── History ────────────────────────────────────────────
