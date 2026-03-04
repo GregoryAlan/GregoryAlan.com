@@ -244,6 +244,14 @@ for (const vfsPath of curl.llmsFullOrder) {
     if (annotation) fullLines.push('', `> ${annotation}`);
     fullLines.push('', content, '', '---', '');
 }
+// Append closing section if present
+if (curl.llmsFullClosing) {
+    const c = curl.llmsFullClosing;
+    fullLines.push('', `## ${c.heading}`, '', c.preamble, '');
+    for (const item of c.items) {
+        fullLines.push(`- ${item}`);
+    }
+}
 // Remove trailing separator
 if (fullLines[fullLines.length - 1] === '') fullLines.pop();
 if (fullLines[fullLines.length - 1] === '---') fullLines.pop();

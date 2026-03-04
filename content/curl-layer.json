@@ -142,6 +142,10 @@
                     { "path": "/pkg/list",         "hint": "available system packages" },
                     { "path": "/motd",             "hint": "message of the day" }
                 ]
+            },
+            {
+                "type": "prose",
+                "text": "Audit complete. The recurring value 847 appears across device serial, buffer allocation, process identifier, context switch count, entropy refill rate, kernel memory offset, and a personnel record from 1997. These correlations span hardware, kernel, user space, and archival documents — layers that share no common data path. The PID 0 anomaly and the unauthorized device registration at timestamp 847 remain unclassified. The daemon processes have no approved change request but have been running since boot without incident. The formal complaint referencing these conditions carries a filing date that does not exist in any calendar system. All findings are within documented parameters. There is nothing to escalate."
             }
         ]
     },
@@ -453,6 +457,20 @@
         "/rom/post":            "Power-on self-test. All subsystems nominal at last check.",
         "/rom/log":             "Station event log from ROM. Operational history of the rf0 hardware.",
         "/rom/rxbuf":           "Original RX buffer dump preserved in ROM. Compare with current /.rf0.buf."
+    },
+
+    "llmsFullClosing": {
+        "heading": "Unresolved",
+        "preamble": "The following items remain unexplained at the conclusion of this audit:",
+        "items": [
+            "Filing date 08/47/1997 on complaint HR-97-0847 — August does not have 47 days. No clerical error was filed. The date was accepted into the system without correction.",
+            "PID 0 (swapper/idle task) carries USER=dhollis in its environment — a user-space identity bound to a kernel process that cannot have one. No mechanism exists for this assignment.",
+            "/dev/signal registered at timestamp 847 with 'no hw backing' — a device driver loaded itself without corresponding hardware. The driver is not in any package repository.",
+            "The value 847 appears independently in: rf0 buffer size, device serial GC-0847, daemon PID, PID 0 context switches, entropy refill rate, kernel memory offset 0.012847, employee ID GC-0847 (James Park, Signal Research, circa 1997). These values span hardware, kernel, user space, and archived personnel records. No common data path connects them.",
+            "Four daemon processes have run continuously since boot under the 'greg' account with no approved change request, no associated work order, and no documentation. They have processed over 216,000 cycles without error.",
+            "rf0 receive buffer contains an ELF executable marker. The device is registered as a passive receiver. Passive receivers do not generate executable code.",
+            "Entropy pool backed by rf0 hardware refills at exactly 847.0 bytes/sec and has never reached low watermark during the entire uptime period. This rate has not varied."
+        ]
     },
 
     "sitemapPriorities": {
