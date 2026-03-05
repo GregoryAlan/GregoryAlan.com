@@ -501,6 +501,110 @@ const Kernel = {
         },
     },
 
+    // ─── Process Table ────────────────────────────────────────
+
+    proc: {
+        _nextPid: 100,
+        _table: {},       // pid → process object
+        _foreground: null, // pid of foreground process (or null)
+
+        spawn(command, args, opts) {
+            const pid = this._nextPid++;
+            const proc = {
+                pid,
+                command,
+                args: args || '',
+                status: 'running',    // 'running' | 'stopped' | 'exited'
+                exitCode: null,
+                startTime: Date.now(),
+                endTime: null,
+                background: !!(opts && opts.background),
+                _onSignal: null,      // set by async commands
+                outputRegion: null,   // set by Terminal for async commands
+
+                write(html) {
+                    if (this.outputRegion) {
+                        const line = document.createElement('div');
+                        line.className = 'output';
+                        line.innerHTML = html;
+                        this.outputRegion.appendChild(line);
+                        requestAnimationFrame(() => {
+                            Terminal.el.input.scrollIntoView({ block: 'end' });
+                        });
+                    }
+                },
+
+                writeln(text) {
+                    this.write(Terminal._esc(text));
+                },
+
+                exit(code) {
+                    if (this.status === 'exited') return;
+                    this.status = 'exited';
+                    this.exitCode = code === undefined ? 0 : code;
+                    this.endTime = Date.now();
+                    const table = Kernel.proc;
+                    if (table._foreground === this.pid) {
+                        table._foreground = null;
+                    }
+                    EventBus.emit('process:exited', {
+                        pid: this.pid,
+                        command: this.command,
+                        exitCode: this.exitCode,
+                        background: this.background,
+                    });
+                    // Auto-cleanup after 5s
+                    setTimeout(() => { delete table._table[this.pid]; }, 5000);
+                },
+            };
+
+            this._table[pid] = proc;
+            if (!proc.background) {
+                this._foreground = pid;
+            }
+            return proc;
+        },
+
+        get(pid) {
+            return this._table[pid] || null;
+        },
+
+        list() {
+            return Object.values(this._table);
+        },
+
+        foreground() {
+            return this._foreground ? this._table[this._foreground] || null : null;
+        },
+
+        signal(pid, sig) {
+            const proc = this._table[pid];
+            if (!proc || proc.status === 'exited') return false;
+            if (proc._onSignal) {
+                proc._onSignal(sig);
+            } else {
+                // Default: SIGTERM/SIGKILL/SIGINT all terminate
+                if (sig === 'SIGTERM' || sig === 'SIGKILL' || sig === 'SIGINT') {
+                    proc.exit(128);
+                }
+            }
+            return true;
+        },
+
+        reset() {
+            // Kill all running processes (clears their intervals/timers)
+            for (const proc of Object.values(this._table)) {
+                if (proc.status === 'running') {
+                    if (proc._intervalId) clearInterval(proc._intervalId);
+                    proc.status = 'exited';
+                }
+            }
+            for (const pid in this._table) delete this._table[pid];
+            this._nextPid = 100;
+            this._foreground = null;
+        },
+    },
+
     // ─── Version Accessors ────────────────────────────────────
 
     kernelVersion: {

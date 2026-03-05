@@ -124,6 +124,35 @@ const Terminal = {
             return;
         }
 
+        // ── Ctrl+C: interrupt foreground process or clear line ──
+        if (e.key === 'c' && e.ctrlKey) {
+            e.preventDefault();
+            const fg = Kernel.proc.foreground();
+            if (fg) {
+                this.appendSystemLine('^C');
+                Kernel.proc.signal(fg.pid, 'SIGINT');
+            } else {
+                // No foreground process — show ^C and clear input (standard terminal)
+                if (this.el.input.value) {
+                    this.addOutput(this.el.input.value + '^C', '');
+                } else {
+                    this.appendSystemLine('^C');
+                }
+                this.el.input.value = '';
+            }
+            return;
+        }
+
+        // ── 'q' key: quit interactive commands (like top) ──
+        if (e.key === 'q' && !e.ctrlKey && !e.metaKey) {
+            const fg = Kernel.proc.foreground();
+            if (fg && fg._quitOnQ) {
+                e.preventDefault();
+                Kernel.proc.signal(fg.pid, 'SIGINT');
+                return;
+            }
+        }
+
         if (e.key === 'Tab') {
             e.preventDefault();
             const result = Shell.cycleTab(this.el.input.value);
@@ -151,6 +180,9 @@ const Terminal = {
 
         if (e.key === 'Enter') {
             e.preventDefault();
+            // Block input while foreground async process is running
+            if (Kernel.proc.foreground()) return;
+
             const cmd = this.el.input.value;
             if (cmd.trim()) {
                 Shell.addHistory(cmd);
@@ -159,7 +191,29 @@ const Terminal = {
                 this.clearOutput();
             } else {
                 const result = Shell.exec(cmd);
-                if (result === null && cmd.split(/&&|\|\||[;|]/).map(s => s.trim().split(/\s+/)[0]).includes('clear')) {
+                if (result === Shell.ASYNC) {
+                    // Async command — show the command line, create output region
+                    const cmdHtml = `<div><span class="prompt">${Shell.getPrompt()}</span> <span class="command">${this._esc(cmd)}</span></div>`;
+                    this.el.output.innerHTML += cmdHtml;
+                    const region = document.createElement('div');
+                    region.className = 'output async-output';
+                    this.el.output.appendChild(region);
+                    // Attach region to the foreground process
+                    const fg = Kernel.proc.foreground();
+                    if (fg) {
+                        fg.outputRegion = region;
+                    }
+                    // Listen for process exit to re-enable input
+                    const exitListener = EventBus.on('process:exited', (detail) => {
+                        if (fg && detail.pid === fg.pid) {
+                            EventBus.off(exitListener);
+                            this.updatePrompt();
+                            requestAnimationFrame(() => {
+                                this.el.input.scrollIntoView({ block: 'end' });
+                            });
+                        }
+                    });
+                } else if (result === null && cmd.split(/&&|\|\||[;|]/).map(s => s.trim().split(/\s+/)[0]).includes('clear')) {
                     this.clearOutput();
                 } else {
                     this.addOutput(cmd, result);

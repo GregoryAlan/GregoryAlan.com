@@ -14,7 +14,8 @@
 //
 // Returns: { chains: Array<{ op: null|';'|'&&'|'||',
 //            stages: Array<Array<{ value: string, quoted: boolean,
-//                                  expandable: boolean, isOperator?: boolean }>> }> }
+//                                  expandable: boolean, isOperator?: boolean }>>,
+//            background?: boolean }> }
 function shellTokenize(raw) {
     const chains = [{ op: null, stages: [[]] }];
     if (!raw || !raw.trim()) return { chains };
@@ -40,6 +41,12 @@ function shellTokenize(raw) {
         if (str[i] === '&' && i + 1 < str.length && str[i + 1] === '&') {
             chains.push({ op: '&&', stages: [[]] });
             i += 2;
+            continue;
+        }
+        // Lone & (background operator) — not && which was already caught
+        if (str[i] === '&') {
+            chains[chains.length - 1].background = true;
+            i++;
             continue;
         }
         if (str[i] === ';') {
@@ -111,9 +118,8 @@ function shellTokenize(raw) {
         let wasEscaped = false;
         while (i < str.length && str[i] !== ' ' && str[i] !== '\t'
                && str[i] !== '|' && str[i] !== ';'
-               && str[i] !== '>' && str[i] !== '<') {
-            // Stop at && (but not single &)
-            if (str[i] === '&' && i + 1 < str.length && str[i + 1] === '&') break;
+               && str[i] !== '>' && str[i] !== '<'
+               && str[i] !== '&') {
             // Backslash escape outside quotes
             if (str[i] === '\\' && i + 1 < str.length) {
                 token += str[i + 1];

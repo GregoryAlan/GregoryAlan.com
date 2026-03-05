@@ -129,6 +129,8 @@ function applyVersion(targetVersion) {
     Shell.resetCommands();
     Kernel.fs.reset();
     Kernel.driver.reset();
+    Kernel.proc.reset();
+    Shell.jobs.reset();
     ManifestLoader.reset();
     // Reset active profile on version change
     Terminal._pendingAuth = null;

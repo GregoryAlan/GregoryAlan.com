@@ -7,6 +7,8 @@
 
 const Shell = {
 
+    ASYNC: Symbol('async'),
+
     // ─── Command Registry ───────────────────────────────────
 
     _commands: {},
@@ -44,12 +46,18 @@ const Shell = {
 
                 let result;
                 if (stages.length > 1) {
-                    result = this._execStages(stages);
+                    if (chain.background) {
+                        this._lastExit = 1;
+                        result = 'bash: backgrounding pipelines is not supported';
+                    } else {
+                        result = this._execStages(stages);
+                    }
                 } else {
-                    result = this._execSingle(stages[0]);
+                    result = this._execSingle(stages[0], chain.background);
                 }
 
                 if (result === null) return null;
+                if (result === Shell.ASYNC) return Shell.ASYNC;
                 if (result !== undefined && result !== '') outputs.push(result);
             }
 
@@ -60,7 +68,7 @@ const Shell = {
         }
     },
 
-    _execSingle(tokens) {
+    _execSingle(tokens, background) {
         if (!tokens.length) { this._lastExit = 0; return ''; }
 
         const redir = this._extractRedirections(tokens);
@@ -87,7 +95,21 @@ const Shell = {
             const argValues = expanded.map(t => t.value);
             const args = argValues.join(' ');
             const parsed = parseArgs(args, undefined, argValues);
-            result = this._commands[command](args, stdin, parsed);
+            const proc = Kernel.proc.spawn(command, args, { background: !!background });
+            result = this._commands[command](args, stdin, parsed, proc);
+            if (result === Shell.ASYNC) {
+                if (background) {
+                    // Background async — add to job table
+                    const jobId = this.jobs.add(proc);
+                    this._lastExit = 0;
+                    return `[${jobId}] ${proc.pid}`;
+                }
+                // Foreground async — leave process running, return sentinel
+                this._lastExit = 0;
+                return Shell.ASYNC;
+            }
+            // Sync command — auto-exit process
+            proc.exit(0);
             EventBus.emit('command:executed', { command, args, parsed, output: result });
             this._lastExit = 0;
         } else {
@@ -146,7 +168,14 @@ const Shell = {
             const argValues = expanded.map(t => t.value);
             const args = argValues.join(' ');
             const parsed = parseArgs(args, undefined, argValues);
-            const result = this._commands[command](args, stdin, parsed);
+            const proc = Kernel.proc.spawn(command, args);
+            const result = this._commands[command](args, stdin, parsed, proc);
+            if (result === Shell.ASYNC) {
+                proc.exit(1);
+                this._lastExit = 1;
+                return `${command}: pipes not supported for streaming commands`;
+            }
+            proc.exit(0);
             if (result === null) return null;
 
             EventBus.emit('command:executed', { command, args, parsed, output: result });
@@ -423,6 +452,44 @@ const Shell = {
         LANG: 'en_US.UTF-8',
         PATH: '/usr/local/bin:/usr/bin:/bin',
         OSTYPE: 'gregos',
+    },
+
+    // ─── Job Table ────────────────────────────────────────────
+
+    jobs: {
+        _jobs: {},
+        _nextJobId: 1,
+
+        add(proc) {
+            const jobId = this._nextJobId++;
+            this._jobs[jobId] = proc;
+            proc.jobId = jobId;
+            // Listen for exit to print completion message
+            const listenerId = EventBus.on('process:exited', (detail) => {
+                if (detail.pid === proc.pid) {
+                    EventBus.off(listenerId);
+                    Terminal.appendSystemLine(`[${jobId}]+  Done                    ${proc.command} ${proc.args}`);
+                    delete this._jobs[jobId];
+                }
+            });
+            return jobId;
+        },
+
+        list() {
+            return Object.entries(this._jobs).map(([id, proc]) => ({
+                jobId: parseInt(id),
+                proc,
+            }));
+        },
+
+        getByJobId(id) {
+            return this._jobs[id] || null;
+        },
+
+        reset() {
+            for (const k in this._jobs) delete this._jobs[k];
+            this._nextJobId = 1;
+        },
     },
 
     // ─── User Profiles ───────────────────────────────────────

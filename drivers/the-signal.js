@@ -84,8 +84,8 @@ const theSignalDriver = {
     // spec: the-signal-storyline.md > Act 5: Not Alone (strings)
     // finger: removed — greg-corp.js owns the superset (profiles + root + guest)
     commands: {
-        ps: (args) => {
-            const base = v1_1CommandsPack.commands.ps(args);
+        ps: (args, stdin, parsed, proc) => {
+            const base = v1_1CommandsPack.commands.ps(args, stdin, parsed, proc);
             if ((args === 'aux' || args === '-aux') && Kernel.driver.flags.contact) {
                 return base + '\n<span class="timestamp-anomaly">' + ManifestLoader.getNarrativeOutput('ps-anomaly') + '</span>';
             }
