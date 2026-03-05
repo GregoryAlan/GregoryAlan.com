@@ -22,6 +22,30 @@
         ]
     },
 
+    "curl": {
+        "seeAlso": {
+            "/rom/status":  ["/rom/info", "/rom/log", "/dev/rf0"],
+            "/rom/info":    ["/home/dhollis/personnel/park_j.prf", "/rom/status"],
+            "/rom/post":    ["/rom/info", "/rom/status"],
+            "/rom/log":     ["/rom/status", "/var/log/kern.log"],
+            "/rom/rxbuf":   ["/.rf0.buf", "/rom/status"]
+        },
+        "annotations": {
+            "/rom/info":    "Device identification.",
+            "/rom/status":  "RF0 hardware diagnostics from ROM.",
+            "/rom/post":    "Power-on self-test results.",
+            "/rom/log":     "Station event log from ROM.",
+            "/rom/rxbuf":   "RX buffer dump from ROM."
+        },
+        "sitemapPriorities": {
+            "/rom/status":  0.6,
+            "/rom/info":    0.6,
+            "/rom/post":    0.5,
+            "/rom/log":     0.5,
+            "/rom/rxbuf":   0.6
+        }
+    },
+
     "sequences": {
         "boot-v1.0": [
             { "text": "RF0 Broadcast Repeater v1.0", "delay": 300 },

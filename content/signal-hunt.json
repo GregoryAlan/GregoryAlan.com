@@ -34,6 +34,36 @@
             "type": "gated",
             "gate": "contact-made",
             "content": "/dev/rf0 --listen --persist"
+        },
+
+        "/proc/0/maps": {
+            "type": "gated",
+            "gate": "contact-made",
+            "content": "00400000-00401000 r-xp 00000000 00:00 0          [text]\n00600000-00601000 rw-p 00000000 00:00 0          [data]\n00847000-00847fff ---p 00000000 00:00 0          [guard]\n7fff00000000-7fff00001000 rw-p 00000000 00:00 0  [stack]\nffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0 [vsyscall]"
+        }
+    },
+
+    "curl": {
+        "seeAlso": {
+            "/.rf0.buf":       ["/dev/rf0", "/man/decode"],
+            "/proc/0/status":  ["/proc/0/environ", "/proc/0/cmdline", "/proc/0/maps", "/var/log/kern.log"],
+            "/proc/0/environ": ["/home/dhollis/.plan", "/proc/0/status"],
+            "/proc/0/cmdline": ["/proc/0/status", "/proc/0/environ"],
+            "/proc/0/maps":    ["/proc/0/status", "/var/log/daemon.log"]
+        },
+        "annotations": {
+            "/.rf0.buf":       "Raw hex dump from rf0 receive buffer.",
+            "/proc/0/status":  "PID 0 process status.",
+            "/proc/0/environ": "PID 0 environment variables.",
+            "/proc/0/cmdline": "PID 0 command line.",
+            "/proc/0/maps":    "PID 0 memory map."
+        },
+        "sitemapPriorities": {
+            "/proc/0/status":  0.8,
+            "/proc/0/environ": 0.8,
+            "/proc/0/cmdline": 0.7,
+            "/.rf0.buf":       0.8,
+            "/proc/0/maps":    0.7
         }
     },
 

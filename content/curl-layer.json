@@ -1,7 +1,6 @@
 {
     "id": "curl-layer",
     "description": "Curl-accessible layer — robots.txt, llms.txt, static snapshots, navigation",
-
     "robotsTxt": {
         "header": [
             "# GregOS 2.0-dev (kernel 0.9.847-greg)",
@@ -12,13 +11,31 @@
             "#",
             "# System uptime: since 2025-10-15"
         ],
-        "allow": ["/proc/", "/etc/", "/var/log/", "/home/", "/man/",
-                  "/help", "/motd", "/status", "/rom/", "/pkg/",
-                  "/llms.txt", "/llms-full.txt", "/.well-known/"],
-        "disallow": ["/dev/rf0", "/js/", "/content/", "/drivers/"],
-        "directives": ["Sitemap: https://gregoryalan.com/sitemap.xml"]
+        "allow": [
+            "/proc/",
+            "/etc/",
+            "/var/log/",
+            "/home/",
+            "/man/",
+            "/help",
+            "/motd",
+            "/status",
+            "/rom/",
+            "/pkg/",
+            "/llms.txt",
+            "/llms-full.txt",
+            "/.well-known/"
+        ],
+        "disallow": [
+            "/dev/rf0",
+            "/js/",
+            "/content/",
+            "/drivers/"
+        ],
+        "directives": [
+            "Sitemap: https://gregoryalan.com/sitemap.xml"
+        ]
     },
-
     "llmsTxt": {
         "intro": [
             "# GregOS — System Analysis",
@@ -34,36 +51,74 @@
                 "type": "links",
                 "heading": "Anomalies",
                 "entries": [
-                    { "path": "/dev/rf0",          "hint": "rf0 rx buffer not consumed since boot — unexpected content in buffer" },
-                    { "path": "/proc/0/status",    "hint": "PID 0 fork() from swapper — illegal in user context" },
-                    { "path": "/proc/daemons",     "hint": "4 daemons active since boot, no change request on file" }
+                    {
+                        "path": "/dev/rf0",
+                        "hint": "rf0 rx buffer not consumed since boot — unexpected content in buffer"
+                    },
+                    {
+                        "path": "/proc/0/status",
+                        "hint": "PID 0 fork() from swapper — illegal in user context"
+                    },
+                    {
+                        "path": "/proc/daemons",
+                        "hint": "4 daemons active since boot, no change request on file"
+                    }
                 ]
             },
             {
                 "type": "links",
                 "heading": "Start Here",
                 "entries": [
-                    { "path": "/var/log/kern.log", "hint": "kernel ring buffer" },
-                    { "path": "/dev/rf0",          "hint": "rf0 device status" },
-                    { "path": "/proc/daemons",     "hint": "active daemon processes" },
-                    { "path": "/proc/0/status",    "hint": "anomalous PID 0" }
+                    {
+                        "path": "/var/log/kern.log",
+                        "hint": "kernel ring buffer"
+                    },
+                    {
+                        "path": "/dev/rf0",
+                        "hint": "rf0 device status"
+                    },
+                    {
+                        "path": "/proc/daemons",
+                        "hint": "active daemon processes"
+                    },
+                    {
+                        "path": "/proc/0/status",
+                        "hint": "anomalous PID 0"
+                    }
                 ]
             },
             {
                 "type": "links",
                 "heading": "Filesystem",
                 "entries": [
-                    { "path": "/etc/index",        "hint": "system configuration" },
-                    { "path": "/proc/index",       "hint": "process and kernel state" },
-                    { "path": "/var/log/index",    "hint": "system logs" },
-                    { "path": "/home/index",       "hint": "user directories" },
-                    { "path": "/dev/rf0",          "hint": "device status" },
-                    { "path": "/rom/index",        "hint": "ROM firmware" }
+                    {
+                        "path": "/etc/index",
+                        "hint": "system configuration"
+                    },
+                    {
+                        "path": "/proc/index",
+                        "hint": "process and kernel state"
+                    },
+                    {
+                        "path": "/var/log/index",
+                        "hint": "system logs"
+                    },
+                    {
+                        "path": "/home/index",
+                        "hint": "user directories"
+                    },
+                    {
+                        "path": "/dev/rf0",
+                        "hint": "device status"
+                    },
+                    {
+                        "path": "/rom/index",
+                        "hint": "ROM firmware"
+                    }
                 ]
             }
         ]
     },
-
     "staticFiles": {
         "/dev/rf0": [
             "RF0 DEVICE STATUS",
@@ -153,142 +208,453 @@
             "  /motd          Message of the day",
             "  /pkg/          Package registry",
             "  /rom/          ROM firmware (v1.0)"
+        ],
+        "/var/log/daemon.trace": [
+            "DAEMON TRACE — gregd process group",
+            "===================================",
+            "trace start: 2025-10-15T00:00:42.000",
+            "source:      /proc/gregd/trace",
+            "filter:      pid 847-851",
+            "verbosity:   2 (full chain + timing)",
+            "",
+            "FIELDS:",
+            "  [time] [gregd:PID] cycle N | chain | in→out | time | exit",
+            "---",
+            "",
+            "[00:00:42.001] [gregd:847] cycle 216847 | rf0|shift|remap|align|exec | 4096→847  | 0.011s | exit 847",
+            "[00:00:42.014] [gregd:848] cycle 216847 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:00:42.023] [gregd:849] cycle 216847 | rf0|remap|align|exec       | 4096→847  | 0.011s | exit 0",
+            "[00:00:42.033] [gregd:850] cycle 216847 | rf0|shift|align            | 4096→256  | 0.004s | exit 0",
+            "[00:01:42.001] [gregd:847] cycle 216848 | rf0|shift|remap|align|exec | 4096→847  | 0.012s | exit 847",
+            "[00:01:42.014] [gregd:848] cycle 216848 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:01:42.023] [gregd:849] cycle 216848 | rf0|remap|align|exec       | 4096→847  | 0.011s | exit 0",
+            "[00:01:42.033] [gregd:850] cycle 216848 | rf0|shift|align            | 4096→256  | 0.005s | exit 0",
+            "[00:01:47.000] rf0: rx idle (listening)",
+            "[00:02:42.001] [gregd:847] cycle 216849 | rf0|shift|remap|align|exec | 4096→847  | 0.012s | exit 847",
+            "[00:02:42.014] [gregd:848] cycle 216849 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:02:42.023] [gregd:849] cycle 216849 | rf0|remap|align|exec       | 4096→847  | 0.010s | exit 0",
+            "[00:02:42.033] [gregd:850] cycle 216849 | rf0|shift|align            | 4096→256  | 0.005s | exit 0",
+            "[00:03:42.001] [gregd:847] cycle 216850 | rf0|shift|remap|align|exec | 4096→847  | 0.013s | exit 847",
+            "[00:03:42.014] [gregd:848] cycle 216850 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:03:42.023] [gregd:849] cycle 216850 | rf0|remap|align|exec       | 4096→847  | 0.009s | exit 0",
+            "[00:03:42.033] [gregd:850] cycle 216850 | rf0|shift|align            | 4096→256  | 0.004s | exit 0",
+            "[00:04:42.001] [gregd:847] cycle 216851 | rf0|shift|remap|align|exec | 4096→847  | 0.012s | exit 847",
+            "[00:04:42.014] [gregd:848] cycle 216851 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:04:42.023] [gregd:849] cycle 216851 | rf0|remap|align|exec       | 4096→847  | 0.010s | exit 0",
+            "[00:04:42.033] [gregd:850] cycle 216851 | rf0|shift|align            | 4096→256  | 0.004s | exit 0",
+            "[00:04:42.847] [gregd:851] cycle 216851 | rf0|shift|remap|align|exec|  | 4096→0    | 0.847s | exit 851",
+            "[00:04:47.000] gregd[847]: exit 847 — anomaly logged",
+            "[00:05:42.001] [gregd:847] cycle 216852 | rf0|shift|remap|align|exec | 4096→847  | 0.013s | exit 847",
+            "[00:05:42.014] [gregd:848] cycle 216852 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:05:42.023] [gregd:849] cycle 216852 | rf0|remap|align|exec       | 4096→847  | 0.011s | exit 0",
+            "[00:05:42.033] [gregd:850] cycle 216852 | rf0|shift|align            | 4096→256  | 0.003s | exit 0",
+            "[00:06:42.001] [gregd:847] cycle 216853 | rf0|shift|remap|align|exec | 4096→847  | 0.013s | exit 847",
+            "[00:06:42.014] [gregd:848] cycle 216853 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:06:42.023] [gregd:849] cycle 216853 | rf0|remap|align|exec       | 4096→847  | 0.011s | exit 0",
+            "[00:06:42.033] [gregd:850] cycle 216853 | rf0|shift|align            | 4096→256  | 0.005s | exit 0",
+            "[00:07:42.001] [gregd:847] cycle 216854 | rf0|shift|remap|align|exec | 4096→847  | 0.012s | exit 847",
+            "[00:07:42.014] [gregd:848] cycle 216854 | rf0|shift|remap|exec       | 4096→512  | 0.009s | exit 0",
+            "[00:07:42.023] [gregd:849] cycle 216854 | rf0|remap|align|exec       | 4096→847  | 0.008s | exit 0",
+            "[00:07:42.033] [gregd:850] cycle 216854 | rf0|shift|align            | 4096→256  | 0.004s | exit 0",
+            "[00:08:42.001] [gregd:847] cycle 216855 | rf0|shift|remap|align|exec | 4096→847  | 0.012s | exit 847",
+            "[00:08:42.014] [gregd:848] cycle 216855 | rf0|shift|remap|exec       | 4096→512  | 0.007s | exit 0",
+            "[00:08:42.023] [gregd:849] cycle 216855 | rf0|remap|align|exec       | 4096→847  | 0.009s | exit 0",
+            "[00:08:42.033] [gregd:850] cycle 216855 | rf0|shift|align            | 4096→256  | 0.003s | exit 0",
+            "[00:09:42.001] [gregd:847] cycle 216856 | rf0|shift|remap|align|exec | 4096→847  | 0.014s | exit 847",
+            "[00:09:42.014] [gregd:848] cycle 216856 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:09:42.023] [gregd:849] cycle 216856 | rf0|remap|align|exec       | 4096→847  | 0.009s | exit 0",
+            "[00:09:42.033] [gregd:850] cycle 216856 | rf0|shift|align            | 4096→256  | 0.004s | exit 0",
+            "[00:10:42.001] [gregd:847] cycle 216857 | rf0|shift|remap|align|exec | 4096→847  | 0.012s | exit 847",
+            "[00:10:42.014] [gregd:848] cycle 216857 | rf0|shift|remap|exec       | 4096→512  | 0.007s | exit 0",
+            "[00:10:42.023] [gregd:849] cycle 216857 | rf0|remap|align|exec       | 4096→847  | 0.008s | exit 0",
+            "[00:10:42.033] [gregd:850] cycle 216857 | rf0|shift|align            | 4096→256  | 0.003s | exit 0",
+            "[00:10:47.000] rf0: signal strength 0.000 dBm",
+            "[00:11:42.001] [gregd:847] cycle 216858 | rf0|shift|remap|align|exec | 4096→847  | 0.014s | exit 847",
+            "[00:11:42.014] [gregd:848] cycle 216858 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:11:42.023] [gregd:849] cycle 216858 | rf0|remap|align|exec       | 4096→847  | 0.011s | exit 0",
+            "[00:11:42.033] [gregd:850] cycle 216858 | rf0|shift|align            | 4096→256  | 0.004s | exit 0",
+            "[00:12:42.001] [gregd:847] cycle 216859 | rf0|shift|remap|align|exec | 4096→847  | 0.014s | exit 847",
+            "[00:12:42.014] [gregd:848] cycle 216859 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:12:42.023] [gregd:849] cycle 216859 | rf0|remap|align|exec       | 4096→847  | 0.009s | exit 0",
+            "[00:12:42.033] [gregd:850] cycle 216859 | rf0|shift|align            | 4096→256  | 0.004s | exit 0",
+            "[00:13:42.001] [gregd:847] cycle 216860 | rf0|shift|remap|align|exec | 4096→847  | 0.012s | exit 847",
+            "[00:13:42.014] [gregd:848] cycle 216860 | rf0|shift|remap|exec       | 4096→512  | 0.009s | exit 0",
+            "[00:13:42.023] [gregd:849] cycle 216860 | rf0|remap|align|exec       | 4096→847  | 0.009s | exit 0",
+            "[00:13:42.033] [gregd:850] cycle 216860 | rf0|shift|align            | 4096→256  | 0.003s | exit 0",
+            "[00:14:42.001] [gregd:847] cycle 216861 | rf0|shift|remap|align|exec | 4096→847  | 0.011s | exit 847",
+            "[00:14:42.014] [gregd:848] cycle 216861 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:14:42.023] [gregd:849] cycle 216861 | rf0|remap|align|exec       | 4096→847  | 0.008s | exit 0",
+            "[00:14:42.033] [gregd:850] cycle 216861 | rf0|shift|align            | 4096→256  | 0.004s | exit 0",
+            "[00:15:42.001] [gregd:847] cycle 216862 | rf0|shift|remap|align|exec | 4096→847  | 0.012s | exit 847",
+            "[00:15:42.014] [gregd:848] cycle 216862 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:15:42.023] [gregd:849] cycle 216862 | rf0|remap|align|exec       | 4096→847  | 0.009s | exit 0",
+            "[00:15:42.033] [gregd:850] cycle 216862 | rf0|shift|align            | 4096→256  | 0.003s | exit 0",
+            "[00:16:42.001] [gregd:847] cycle 216863 | rf0|shift|remap|align|exec | 4096→847  | 0.013s | exit 847",
+            "[00:16:42.014] [gregd:848] cycle 216863 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:16:42.023] [gregd:849] cycle 216863 | rf0|remap|align|exec       | 4096→847  | 0.009s | exit 0",
+            "[00:16:42.033] [gregd:850] cycle 216863 | rf0|shift|align            | 4096→256  | 0.005s | exit 0",
+            "[00:17:42.001] [gregd:847] cycle 216864 | rf0|shift|remap|align|exec | 4096→847  | 0.013s | exit 847",
+            "[00:17:42.014] [gregd:848] cycle 216864 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:17:42.023] [gregd:849] cycle 216864 | rf0|remap|align|exec       | 4096→847  | 0.008s | exit 0",
+            "[00:17:42.033] [gregd:850] cycle 216864 | rf0|shift|align            | 4096→256  | 0.004s | exit 0",
+            "[00:18:42.001] [gregd:847] cycle 216865 | rf0|shift|remap|align|exec | 4096→847  | 0.013s | exit 847",
+            "[00:18:42.014] [gregd:848] cycle 216865 | rf0|shift|remap|exec       | 4096→512  | 0.007s | exit 0",
+            "[00:18:42.023] [gregd:849] cycle 216865 | rf0|remap|align|exec       | 4096→847  | 0.010s | exit 0",
+            "[00:18:42.033] [gregd:850] cycle 216865 | rf0|shift|align            | 4096→256  | 0.004s | exit 0",
+            "[00:18:47.000] gregd: chain realignment pending",
+            "[00:19:42.001] [gregd:847] cycle 216866 | rf0|shift|remap|align|exec | 4096→847  | 0.011s | exit 847",
+            "[00:19:42.014] [gregd:848] cycle 216866 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:19:42.023] [gregd:849] cycle 216866 | rf0|remap|align|exec       | 4096→847  | 0.008s | exit 0",
+            "[00:19:42.033] [gregd:850] cycle 216866 | rf0|shift|align            | 4096→256  | 0.004s | exit 0",
+            "[00:20:42.001] [gregd:847] cycle 216867 | rf0|shift|remap|align|exec | 4096→847  | 0.011s | exit 847",
+            "[00:20:42.014] [gregd:848] cycle 216867 | rf0|shift|remap|exec       | 4096→512  | 0.007s | exit 0",
+            "[00:20:42.023] [gregd:849] cycle 216867 | rf0|remap|align|exec       | 4096→847  | 0.009s | exit 0",
+            "[00:20:42.033] [gregd:850] cycle 216867 | rf0|shift|align            | 4096→256  | 0.003s | exit 0",
+            "[00:21:42.001] [gregd:847] cycle 216868 | rf0|shift|remap|align|exec | 4096→847  | 0.012s | exit 847",
+            "[00:21:42.014] [gregd:848] cycle 216868 | rf0|shift|remap|exec       | 4096→512  | 0.007s | exit 0",
+            "[00:21:42.023] [gregd:849] cycle 216868 | rf0|remap|align|exec       | 4096→847  | 0.010s | exit 0",
+            "[00:21:42.033] [gregd:850] cycle 216868 | rf0|shift|align            | 4096→256  | 0.004s | exit 0",
+            "[00:22:42.001] [gregd:847] cycle 216869 | rf0|shift|remap|align|exec | 4096→847  | 0.013s | exit 847",
+            "[00:22:42.014] [gregd:848] cycle 216869 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:22:42.023] [gregd:849] cycle 216869 | rf0|remap|align|exec       | 4096→847  | 0.010s | exit 0",
+            "[00:22:42.033] [gregd:850] cycle 216869 | rf0|shift|align            | 4096→256  | 0.004s | exit 0",
+            "[00:22:42.847] [gregd:851] cycle 216869 | rf0|shift|remap|align|exec|  | 4096→0    | 0.847s | exit 851",
+            "[00:23:42.001] [gregd:847] cycle 216870 | rf0|shift|remap|align|exec | 4096→847  | 0.012s | exit 847",
+            "[00:23:42.014] [gregd:848] cycle 216870 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:23:42.023] [gregd:849] cycle 216870 | rf0|remap|align|exec       | 4096→847  | 0.010s | exit 0",
+            "[00:23:42.033] [gregd:850] cycle 216870 | rf0|shift|align            | 4096→256  | 0.004s | exit 0",
+            "[00:24:42.001] [gregd:847] cycle 216871 | rf0|shift|remap|align|exec | 4096→847  | 0.011s | exit 847",
+            "[00:24:42.014] [gregd:848] cycle 216871 | rf0|shift|remap|exec       | 4096→512  | 0.009s | exit 0",
+            "[00:24:42.023] [gregd:849] cycle 216871 | rf0|remap|align|exec       | 4096→847  | 0.008s | exit 0",
+            "[00:24:42.033] [gregd:850] cycle 216871 | rf0|shift|align            | 4096→256  | 0.005s | exit 0",
+            "[00:25:42.001] [gregd:847] cycle 216872 | rf0|shift|remap|align|exec | 4096→847  | 0.011s | exit 847",
+            "[00:25:42.014] [gregd:848] cycle 216872 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:25:42.023] [gregd:849] cycle 216872 | rf0|remap|align|exec       | 4096→847  | 0.009s | exit 0",
+            "[00:25:42.033] [gregd:850] cycle 216872 | rf0|shift|align            | 4096→256  | 0.003s | exit 0",
+            "[00:26:42.001] [gregd:847] cycle 216873 | rf0|shift|remap|align|exec | 4096→847  | 0.012s | exit 847",
+            "[00:26:42.014] [gregd:848] cycle 216873 | rf0|shift|remap|exec       | 4096→512  | 0.007s | exit 0",
+            "[00:26:42.023] [gregd:849] cycle 216873 | rf0|remap|align|exec       | 4096→847  | 0.010s | exit 0",
+            "[00:26:42.033] [gregd:850] cycle 216873 | rf0|shift|align            | 4096→256  | 0.005s | exit 0",
+            "[00:27:42.001] [gregd:847] cycle 216874 | rf0|shift|remap|align|exec | 4096→847  | 0.013s | exit 847",
+            "[00:27:42.014] [gregd:848] cycle 216874 | rf0|shift|remap|exec       | 4096→512  | 0.007s | exit 0",
+            "[00:27:42.023] [gregd:849] cycle 216874 | rf0|remap|align|exec       | 4096→847  | 0.009s | exit 0",
+            "[00:27:42.033] [gregd:850] cycle 216874 | rf0|shift|align            | 4096→256  | 0.005s | exit 0",
+            "[00:28:42.001] [gregd:847] cycle 216875 | rf0|shift|remap|align|exec | 4096→847  | 0.013s | exit 847",
+            "[00:28:42.014] [gregd:848] cycle 216875 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:28:42.023] [gregd:849] cycle 216875 | rf0|remap|align|exec       | 4096→847  | 0.009s | exit 0",
+            "[00:28:42.033] [gregd:850] cycle 216875 | rf0|shift|align            | 4096→256  | 0.003s | exit 0",
+            "[00:28:47.000] audit: entropy pool unchanged for 847+ ticks",
+            "[00:29:42.001] [gregd:847] cycle 216876 | rf0|shift|remap|align|exec | 4096→847  | 0.012s | exit 847",
+            "[00:29:42.014] [gregd:848] cycle 216876 | rf0|shift|remap|exec       | 4096→512  | 0.007s | exit 0",
+            "[00:29:42.023] [gregd:849] cycle 216876 | rf0|remap|align|exec       | 4096→847  | 0.009s | exit 0",
+            "[00:29:42.033] [gregd:850] cycle 216876 | rf0|shift|align            | 4096→256  | 0.004s | exit 0",
+            "[00:30:42.001] [gregd:847] cycle 216877 | rf0|shift|remap|align|exec | 4096→847  | 0.011s | exit 847",
+            "[00:30:42.014] [gregd:848] cycle 216877 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:30:42.023] [gregd:849] cycle 216877 | rf0|remap|align|exec       | 4096→847  | 0.010s | exit 0",
+            "[00:30:42.033] [gregd:850] cycle 216877 | rf0|shift|align            | 4096→256  | 0.005s | exit 0",
+            "[00:31:42.001] [gregd:847] cycle 216878 | rf0|shift|remap|align|exec | 4096→847  | 0.013s | exit 847",
+            "[00:31:42.014] [gregd:848] cycle 216878 | rf0|shift|remap|exec       | 4096→512  | 0.007s | exit 0",
+            "[00:31:42.023] [gregd:849] cycle 216878 | rf0|remap|align|exec       | 4096→847  | 0.009s | exit 0",
+            "[00:31:42.033] [gregd:850] cycle 216878 | rf0|shift|align            | 4096→256  | 0.003s | exit 0",
+            "[00:32:42.001] [gregd:847] cycle 216879 | rf0|shift|remap|align|exec | 4096→847  | 0.012s | exit 847",
+            "[00:32:42.014] [gregd:848] cycle 216879 | rf0|shift|remap|exec       | 4096→512  | 0.009s | exit 0",
+            "[00:32:42.023] [gregd:849] cycle 216879 | rf0|remap|align|exec       | 4096→847  | 0.009s | exit 0",
+            "[00:32:42.033] [gregd:850] cycle 216879 | rf0|shift|align            | 4096→256  | 0.004s | exit 0",
+            "[00:33:42.001] [gregd:847] cycle 216880 | rf0|shift|remap|align|exec | 4096→847  | 0.012s | exit 847",
+            "[00:33:42.014] [gregd:848] cycle 216880 | rf0|shift|remap|exec       | 4096→512  | 0.007s | exit 0",
+            "[00:33:42.023] [gregd:849] cycle 216880 | rf0|remap|align|exec       | 4096→847  | 0.010s | exit 0",
+            "[00:33:42.033] [gregd:850] cycle 216880 | rf0|shift|align            | 4096→256  | 0.004s | exit 0",
+            "[00:34:42.001] [gregd:847] cycle 216881 | rf0|shift|remap|align|exec | 4096→847  | 0.012s | exit 847",
+            "[00:34:42.014] [gregd:848] cycle 216881 | rf0|shift|remap|exec       | 4096→512  | 0.009s | exit 0",
+            "[00:34:42.023] [gregd:849] cycle 216881 | rf0|remap|align|exec       | 4096→847  | 0.009s | exit 0",
+            "[00:34:42.033] [gregd:850] cycle 216881 | rf0|shift|align            | 4096→256  | 0.003s | exit 0",
+            "[00:35:42.001] [gregd:847] cycle 216882 | rf0|shift|remap|align|exec | 4096→847  | 0.013s | exit 847",
+            "[00:35:42.014] [gregd:848] cycle 216882 | rf0|shift|remap|exec       | 4096→512  | 0.007s | exit 0",
+            "[00:35:42.023] [gregd:849] cycle 216882 | rf0|remap|align|exec       | 4096→847  | 0.008s | exit 0",
+            "[00:35:42.033] [gregd:850] cycle 216882 | rf0|shift|align            | 4096→256  | 0.004s | exit 0",
+            "[00:36:42.001] [gregd:847] cycle 216883 | rf0|shift|remap|align|exec | 4096→847  | 0.014s | exit 847",
+            "[00:36:42.014] [gregd:848] cycle 216883 | rf0|shift|remap|exec       | 4096→512  | 0.007s | exit 0",
+            "[00:36:42.023] [gregd:849] cycle 216883 | rf0|remap|align|exec       | 4096→847  | 0.008s | exit 0",
+            "[00:36:42.033] [gregd:850] cycle 216883 | rf0|shift|align            | 4096→256  | 0.004s | exit 0",
+            "[00:36:47.000] gregd[847]: cycle complete",
+            "[00:37:42.001] [gregd:847] cycle 216884 | rf0|shift|remap|align|exec | 4096→847  | 0.013s | exit 847",
+            "[00:37:42.014] [gregd:848] cycle 216884 | rf0|shift|remap|exec       | 4096→512  | 0.009s | exit 0",
+            "[00:37:42.023] [gregd:849] cycle 216884 | rf0|remap|align|exec       | 4096→847  | 0.008s | exit 0",
+            "[00:37:42.033] [gregd:850] cycle 216884 | rf0|shift|align            | 4096→256  | 0.003s | exit 0",
+            "[00:38:42.001] [gregd:847] cycle 216885 | rf0|shift|remap|align|exec | 4096→847  | 0.013s | exit 847",
+            "[00:38:42.014] [gregd:848] cycle 216885 | rf0|shift|remap|exec       | 4096→512  | 0.007s | exit 0",
+            "[00:38:42.023] [gregd:849] cycle 216885 | rf0|remap|align|exec       | 4096→847  | 0.009s | exit 0",
+            "[00:38:42.033] [gregd:850] cycle 216885 | rf0|shift|align            | 4096→256  | 0.005s | exit 0",
+            "[00:39:42.001] [gregd:847] cycle 216886 | rf0|shift|remap|align|exec | 4096→847  | 0.012s | exit 847",
+            "[00:39:42.014] [gregd:848] cycle 216886 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:39:42.023] [gregd:849] cycle 216886 | rf0|remap|align|exec       | 4096→847  | 0.010s | exit 0",
+            "[00:39:42.033] [gregd:850] cycle 216886 | rf0|shift|align            | 4096→256  | 0.003s | exit 0",
+            "[00:40:42.001] [gregd:847] cycle 216887 | rf0|shift|remap|align|exec | 4096→847  | 0.014s | exit 847",
+            "[00:40:42.014] [gregd:848] cycle 216887 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:40:42.023] [gregd:849] cycle 216887 | rf0|remap|align|exec       | 4096→847  | 0.010s | exit 0",
+            "[00:40:42.033] [gregd:850] cycle 216887 | rf0|shift|align            | 4096→256  | 0.003s | exit 0",
+            "[00:40:42.847] [gregd:851] cycle 216887 | rf0|shift|remap|align|exec|  | 4096→0    | 0.847s | exit 851",
+            "[00:41:42.001] [gregd:847] cycle 216888 | rf0|shift|remap|align|exec | 4096→847  | 0.011s | exit 847",
+            "[00:41:42.014] [gregd:848] cycle 216888 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:41:42.023] [gregd:849] cycle 216888 | rf0|remap|align|exec       | 4096→847  | 0.009s | exit 0",
+            "[00:41:42.033] [gregd:850] cycle 216888 | rf0|shift|align            | 4096→256  | 0.004s | exit 0",
+            "[00:42:42.001] [gregd:847] cycle 216889 | rf0|shift|remap|align|exec | 4096→847  | 0.013s | exit 847",
+            "[00:42:42.014] [gregd:848] cycle 216889 | rf0|shift|remap|exec       | 4096→512  | 0.008s | exit 0",
+            "[00:42:42.023] [gregd:849] cycle 216889 | rf0|remap|align|exec       | 4096→847  | 0.008s | exit 0",
+            "[00:42:42.033] [gregd:850] cycle 216889 | rf0|shift|align            | 4096→256  | 0.003s | exit 0",
+            "",
+            "--- trace summary ---",
+            "cycles: 216847-216889 (43 total)",
+            "pid 847: exit 847 (43/43 cycles)",
+            "pid 848: exit 0   (43/43 cycles)",
+            "pid 849: exit 0   (43/43 cycles)",
+            "pid 850: exit 0   (43/43 cycles)",
+            "pid 851: 3 unscheduled appearances (not in /proc/daemons)",
+            "",
+            "trace end: 2025-10-15T00:42:42.034"
         ]
     },
-
     "seeAlso": {
-        "/status":            ["/var/log/kern.log", "/proc/daemons", "/dev/rf0"],
-        "/var/log/kern.log":  ["/dev/rf0", "/proc/0/status", "/proc/daemons"],
-        "/var/log/syslog":    ["/var/log/kern.log", "/proc/entropy_avail"],
-        "/var/log/daemon.log":["/etc/crontab", "/home/greg/bin/shift", "/proc/daemons"],
-        "/dev/rf0":           ["/.rf0.buf", "/var/log/kern.log", "/rom/status"],
-        "/.rf0.buf":          ["/dev/rf0", "/man/decode"],
-        "/proc/0/status":     ["/proc/0/environ", "/proc/0/cmdline", "/var/log/kern.log"],
-        "/proc/0/environ":    ["/home/dhollis/.plan", "/proc/0/status"],
-        "/proc/0/cmdline":    ["/proc/0/status", "/proc/0/environ"],
-        "/proc/daemons":      ["/var/log/daemon.log", "/proc/0/status"],
-        "/proc/entropy_avail":["/dev/rf0", "/proc/daemons"],
-        "/etc/passwd":        ["/home/greg/.bashrc", "/home/dhollis/.plan"],
-        "/etc/fstab":         ["/dev/rf0", "/etc/modules.conf"],
-        "/etc/modules.conf":  ["/var/log/kern.log", "/etc/fstab"],
-        "/etc/crontab":       ["/var/log/daemon.log", "/proc/daemons"],
-        "/home/greg/.bashrc": ["/home/greg/bin/shift", "/home/greg/bin/exec"],
-        "/home/greg/bin/shift":["/home/greg/bin/remap", "/var/log/daemon.log"],
-        "/home/greg/bin/remap":["/home/greg/bin/align", "/home/greg/bin/shift"],
-        "/home/greg/bin/align":["/home/greg/bin/exec", "/home/greg/bin/remap"],
-        "/home/greg/bin/exec": ["/var/log/daemon.log", "/proc/daemons"],
-        "/home/dhollis/.plan": ["/home/dhollis/inbox/fwd_from_greg.msg", "/proc/0/environ"],
-        "/home/dhollis/inbox/fwd_from_greg.msg":  ["/home/dhollis/personnel/alan_g.prf", "/home/dhollis/.plan"],
-        "/home/dhollis/personnel/alan_g.prf":     ["/home/dhollis/personnel/park_j.prf", "/home/dhollis/.pending/HR-97-0847.complaint"],
-        "/home/dhollis/personnel/park_j.prf":     ["/rom/info", "/home/dhollis/personnel/alan_g.prf"],
-        "/home/dhollis/personnel/hollis_d.prf":   ["/home/dhollis/.plan", "/home/dhollis/personnel/alan_g.prf"],
-        "/home/dhollis/personnel/chen_s.prf":     ["/home/dhollis/personnel/park_j.prf"],
-        "/home/dhollis/personnel/martinez_r.prf": ["/home/dhollis/.pending/HR-97-0847.complaint"],
-        "/home/dhollis/.pending/HR-97-0847.complaint": ["/home/dhollis/personnel/alan_g.prf", "/var/log/daemon.log"],
-        "/home/dhollis/reports/headcount_q3_97.txt":   ["/home/dhollis/personnel/alan_g.prf"],
-        "/home/dhollis/inbox/re_restructuring.msg":    ["/home/dhollis/personnel/park_j.prf"],
-        "/var/mail/dhollis":  ["/home/dhollis/.plan", "/home/dhollis/inbox/fwd_from_greg.msg"],
-        "/rom/status":        ["/rom/info", "/rom/log", "/dev/rf0"],
-        "/rom/info":          ["/home/dhollis/personnel/park_j.prf", "/rom/status"],
-        "/rom/post":          ["/rom/info", "/rom/status"],
-        "/rom/log":           ["/rom/status", "/var/log/kern.log"],
-        "/rom/rxbuf":         ["/.rf0.buf", "/rom/status"],
-        "/home/index":        ["/etc/passwd"],
-        "/var/log/index":     ["/proc/daemons", "/proc/0/status"],
-        "/rom/index":         ["/dev/rf0", "/var/log/kern.log"]
+        "/status": [
+            "/var/log/kern.log",
+            "/proc/daemons",
+            "/dev/rf0"
+        ],
+        "/var/log/kern.log": [
+            "/dev/rf0",
+            "/proc/0/status",
+            "/proc/daemons"
+        ],
+        "/var/log/daemon.log": [
+            "/etc/crontab",
+            "/home/greg/bin/shift",
+            "/proc/daemons",
+            "/var/log/daemon.trace"
+        ],
+        "/dev/rf0": [
+            "/.rf0.buf",
+            "/var/log/kern.log",
+            "/rom/status"
+        ],
+        "/proc/daemons": [
+            "/var/log/daemon.log",
+            "/proc/0/status"
+        ],
+        "/proc/entropy_avail": [
+            "/dev/rf0",
+            "/proc/daemons"
+        ],
+        "/home/index": [
+            "/etc/passwd"
+        ],
+        "/var/log/index": [
+            "/proc/daemons",
+            "/proc/0/status"
+        ],
+        "/rom/index": [
+            "/dev/rf0",
+            "/var/log/kern.log"
+        ],
+        "/var/log/daemon.trace": [
+            "/var/log/daemon.log",
+            "/proc/daemons",
+            "/home/greg/doc/chain-notes.txt"
+        ]
     },
-
     "directoryIndexes": {
         "/etc/": {
             "entries": [
-                { "name": "hostname",       "desc": "System hostname" },
-                { "name": "passwd",         "desc": "User accounts" },
-                { "name": "fstab",          "desc": "Filesystem table" },
-                { "name": "motd",           "desc": "Message of the day" },
-                { "name": "crontab",        "desc": "Scheduled tasks" },
-                { "name": "modules.conf",   "desc": "Loaded kernel modules" },
-                { "name": "gregos-release", "desc": "OS release info" }
+                {
+                    "name": "hostname",
+                    "desc": "System hostname"
+                },
+                {
+                    "name": "passwd",
+                    "desc": "User accounts"
+                },
+                {
+                    "name": "fstab",
+                    "desc": "Filesystem table"
+                },
+                {
+                    "name": "motd",
+                    "desc": "Message of the day"
+                },
+                {
+                    "name": "crontab",
+                    "desc": "Scheduled tasks"
+                },
+                {
+                    "name": "modules.conf",
+                    "desc": "Loaded kernel modules"
+                },
+                {
+                    "name": "gregos-release",
+                    "desc": "OS release info"
+                }
             ],
             "usageHint": "Usage: curl gregoryalan.com/etc/<file>"
         },
         "/proc/": {
             "entries": [
-                { "name": "version",       "desc": "Kernel version string" },
-                { "name": "cpuinfo",       "desc": "CPU information" },
-                { "name": "meminfo",       "desc": "Memory information" },
-                { "name": "daemons",       "desc": "Running daemon processes" },
-                { "name": "entropy_avail", "desc": "Entropy pool status" },
-                { "name": "0/",            "desc": "PID 0 (anomalous process)" }
+                {
+                    "name": "version",
+                    "desc": "Kernel version string"
+                },
+                {
+                    "name": "cpuinfo",
+                    "desc": "CPU information"
+                },
+                {
+                    "name": "meminfo",
+                    "desc": "Memory information"
+                },
+                {
+                    "name": "daemons",
+                    "desc": "Running daemon processes"
+                },
+                {
+                    "name": "entropy_avail",
+                    "desc": "Entropy pool status"
+                },
+                {
+                    "name": "0/",
+                    "desc": "PID 0 (anomalous process)"
+                }
             ],
             "usageHint": "Usage: curl gregoryalan.com/proc/<file>"
         },
         "/home/": {
             "entries": [
-                { "name": "greg/",    "desc": "Gregory Alan (system owner)" },
-                { "name": "dhollis/", "desc": "Diane Hollis (HR director)" },
-                { "name": "guest/",   "desc": "Visitor account" }
+                {
+                    "name": "greg/",
+                    "desc": "Gregory Alan (system owner)"
+                },
+                {
+                    "name": "dhollis/",
+                    "desc": "Diane Hollis (HR director)"
+                },
+                {
+                    "name": "guest/",
+                    "desc": "Visitor account"
+                }
             ]
         },
         "/var/log/": {
             "entries": [
-                { "name": "kern.log",   "desc": "Kernel ring buffer" },
-                { "name": "daemon.log", "desc": "Daemon process output" },
-                { "name": "syslog",     "desc": "System messages" }
+                {
+                    "name": "kern.log",
+                    "desc": "Kernel ring buffer"
+                },
+                {
+                    "name": "daemon.log",
+                    "desc": "Daemon process output"
+                },
+                {
+                    "name": "syslog",
+                    "desc": "System messages"
+                },
+                {
+                    "name": "daemon.trace",
+                    "desc": "Extended daemon execution trace"
+                }
             ]
         },
         "/rom/": {
             "entries": [
-                { "name": "status", "desc": "RF0 device diagnostics" },
-                { "name": "post",   "desc": "Power-on self-test results" },
-                { "name": "info",   "desc": "Device identification" },
-                { "name": "log",    "desc": "Station event log" },
-                { "name": "rxbuf",  "desc": "RX buffer dump" }
+                {
+                    "name": "status",
+                    "desc": "RF0 device diagnostics"
+                },
+                {
+                    "name": "post",
+                    "desc": "Power-on self-test results"
+                },
+                {
+                    "name": "info",
+                    "desc": "Device identification"
+                },
+                {
+                    "name": "log",
+                    "desc": "Station event log"
+                },
+                {
+                    "name": "rxbuf",
+                    "desc": "RX buffer dump"
+                }
             ],
             "footer": "ROM firmware from v1.0 boot"
+        },
+        "/home/greg/doc/": {
+            "entries": [
+                {
+                    "name": "chain-notes.txt",
+                    "desc": "Transform pipeline design notes"
+                },
+                {
+                    "name": "RFC-0847.txt",
+                    "desc": "Entropy transform chain protocol"
+                }
+            ]
+        },
+        "/home/greg/src/": {
+            "entries": [
+                {
+                    "name": "CHANGELOG",
+                    "desc": "Kernel changelog"
+                },
+                {
+                    "name": "rf0.conf",
+                    "desc": "RF0 module configuration"
+                }
+            ]
         }
     },
-
     "footerHints": {
         "/man/index": "Usage: curl gregoryalan.com/man/<command>",
-        "/help":      "Man pages: curl gregoryalan.com/man/<command>"
+        "/help": "Man pages: curl gregoryalan.com/man/<command>"
     },
-
     "statusPaths": {
-        "/etc/passwd":              "User accounts",
-        "/etc/hostname":            "System hostname",
-        "/etc/fstab":               "Filesystem table",
-        "/etc/crontab":             "Scheduled tasks",
-        "/etc/modules.conf":        "Loaded kernel modules",
-        "/etc/gregos-release":      "OS release info",
-        "/proc/version":            "Kernel version",
-        "/proc/cpuinfo":            "CPU information",
-        "/proc/meminfo":            "Memory information",
-        "/proc/daemons":            "Running daemons",
-        "/proc/entropy_avail":      "Entropy pool status",
-        "/proc/0/status":           "PID 0 process status",
-        "/proc/0/environ":          "PID 0 environment",
-        "/proc/0/cmdline":          "PID 0 command line",
-        "/var/log/kern.log":        "Kernel log",
-        "/var/log/daemon.log":      "Daemon log",
-        "/var/log/syslog":          "System log",
-        "/dev/rf0":                 "RF0 device status",
-        "/.rf0.buf":                "RF0 receive buffer dump",
-        "/home/greg/.bashrc":       "greg shell config",
-        "/home/greg/bin/shift":     "Bitwise stream transform",
-        "/home/greg/bin/remap":     "Byte substitution transform",
-        "/home/greg/bin/align":     "Stream frame alignment",
-        "/home/greg/bin/exec":      "Stream execution engine",
-        "/home/dhollis/inbox/":     "Diane Hollis mailbox",
+        "/etc/passwd": "User accounts",
+        "/etc/hostname": "System hostname",
+        "/etc/fstab": "Filesystem table",
+        "/etc/crontab": "Scheduled tasks",
+        "/etc/modules.conf": "Loaded kernel modules",
+        "/etc/gregos-release": "OS release info",
+        "/proc/version": "Kernel version",
+        "/proc/cpuinfo": "CPU information",
+        "/proc/meminfo": "Memory information",
+        "/proc/daemons": "Running daemons",
+        "/proc/entropy_avail": "Entropy pool status",
+        "/proc/0/status": "PID 0 process status",
+        "/proc/0/environ": "PID 0 environment",
+        "/proc/0/cmdline": "PID 0 command line",
+        "/var/log/kern.log": "Kernel log",
+        "/var/log/daemon.log": "Daemon log",
+        "/var/log/syslog": "System log",
+        "/dev/rf0": "RF0 device status",
+        "/.rf0.buf": "RF0 receive buffer dump",
+        "/home/greg/.bashrc": "greg shell config",
+        "/home/greg/bin/shift": "Bitwise stream transform",
+        "/home/greg/bin/remap": "Byte substitution transform",
+        "/home/greg/bin/align": "Stream frame alignment",
+        "/home/greg/bin/exec": "Stream execution engine",
+        "/home/dhollis/inbox/": "Diane Hollis mailbox",
         "/home/dhollis/personnel/": "Personnel records",
-        "/man/":                    "Manual pages index",
-        "/help":                    "Command reference",
-        "/motd":                    "Message of the day",
-        "/pkg/list":                "Package registry",
-        "/rom/status":              "ROM device status",
-        "/rom/post":                "ROM POST results",
-        "/rom/info":                "ROM device info"
+        "/man/": "Manual pages index",
+        "/help": "Command reference",
+        "/motd": "Message of the day",
+        "/pkg/list": "Package registry",
+        "/rom/status": "ROM device status",
+        "/rom/post": "ROM POST results",
+        "/rom/info": "ROM device info",
+        "/proc/0/maps": "PID 0 memory map",
+        "/var/log/daemon.trace": "Daemon execution trace",
+        "/home/greg/doc/chain-notes.txt": "Pipeline design notes",
+        "/home/greg/doc/RFC-0847.txt": "ETCP protocol spec",
+        "/home/greg/src/CHANGELOG": "Kernel changelog",
+        "/home/greg/src/rf0.conf": "RF0 module config"
     },
-
     "llmsFullOrder": [
         "/status",
         "/var/log/kern.log",
@@ -298,14 +664,20 @@
         "/proc/0/status",
         "/proc/0/environ",
         "/proc/0/cmdline",
+        "/proc/0/maps",
         "/proc/daemons",
         "/var/log/daemon.log",
+        "/var/log/daemon.trace",
         "/proc/entropy_avail",
         "/home/greg/.bashrc",
         "/home/greg/bin/shift",
         "/home/greg/bin/remap",
         "/home/greg/bin/align",
         "/home/greg/bin/exec",
+        "/home/greg/doc/chain-notes.txt",
+        "/home/greg/doc/RFC-0847.txt",
+        "/home/greg/src/CHANGELOG",
+        "/home/greg/src/rf0.conf",
         "/etc/passwd",
         "/etc/fstab",
         "/etc/crontab",
@@ -330,93 +702,34 @@
         "/rom/log",
         "/rom/rxbuf"
     ],
-
     "llmsFullAnnotations": {
-        "/status":              "System overview.",
-        "/var/log/kern.log":    "Kernel ring buffer.",
-        "/var/log/syslog":      "System messages.",
-        "/dev/rf0":             "Character device status.",
-        "/.rf0.buf":            "Raw hex dump from rf0 receive buffer.",
-        "/proc/0/status":       "PID 0 process status.",
-        "/proc/0/environ":      "PID 0 environment variables.",
-        "/proc/0/cmdline":      "PID 0 command line.",
-        "/proc/daemons":        "Active daemon processes.",
-        "/var/log/daemon.log":  "Daemon cycle output.",
-        "/proc/entropy_avail":  "Entropy pool status.",
-        "/home/greg/.bashrc":   "Shell configuration for greg.",
-        "/home/greg/bin/shift": "Bitwise stream transform.",
-        "/home/greg/bin/remap": "Byte substitution.",
-        "/home/greg/bin/align": "Stream frame alignment.",
-        "/home/greg/bin/exec":  "Execution engine.",
-        "/etc/passwd":          "Three accounts: greg, dhollis, guest.",
-        "/etc/fstab":           "Filesystem table.",
-        "/etc/crontab":         "Scheduled tasks.",
-        "/etc/modules.conf":    "Loaded kernel modules.",
-        "/home/dhollis/.plan":  "User plan file for Diane Hollis.",
-        "/home/dhollis/inbox/fwd_from_greg.msg":          "Forwarded message.",
-        "/home/dhollis/inbox/re_restructuring.msg":       "Email regarding department restructuring.",
-        "/home/dhollis/inbox/re_board_session.msg":       "Email regarding a board session.",
-        "/home/dhollis/inbox/re_benefits_enrollment.msg": "Benefits enrollment email.",
-        "/home/dhollis/personnel/alan_g.prf":       "Gregory Alan. President.",
-        "/home/dhollis/personnel/park_j.prf":       "James Park. Signal Research.",
-        "/home/dhollis/personnel/hollis_d.prf":     "Diane Hollis. HR Director.",
-        "/home/dhollis/personnel/chen_s.prf":       "Sarah Chen. Engineering.",
-        "/home/dhollis/personnel/martinez_r.prf":   "Roberto Martinez. IT Operations.",
-        "/home/dhollis/personnel/hayes_m.prf":      "Margaret Hayes. Executive Office.",
-        "/home/dhollis/reports/headcount_q3_97.txt":"Q3 1997 headcount report.",
-        "/home/dhollis/.pending/HR-97-0847.complaint": "Formal complaint. Case HR-97-0847.",
-        "/var/mail/dhollis":    "System mailbox for Diane Hollis.",
-        "/rom/info":            "Device identification.",
-        "/rom/status":          "RF0 hardware diagnostics from ROM.",
-        "/rom/post":            "Power-on self-test results.",
-        "/rom/log":             "Station event log from ROM.",
-        "/rom/rxbuf":           "RX buffer dump from ROM."
+        "/status": "System overview.",
+        "/var/log/kern.log": "Kernel ring buffer.",
+        "/dev/rf0": "Character device status.",
+        "/proc/daemons": "Active daemon processes.",
+        "/var/log/daemon.log": "Daemon cycle output.",
+        "/proc/entropy_avail": "Entropy pool status.",
+        "/var/log/daemon.trace": "Extended daemon execution trace with per-cycle timing."
     },
-
     "llmsFullClosing": {
         "heading": "End of filesystem dump",
         "preamble": "All accessible files have been included. Cross-references between files are noted in '# See also' footers.",
         "items": []
     },
-
     "sitemapPriorities": {
-        "/llms.txt":      0.9,
+        "/llms.txt": 0.9,
         "/llms-full.txt": 0.9,
-        "/status":        0.8,
+        "/status": 0.8,
         "/var/log/kern.log": 0.8,
-        "/dev/rf0":       0.8,
-        "/proc/0/status": 0.8,
-        "/proc/0/environ":0.8,
-        "/proc/0/cmdline":0.7,
-        "/.rf0.buf":      0.8,
-        "/proc/daemons":  0.7,
+        "/dev/rf0": 0.8,
+        "/proc/daemons": 0.7,
         "/var/log/daemon.log": 0.7,
         "/proc/entropy_avail": 0.6,
-        "/etc/passwd":    0.7,
-        "/home/dhollis/.plan": 0.7,
-        "/home/dhollis/inbox/fwd_from_greg.msg": 0.7,
-        "/home/dhollis/personnel/alan_g.prf": 0.7,
-        "/home/dhollis/personnel/park_j.prf": 0.7,
-        "/home/dhollis/.pending/HR-97-0847.complaint": 0.8,
-        "/var/mail/dhollis": 0.6,
-        "/home/greg/.bashrc": 0.5,
-        "/home/greg/bin/shift": 0.5,
-        "/home/greg/bin/remap": 0.5,
-        "/home/greg/bin/align": 0.5,
-        "/home/greg/bin/exec":  0.5,
-        "/etc/fstab":     0.5,
-        "/etc/crontab":   0.5,
-        "/etc/modules.conf": 0.5,
-        "/var/log/syslog": 0.6,
-        "/rom/status":    0.6,
-        "/rom/info":      0.6,
-        "/rom/post":      0.5,
-        "/rom/log":       0.5,
-        "/rom/rxbuf":     0.6,
-        "/help":          0.4,
-        "/man/index":     0.4,
-        "/pkg/list":      0.4,
-        "/motd":          0.4,
-        "/status.json":   0.5
+        "/help": 0.4,
+        "/man/index": 0.4,
+        "/pkg/list": 0.4,
+        "/motd": 0.4,
+        "/status.json": 0.5,
+        "/var/log/daemon.trace": 0.7
     }
 }

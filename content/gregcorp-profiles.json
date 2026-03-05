@@ -23,6 +23,46 @@
         }
     },
 
+    "curl": {
+        "seeAlso": {
+            "/home/dhollis/.plan":              ["/home/dhollis/inbox/fwd_from_greg.msg", "/proc/0/environ"],
+            "/home/dhollis/inbox/fwd_from_greg.msg":  ["/home/dhollis/personnel/alan_g.prf", "/home/dhollis/.plan"],
+            "/home/dhollis/personnel/alan_g.prf":     ["/home/dhollis/personnel/park_j.prf", "/home/dhollis/.pending/HR-97-0847.complaint"],
+            "/home/dhollis/personnel/park_j.prf":     ["/rom/info", "/home/dhollis/personnel/alan_g.prf"],
+            "/home/dhollis/personnel/hollis_d.prf":   ["/home/dhollis/.plan", "/home/dhollis/personnel/alan_g.prf"],
+            "/home/dhollis/personnel/chen_s.prf":     ["/home/dhollis/personnel/park_j.prf"],
+            "/home/dhollis/personnel/martinez_r.prf": ["/home/dhollis/.pending/HR-97-0847.complaint"],
+            "/home/dhollis/.pending/HR-97-0847.complaint": ["/home/dhollis/personnel/alan_g.prf", "/var/log/daemon.log"],
+            "/home/dhollis/reports/headcount_q3_97.txt":   ["/home/dhollis/personnel/alan_g.prf"],
+            "/home/dhollis/inbox/re_restructuring.msg":    ["/home/dhollis/personnel/park_j.prf"],
+            "/var/mail/dhollis":  ["/home/dhollis/.plan", "/home/dhollis/inbox/fwd_from_greg.msg"]
+        },
+        "annotations": {
+            "/home/dhollis/.plan":              "User plan file for Diane Hollis.",
+            "/home/dhollis/inbox/fwd_from_greg.msg":          "Forwarded message.",
+            "/home/dhollis/inbox/re_restructuring.msg":       "Email regarding department restructuring.",
+            "/home/dhollis/inbox/re_board_session.msg":       "Email regarding a board session.",
+            "/home/dhollis/inbox/re_benefits_enrollment.msg": "Benefits enrollment email.",
+            "/home/dhollis/personnel/alan_g.prf":       "Gregory Alan. President.",
+            "/home/dhollis/personnel/park_j.prf":       "James Park. Signal Research.",
+            "/home/dhollis/personnel/hollis_d.prf":     "Diane Hollis. HR Director.",
+            "/home/dhollis/personnel/chen_s.prf":       "Sarah Chen. Engineering.",
+            "/home/dhollis/personnel/martinez_r.prf":   "Roberto Martinez. IT Operations.",
+            "/home/dhollis/personnel/hayes_m.prf":      "Margaret Hayes. Executive Office.",
+            "/home/dhollis/reports/headcount_q3_97.txt":"Q3 1997 headcount report.",
+            "/home/dhollis/.pending/HR-97-0847.complaint": "Formal complaint. Case HR-97-0847.",
+            "/var/mail/dhollis":    "System mailbox for Diane Hollis."
+        },
+        "sitemapPriorities": {
+            "/home/dhollis/.plan": 0.7,
+            "/home/dhollis/inbox/fwd_from_greg.msg": 0.7,
+            "/home/dhollis/personnel/alan_g.prf": 0.7,
+            "/home/dhollis/personnel/park_j.prf": 0.7,
+            "/home/dhollis/.pending/HR-97-0847.complaint": 0.8,
+            "/var/mail/dhollis": 0.6
+        }
+    },
+
     "treeFiles": {
         "/home/dhollis/.bashrc": {
             "content": "# .bashrc - Diane Hollis\nexport TERM=vt100\nexport EDITOR=vi\nalias ll='ls -la'\nalias pers='ls personnel/'\nalias pending='ls .pending/'\nPS1='dhollis@gregcorp:$PWD$ '"

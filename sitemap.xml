@@ -125,6 +125,30 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://gregoryalan.com/home/greg/doc/RFC-0847.txt</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://gregoryalan.com/home/greg/doc/chain-notes.txt</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://gregoryalan.com/home/greg/doc/index</loc>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://gregoryalan.com/home/greg/src/CHANGELOG</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://gregoryalan.com/home/greg/src/index</loc>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://gregoryalan.com/home/greg/src/rf0.conf</loc>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://gregoryalan.com/home/index</loc>
     <priority>0.3</priority>
   </url>
@@ -285,6 +309,10 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://gregoryalan.com/proc/0/maps</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://gregoryalan.com/proc/0/status</loc>
     <priority>0.8</priority>
   </url>
@@ -350,6 +378,10 @@
   </url>
   <url>
     <loc>https://gregoryalan.com/var/log/daemon.log</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://gregoryalan.com/var/log/daemon.trace</loc>
     <priority>0.7</priority>
   </url>
   <url>

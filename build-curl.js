@@ -41,6 +41,19 @@ const sig  = loadJSON('signal-hunt.json');
 const rom  = loadJSON('v1.0-rom.json');
 const curl = loadJSON('curl-layer.json');
 
+// ── Merge curl metadata from all manifests ───────────────────
+
+const allSeeAlso = { ...(curl.seeAlso || {}) };
+const allAnnotations = { ...(curl.llmsFullAnnotations || {}) };
+const allSitemapPriorities = { ...(curl.sitemapPriorities || {}) };
+
+for (const manifest of [v11, v20, gc, sig, rom]) {
+    if (!manifest.curl) continue;
+    Object.assign(allSeeAlso, manifest.curl.seeAlso || {});
+    Object.assign(allAnnotations, manifest.curl.annotations || {});
+    Object.assign(allSitemapPriorities, manifest.curl.sitemapPriorities || {});
+}
+
 // ── Clean output dir ─────────────────────────────────────────
 
 fs.rmSync(OUT, { recursive: true, force: true });
@@ -215,7 +228,7 @@ fs.writeFileSync(path.join(__dirname, 'robots.txt'), robotsLines.join('\n') + '\
 
 // ── 15. seeAlso cross-references (post-processing pass) ─────
 
-for (const [vfsPath, refs] of Object.entries(curl.seeAlso)) {
+for (const [vfsPath, refs] of Object.entries(allSeeAlso)) {
     const dest = path.join(OUT, vfsPath);
     if (fs.existsSync(dest)) {
         const existing = fs.readFileSync(dest, 'utf8');
@@ -246,7 +259,7 @@ for (const vfsPath of curl.llmsFullOrder) {
     const src = path.join(OUT, vfsPath);
     if (!fs.existsSync(src)) continue;
     const content = fs.readFileSync(src, 'utf8');
-    const annotation = (curl.llmsFullAnnotations || {})[vfsPath] || '';
+    const annotation = allAnnotations[vfsPath] || '';
     fullLines.push(`## ${vfsPath}`);
     if (annotation) fullLines.push('', `> ${annotation}`);
     fullLines.push('', content, '', '---', '');
@@ -280,7 +293,7 @@ function addSitemapEntries(dir, prefix) {
             addSitemapEntries(fullPath, prefix + entry.name + '/');
         } else {
             const vfsPath = '/' + prefix + entry.name;
-            const priority = (curl.sitemapPriorities || {})[vfsPath] || 0.3;
+            const priority = allSitemapPriorities[vfsPath] || 0.3;
             sitemapLines.push(
                 '  <url>',
                 `    <loc>https://gregoryalan.com${vfsPath}</loc>`,
