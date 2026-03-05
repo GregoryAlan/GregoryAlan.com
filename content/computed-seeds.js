@@ -17,7 +17,8 @@ const computedNarrativeSeeds = {
         const h = Math.floor(ms / 3600000);
         const m = Math.floor((ms % 3600000) / 60000);
         const up = h + 'h' + String(m).padStart(2, '0') + 'm';
-        const cycles = Math.floor(h * 60);
+        const ambientTicks = (typeof Ambient !== 'undefined') ? Ambient._daemonTicks : 0;
+        const cycles = Math.floor(h * 60) + ambientTicks;
         const lastSec = Math.floor(Math.random() * 60);
         const last = new Date(now - lastSec * 1000)
             .toISOString().replace('T', ' ').substring(0, 19);
@@ -40,7 +41,8 @@ const computedNarrativeSeeds = {
     // spec: NARRATIVE-SEEDS.md > Thread 1 > /var/log/daemon.log
     '/var/log/daemon.log': (state) => {
         const epoch = new Date('2025-10-15T00:00:00Z').getTime();
-        const cycles = Math.floor((Date.now() - epoch) / 60000);
+        const ambientTicks = (typeof Ambient !== 'undefined') ? Ambient._daemonTicks : 0;
+        const cycles = Math.floor((Date.now() - epoch) / 60000) + ambientTicks;
         const base = cycles - 9;
         const mix = [847, 847, 847, 848, 847, 847, 849, 847, 850, 847];
         const chains = {

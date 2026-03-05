@@ -86,6 +86,7 @@
 <script src="js/shell.js"></script>
 <script src="js/manifest-loader.js"></script>
 <script src="js/terminal.js"></script>
+<script src="js/ambient.js"></script>
 <script src="js/cmd/core.js"></script>
 <script src="js/cmd/unix.js"></script>
 <script src="js/cmd/bin-tools.js"></script>
@@ -109,6 +110,7 @@
     for (const drv of Object.values(Kernel.driver._registry)) {
         if (drv.restore) drv.restore(Kernel.driver);
     }
+    Ambient.start();
 
     Terminal.el.input.disabled = true;
 

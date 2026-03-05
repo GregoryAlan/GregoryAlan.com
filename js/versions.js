@@ -132,6 +132,7 @@ function applyVersion(targetVersion) {
     Kernel.proc.reset();
     Shell.jobs.reset();
     ManifestLoader.reset();
+    if (typeof Ambient !== 'undefined') Ambient.reset();
     // Reset active profile on version change
     Terminal._pendingAuth = null;
     Shell._activeProfile = null;

@@ -85,6 +85,7 @@ const Terminal = {
     },
 
     handleKeydown(e) {
+        if (typeof Ambient !== 'undefined') Ambient.suspend();
         // ── Password mode: intercept all input ──
         if (this._pendingAuth) {
             if (e.key === 'Enter') {
