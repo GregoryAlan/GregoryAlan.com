@@ -2,8 +2,9 @@
 //
 // Timer interrupt controller for background narrative events.
 // One master setInterval tick evaluates registered behaviors
-// against kernel state and fires effects. Only activates
-// post-contact at v2.0+.
+// against kernel state and fires effects. Version-gated:
+// v1.0 CRT noise, v1.1 system heartbeat, v2.0 daemon pulse,
+// v2.0 post-contact phantom whispers + prompt corruption.
 //
 // spec: NONE — needs storyline document
 //
@@ -82,7 +83,6 @@ const Ambient = {
 
             if (now - last < effectiveInterval) continue;
 
-            // Gate: all default behaviors require v2.0+ post-contact
             if (b.gate && !b.gate(version, hasContact)) continue;
 
             this._lastFired[b.id] = now;
@@ -99,6 +99,63 @@ const Ambient = {
     _registerDefaultBehaviors() {
         const postContact = (ver, contact) => ver >= 2.0 && contact;
 
+        // v1.0: lone CRT band — stillness is the atmosphere
+        this.register({
+            id: 'rom-crt-noise',
+            effect: 'crtBand',
+            interval: 240000,
+            jitter: 0.4,
+            gate: (ver) => ver < 1.1,
+        });
+
+        // v1.1: system heartbeat — gentle Unix background
+        this.register({
+            id: 'system-heartbeat',
+            effect: 'systemLine',
+            effectOpts: {
+                texts: [
+                    'sshd[47]: Connection from 192.168.1.1 port 22847 on 0.0.0.0 port 22',
+                    'sshd[47]: Disconnected from authenticating user root 192.168.1.1 port 22847',
+                    'CRON[63]: (root) CMD (/usr/sbin/logrotate /etc/logrotate.conf)',
+                    'ntpd[92]: Soliciting pool server 129.6.15.28',
+                    'ntpd[92]: adjusting local clock by 0.000847s',
+                    'postfix/qmgr[108]: 847F2A0001: removed',
+                ],
+            },
+            interval: 150000,
+            jitter: 0.4,
+            gate: (ver) => ver >= 1.1 && ver < 2.0,
+        });
+
+        // v1.1: workstation CRT — paired with heartbeat
+        this.register({
+            id: 'workstation-crt',
+            effect: 'crtBand',
+            interval: 300000,
+            jitter: 0.3,
+            gate: (ver) => ver >= 1.1 && ver < 2.0,
+        });
+
+        // v2.0 pre-contact: daemon pulse — active pipeline
+        this.register({
+            id: 'daemon-pulse',
+            effect: 'systemLine',
+            effectOpts: {
+                texts: [
+                    'gregd[847]: cycle complete | rf0|shift|remap|align|exec | exit 847 | 847 bytes',
+                    'gregd[848]: cycle complete | rf0|shift|remap|exec | exit 0 | 512 bytes',
+                    'gregd[849]: cycle complete | rf0|remap|align|exec | exit 0 | 847 bytes',
+                    'gregd[850]: cycle complete | rf0|shift|align | exit 0 | 256 bytes',
+                    'entropy-check: pool 3847, refill nominal',
+                    'gregd[847]: cycle complete | rf0|shift|remap|align|exec | exit 847 | 847 bytes',
+                ],
+            },
+            interval: 90000,
+            jitter: 0.3,
+            gate: (ver, contact) => ver >= 2.0 && !contact,
+        });
+
+        // v2.0 post-contact: CRT drift — escalated frequency
         this.register({
             id: 'crt-drift',
             effect: 'crtBand',

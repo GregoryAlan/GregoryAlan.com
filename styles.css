@@ -324,6 +324,17 @@ body.v1-0 .scanlines {
     opacity: 1;
 }
 
+.ambient-system-line {
+    color: var(--dim);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    margin: 4px 0;
+}
+
+.ambient-system-line.visible {
+    opacity: 1;
+}
+
 .timestamp-anomaly {
     background: #f55;
     color: #000;

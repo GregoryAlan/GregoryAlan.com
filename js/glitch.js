@@ -55,6 +55,17 @@ function runGlitchEffect(name, opts) {
             setTimeout(() => line.classList.remove('visible'), 4000);
             setTimeout(() => line.remove(), 6000);
         },
+        systemLine() {
+            const texts = opts.texts || ['system ready'];
+            const text = texts[Math.floor(Math.random() * texts.length)];
+            const line = document.createElement('div');
+            line.className = 'ambient-system-line';
+            line.textContent = text;
+            Terminal.el.output.appendChild(line);
+            requestAnimationFrame(() => line.classList.add('visible'));
+            setTimeout(() => line.classList.remove('visible'), 6000);
+            setTimeout(() => line.remove(), 8000);
+        },
         promptCorruption() {
             if (effects._promptCorrupting) return;
             effects._promptCorrupting = true;
