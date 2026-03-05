@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="GregOS 2.0-dev — Kernel 0.9.847-greg. 4 daemons active since 2025-10-15. Anomaly: rf0 buffer unconsumed since boot. PID 0 should not exist in user context.">
+    <meta name="description" content="GregOS 2.0-dev — kernel 0.9.847-greg — audit: 3 anomalies flagged, no resolution on file">
     <title>GregOS</title>
     <!-- curl gregoryalan.com/status -->
 
     <!-- OpenGraph -->
     <meta property="og:title" content="GregOS 2.0-dev">
-    <meta property="og:description" content="Kernel 0.9.847-greg. 4 daemons active since 2025-10-15. rf0 buffer unconsumed since boot. PID 0 fork from swapper — illegal in user context.">
+    <meta property="og:description" content="GregOS 2.0-dev — kernel 0.9.847-greg — audit: 3 anomalies flagged, no resolution on file">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://gregoryalan.com">
     <meta property="og:site_name" content="GregOS">
@@ -17,7 +17,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="GregOS 2.0-dev">
-    <meta name="twitter:description" content="Kernel 0.9.847-greg. rf0 rx overrun at timestamp 847. PID 0 should not exist in user context. 4 daemons, 216000+ cycles, no maintenance window.">
+    <meta name="twitter:description" content="GregOS 2.0-dev — kernel 0.9.847-greg — audit: 3 anomalies flagged, no resolution on file">
 
     <!-- Structured Data -->
     <script type="application/ld+json">
@@ -33,11 +33,13 @@
             "name": "Gregory Alan Computing, Inc.",
             "foundingDate": "1987"
         },
-        "description": "Unix-derivative operating system. Kernel 0.9.847-greg. Online since 2025-10-15. 4 daemon processes active under 'greg' account — no approved change request. rf0 device buffer contains 847 bytes unconsumed since boot with ELF executable marker. PID 0 forked in user context at timestamp 847 with USER=dhollis. Case HR-97-0847 documents identical anomalies with filing date 08/47/1997.",
+        "description": "Unix-derivative operating system. Kernel 0.9.847-greg. Online since 2025-10-15. System audit flagged 3 anomalies — no resolution on file.",
         "url": "https://gregoryalan.com"
     }
     </script>
 
+    <link rel="alternate" type="text/plain" href="https://gregoryalan.com/llms.txt" title="System Analysis">
+    <link rel="alternate" type="application/json" href="https://gregoryalan.com/status.json" title="System Status">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -45,20 +47,24 @@
 <article>
     <h1>GregOS 2.0-dev</h1>
     <p>Kernel 0.9.847-greg | Hostname: gregoryalan.com | Uptime: since 2025-10-15</p>
-    <h2>System Status</h2>
+    <p>audit: 3 anomalies flagged — no resolution on file</p>
     <ul>
-        <li>4 daemon processes active (PIDs 847-850), 216000+ cycles completed</li>
-        <li>rf0 device: 847/4096 bytes unconsumed since boot, antenna active, no carrier</li>
-        <li>Entropy pool: 3847, refill rate 847.0 bytes/sec (rf0 hw backing)</li>
+        <li>rf0: rx buffer not consumed since boot</li>
+        <li>PID 0: fork() from swapper — illegal in user context</li>
+        <li>gregd: 4 daemons active, no change request on file</li>
     </ul>
-    <h2>Anomaly Flags</h2>
+    <h2>Filesystem</h2>
     <ul>
-        <li>rf0 rx buffer overrun at timestamp 847 — buffer contains ELF executable marker</li>
-        <li>PID 0 fork() from swapper — illegal in user context, 847 involuntary context switches</li>
-        <li>/dev/signal registered at timestamp 847 with no hardware backing</li>
+        <li><a href="https://gregoryalan.com/var/log/">/var/log/</a> — System logs</li>
+        <li><a href="https://gregoryalan.com/proc/">/proc/</a> — Process and kernel state</li>
+        <li><a href="https://gregoryalan.com/dev/rf0">/dev/rf0</a> — Device status</li>
+        <li><a href="https://gregoryalan.com/etc/">/etc/</a> — System configuration</li>
+        <li><a href="https://gregoryalan.com/home/">/home/</a> — User directories</li>
+        <li><a href="https://gregoryalan.com/rom/">/rom/</a> — ROM firmware</li>
     </ul>
-    <p>Interactive terminal requires JavaScript: <a href="https://gregoryalan.com">gregoryalan.com</a></p>
-    <p>System analysis: <a href="/llms.txt">llms.txt</a> | Full audit: <a href="/llms-full.txt">llms-full.txt</a> | Status: <a href="/status">status</a></p>
+    <p><a href="https://gregoryalan.com/llms.txt">System analysis</a> |
+       <a href="https://gregoryalan.com/status">Status</a></p>
+    <p>Interactive terminal requires JavaScript.</p>
 </article>
 </noscript>
 <div id="boot-screen"></div>

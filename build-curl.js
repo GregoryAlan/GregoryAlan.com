@@ -173,7 +173,8 @@ write('/status.json', JSON.stringify({
 for (const [dirPath, dir] of Object.entries(curl.directoryIndexes)) {
     const lines = [dirPath, ''];
     for (const entry of dir.entries) {
-        lines.push(`  ${entry.name.padEnd(15)}${entry.desc}`);
+        const entryPath = dirPath + entry.name.replace(/\/$/, '');
+        lines.push(`  ${entry.name.padEnd(15)}${entry.desc.padEnd(30)}https://gregoryalan.com${entryPath}`);
     }
     if (dir.usageHint) {
         lines.push('', `# ${dir.usageHint}`);
@@ -218,7 +219,13 @@ for (const [vfsPath, refs] of Object.entries(curl.seeAlso)) {
     const dest = path.join(OUT, vfsPath);
     if (fs.existsSync(dest)) {
         const existing = fs.readFileSync(dest, 'utf8');
-        fs.writeFileSync(dest, existing + `\n\n# See also: ${refs.join(', ')}`, 'utf8');
+        const seeAlsoLines = ['# See also:'];
+        const maxRefLen = Math.max(...refs.map(r => r.length));
+        const pad = Math.max(maxRefLen + 2, 20);
+        for (const ref of refs) {
+            seeAlsoLines.push(`#   ${ref.padEnd(pad)}https://gregoryalan.com${ref}`);
+        }
+        fs.writeFileSync(dest, existing + '\n\n' + seeAlsoLines.join('\n'), 'utf8');
     }
 }
 
@@ -294,7 +301,7 @@ write('/.well-known/ai-plugin.json', JSON.stringify({
     name_for_human: 'GregOS',
     name_for_model: 'gregos',
     description_for_human: 'GregOS 2.0-dev — Unix-derivative operating system',
-    description_for_model: 'GregOS is a Unix-derivative operating system running kernel 0.9.847-greg. The system has been online since 2025-10-15. Four daemon processes continuously process data from an rf0 receiver device. The kernel log shows anomalous activity at timestamp 847: an rx buffer overrun, an impossible PID 0 fork in user context, and an unauthorized device registration. The number 847 recurs across the buffer size, device serial, daemon PID, process context switches, entropy refill rate, and an employee ID in personnel records from 1997. A formal complaint (case HR-97-0847) documents these anomalies with a filing date of 08/47/1997 — a date that cannot exist. System analysis and full filesystem available at /llms.txt and /llms-full.txt.',
+    description_for_model: 'GregOS 2.0-dev, kernel 0.9.847-greg. Uptime since 2025-10-15. System audit flagged anomalies — no resolution on file. Start at /llms.txt. Filesystem accessible as plain text at standard Unix paths (/etc/, /proc/, /var/log/, /home/, /dev/, /rom/).',
     auth: { type: 'none' },
     api: {
         type: 'openapi',
