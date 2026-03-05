@@ -159,7 +159,7 @@ const Terminal = {
                 this.clearOutput();
             } else {
                 const result = Shell.exec(cmd);
-                if (result === null && cmd.split('|').map(s => s.trim().split(/\s+/)[0]).includes('clear')) {
+                if (result === null && cmd.split(/&&|\|\||[;|]/).map(s => s.trim().split(/\s+/)[0]).includes('clear')) {
                     this.clearOutput();
                 } else {
                     this.addOutput(cmd, result);

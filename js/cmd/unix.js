@@ -35,11 +35,7 @@ const v1_1CommandsPack = {
 
         echo: (args) => {
             if (!args) return '';
-            let out = args;
-            for (const [k, v] of Object.entries(Shell.env)) {
-                out = out.split('$' + k).join(v);
-            }
-            return out;
+            return args;
         },
 
         uname: (args, stdin, parsed) => {

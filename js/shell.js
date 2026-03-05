@@ -12,6 +12,7 @@ const Shell = {
     _commands: {},
     _hiddenCommands: new Set(),
     _completions: {},
+    _lastExit: 0,
 
     register(name, fn) { this._commands[name] = fn; },
     unregister(name) { delete this._commands[name]; },
@@ -31,50 +32,113 @@ const Shell = {
 
     exec(cmd) {
         try {
-            const { stages } = shellTokenize(cmd);
+            const { chains } = shellTokenize(cmd);
+            const outputs = [];
 
-            // Multi-stage pipeline
-            if (stages.length > 1) return this._execStages(stages);
+            for (const chain of chains) {
+                if (chain.op === '&&' && this._lastExit !== 0) continue;
+                if (chain.op === '||' && this._lastExit === 0) continue;
 
-            // Single command
-            const tokens = stages[0];
-            if (!tokens.length) return '';
+                const stages = chain.stages;
+                for (const stage of stages) this._expandVars(stage);
 
-            const command = tokens[0].value.toLowerCase();
-            const argTokens = tokens.slice(1);
+                let result;
+                if (stages.length > 1) {
+                    result = this._execStages(stages);
+                } else {
+                    result = this._execSingle(stages[0]);
+                }
 
-            if (this._commands[command]) {
-                const expanded = this._expandGlobs(argTokens);
-                const argValues = expanded.map(t => t.value);
-                const args = argValues.join(' ');
-                const parsed = parseArgs(args, undefined, argValues);
-                const result = this._commands[command](args, null, parsed);
-                EventBus.emit('command:executed', { command, args, parsed, output: result });
-                return result;
+                if (result === null) return null;
+                if (result !== undefined && result !== '') outputs.push(result);
             }
-            // Easter egg lookup — after real commands, before "not found"
-            const egg = ManifestLoader.getEasterEgg(cmd.trim());
-            if (egg && Kernel.driver.evaluateGate(egg.gate || null, Kernel.driver)) {
-                if (egg.discover) Kernel.driver.discover(egg.discover);
-                if (egg.glitch) runGlitchEffect(egg.glitch, egg.glitchOpts || {});
-                return egg.response;
-            }
-            return `${command}: command not found. Type 'help' for available commands.`;
+
+            return outputs.length ? outputs.join('<br>') : '';
         } catch (e) {
             console.error('[Shell] exec error:', e);
             return 'internal error: ' + (e.message || 'unknown');
         }
     },
 
+    _execSingle(tokens) {
+        if (!tokens.length) { this._lastExit = 0; return ''; }
+
+        const redir = this._extractRedirections(tokens);
+        if (redir.error) { this._lastExit = 1; return redir.error; }
+        tokens = redir.tokens;
+        if (!tokens.length) { this._lastExit = 0; return ''; }
+
+        const command = tokens[0].value.toLowerCase();
+        const argTokens = tokens.slice(1);
+
+        let stdin = null;
+        if (redir.redirections.stdin) {
+            const content = Kernel.fs.read(redir.redirections.stdin.path);
+            if (content === null) {
+                this._lastExit = 1;
+                return `bash: ${redir.redirections.stdin.path}: No such file or directory`;
+            }
+            stdin = content;
+        }
+
+        let result;
+        if (this._commands[command]) {
+            const expanded = this._expandGlobs(argTokens);
+            const argValues = expanded.map(t => t.value);
+            const args = argValues.join(' ');
+            const parsed = parseArgs(args, undefined, argValues);
+            result = this._commands[command](args, stdin, parsed);
+            EventBus.emit('command:executed', { command, args, parsed, output: result });
+            this._lastExit = 0;
+        } else {
+            const cmdStr = tokens.map(t => t.value).join(' ');
+            const egg = ManifestLoader.getEasterEgg(cmdStr);
+            if (egg && Kernel.driver.evaluateGate(egg.gate || null, Kernel.driver)) {
+                if (egg.discover) Kernel.driver.discover(egg.discover);
+                if (egg.glitch) runGlitchEffect(egg.glitch, egg.glitchOpts || {});
+                this._lastExit = 0;
+                result = egg.response;
+            } else {
+                this._lastExit = 127;
+                return `${command}: command not found. Type 'help' for available commands.`;
+            }
+        }
+
+        if (result != null && redir.redirections.stdout) {
+            const content = typeof result === 'string' ? this.stripHTML(result) : '';
+            const wr = redir.redirections.stdout.append
+                ? Kernel.fs.append(redir.redirections.stdout.path, content)
+                : Kernel.fs.write(redir.redirections.stdout.path, content);
+            if (wr && wr.error) { this._lastExit = 1; return wr.error; }
+            return '';
+        }
+
+        return result;
+    },
+
     _execStages(stages) {
         let stdin = null;
 
-        for (const tokens of stages) {
+        for (let i = 0; i < stages.length; i++) {
+            const redir = this._extractRedirections(stages[i]);
+            if (redir.error) { this._lastExit = 1; return redir.error; }
+            const tokens = redir.tokens;
+
+            if (i === 0 && redir.redirections.stdin) {
+                const content = Kernel.fs.read(redir.redirections.stdin.path);
+                if (content === null) {
+                    this._lastExit = 1;
+                    return `bash: ${redir.redirections.stdin.path}: No such file or directory`;
+                }
+                stdin = content;
+            }
+
             if (!tokens.length) continue;
             const command = tokens[0].value.toLowerCase();
             const argTokens = tokens.slice(1);
 
             if (!this._commands[command]) {
+                this._lastExit = 127;
                 return `${command}: command not found`;
             }
 
@@ -86,10 +150,58 @@ const Shell = {
             if (result === null) return null;
 
             EventBus.emit('command:executed', { command, args, parsed, output: result });
+
+            if (i === stages.length - 1 && redir.redirections.stdout) {
+                const content = typeof result === 'string' ? this.stripHTML(result) : '';
+                const wr = redir.redirections.stdout.append
+                    ? Kernel.fs.append(redir.redirections.stdout.path, content)
+                    : Kernel.fs.write(redir.redirections.stdout.path, content);
+                if (wr && wr.error) { this._lastExit = 1; return wr.error; }
+                this._lastExit = 0;
+                return '';
+            }
+
             stdin = this.stripHTML(result) || '';
         }
 
+        this._lastExit = 0;
         return stdin;
+    },
+
+    _expandVars(tokens) {
+        for (const tok of tokens) {
+            if (!tok.expandable || tok.isOperator) continue;
+            tok.value = tok.value.replace(
+                /\$\{([A-Za-z_][A-Za-z0-9_]*)\}|\$(\?|[A-Za-z_][A-Za-z0-9_]*)/g,
+                (_, braced, unbraced) => {
+                    const name = braced || unbraced;
+                    if (name === '?') return String(this._lastExit);
+                    return this.env[name] !== undefined ? this.env[name] : '';
+                }
+            );
+        }
+    },
+
+    _extractRedirections(tokens) {
+        const cleaned = [];
+        const redirections = { stdout: null, stdin: null };
+
+        for (let i = 0; i < tokens.length; i++) {
+            if (!tokens[i].isOperator) { cleaned.push(tokens[i]); continue; }
+            const op = tokens[i].value;
+            const target = tokens[i + 1];
+            if (!target || target.isOperator) {
+                return { error: `bash: syntax error near unexpected token '${op}'` };
+            }
+            if (op === '>' || op === '>>') {
+                redirections.stdout = { path: target.value, append: op === '>>' };
+            } else if (op === '<') {
+                redirections.stdin = { path: target.value };
+            }
+            i++;
+        }
+
+        return { tokens: cleaned, redirections };
     },
 
     stripHTML(str) {

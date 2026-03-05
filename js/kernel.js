@@ -26,6 +26,7 @@ const Kernel = {
         _manPages: {},
         _cwd: [],
         _homePrefix: [],
+        _userFiles: {},
 
         _resolve(name) {
             if (!name || name === '.') return [...this._cwd];
@@ -84,6 +85,14 @@ const Kernel = {
         },
 
         read(name) {
+            // User-written files shadow narrative content
+            const _resolvedArr = this._resolve(name);
+            const _userKey = _resolvedArr.join('/');
+            if (_userKey in this._userFiles) {
+                EventBus.emit('file:read', { name, path: _resolvedArr });
+                return this._userFiles[_userKey];
+            }
+
             let content = null;
             let pathArr = null;
 
@@ -233,11 +242,42 @@ const Kernel = {
         },
         mergeManPages(pages) { Object.assign(this._manPages, pages); },
 
+        _isWritable(name) {
+            const pathArr = this._resolve(name);
+            return pathArr[0] === 'tmp' || (pathArr[0] === 'home' && pathArr.length > 1);
+        },
+
+        write(name, content) {
+            if (!this._isWritable(name)) {
+                return { error: `bash: ${name}: Read-only file system` };
+            }
+            const pathArr = this._resolve(name);
+            const key = pathArr.join('/');
+            this._userFiles[key] = content;
+            this.addTreeFile('/' + key, content);
+            return {};
+        },
+
+        append(name, content) {
+            if (!this._isWritable(name)) {
+                return { error: `bash: ${name}: Read-only file system` };
+            }
+            const pathArr = this._resolve(name);
+            const key = pathArr.join('/');
+            const existing = this._userFiles[key] !== undefined
+                ? this._userFiles[key]
+                : (this.read(name) || '');
+            this._userFiles[key] = existing ? existing + '\n' + content : content;
+            this.addTreeFile('/' + key, this._userFiles[key]);
+            return {};
+        },
+
         reset() {
             for (const k in this._textFiles) delete this._textFiles[k];
             for (const k in this._hiddenFiles) delete this._hiddenFiles[k];
             for (const k in this._manPages) delete this._manPages[k];
             for (const k in this._fileTree) delete this._fileTree[k];
+            for (const k in this._userFiles) delete this._userFiles[k];
             this._cwd.length = 0;
             this._homePrefix.length = 0;
         },

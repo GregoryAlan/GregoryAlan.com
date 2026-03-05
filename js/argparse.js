@@ -7,30 +7,72 @@
 // Depends on: nothing (loads before shell.js)
 
 // Shell-level tokenizer: single-pass character scanner that produces
-// pipeline stages of resolved tokens. Handles double quotes (with
-// backslash escapes), single quotes (literal), backslash escapes
-// outside quotes, and pipe splitting.
+// chain-aware pipeline structures. Handles double quotes (with backslash
+// escapes), single quotes (literal), backslash escapes outside quotes,
+// pipe splitting, command chaining (;, &&, ||), and I/O redirection
+// operators (>, >>, <).
 //
-// Returns: { stages: Array<Array<{ value: string, quoted: boolean }>> }
+// Returns: { chains: Array<{ op: null|';'|'&&'|'||',
+//            stages: Array<Array<{ value: string, quoted: boolean,
+//                                  expandable: boolean, isOperator?: boolean }>> }> }
 function shellTokenize(raw) {
-    const stages = [[]];
-    if (!raw || !raw.trim()) return { stages };
+    const chains = [{ op: null, stages: [[]] }];
+    if (!raw || !raw.trim()) return { chains };
 
     const str = raw;
     let i = 0;
+
+    const currentStage = () => {
+        const chain = chains[chains.length - 1];
+        return chain.stages[chain.stages.length - 1];
+    };
 
     while (i < str.length) {
         // Skip whitespace between tokens
         if (str[i] === ' ' || str[i] === '\t') { i++; continue; }
 
-        // Pipe: start a new stage
-        if (str[i] === '|') {
-            stages.push([]);
+        // Chain operators: ||, &&, ; (must check || before |)
+        if (str[i] === '|' && i + 1 < str.length && str[i + 1] === '|') {
+            chains.push({ op: '||', stages: [[]] });
+            i += 2;
+            continue;
+        }
+        if (str[i] === '&' && i + 1 < str.length && str[i + 1] === '&') {
+            chains.push({ op: '&&', stages: [[]] });
+            i += 2;
+            continue;
+        }
+        if (str[i] === ';') {
+            chains.push({ op: ';', stages: [[]] });
             i++;
             continue;
         }
 
-        // Double-quoted string
+        // Redirection operators: >>, >, <
+        if (str[i] === '>' && i + 1 < str.length && str[i + 1] === '>') {
+            currentStage().push({ value: '>>', isOperator: true });
+            i += 2;
+            continue;
+        }
+        if (str[i] === '>') {
+            currentStage().push({ value: '>', isOperator: true });
+            i++;
+            continue;
+        }
+        if (str[i] === '<') {
+            currentStage().push({ value: '<', isOperator: true });
+            i++;
+            continue;
+        }
+
+        // Pipe: start a new stage within current chain
+        if (str[i] === '|') {
+            chains[chains.length - 1].stages.push([]);
+            i++;
+            continue;
+        }
+
+        // Double-quoted string (expandable — $VAR will be resolved)
         if (str[i] === '"') {
             let token = '';
             i++; // skip opening quote
@@ -47,11 +89,11 @@ function shellTokenize(raw) {
                 i++;
             }
             i++; // skip closing quote
-            stages[stages.length - 1].push({ value: token, quoted: true });
+            currentStage().push({ value: token, quoted: true, expandable: true });
             continue;
         }
 
-        // Single-quoted string (no escape processing)
+        // Single-quoted string (no escape processing, no expansion)
         if (str[i] === "'") {
             let token = '';
             i++; // skip opening quote
@@ -60,14 +102,18 @@ function shellTokenize(raw) {
                 i++;
             }
             i++; // skip closing quote
-            stages[stages.length - 1].push({ value: token, quoted: true });
+            currentStage().push({ value: token, quoted: true, expandable: false });
             continue;
         }
 
-        // Unquoted token
+        // Unquoted token — stops at whitespace, pipe, and operator chars
         let token = '';
         let wasEscaped = false;
-        while (i < str.length && str[i] !== ' ' && str[i] !== '\t' && str[i] !== '|') {
+        while (i < str.length && str[i] !== ' ' && str[i] !== '\t'
+               && str[i] !== '|' && str[i] !== ';'
+               && str[i] !== '>' && str[i] !== '<') {
+            // Stop at && (but not single &)
+            if (str[i] === '&' && i + 1 < str.length && str[i + 1] === '&') break;
             // Backslash escape outside quotes
             if (str[i] === '\\' && i + 1 < str.length) {
                 token += str[i + 1];
@@ -107,10 +153,10 @@ function shellTokenize(raw) {
             token += str[i];
             i++;
         }
-        stages[stages.length - 1].push({ value: token, quoted: wasEscaped });
+        currentStage().push({ value: token, quoted: wasEscaped, expandable: true });
     }
 
-    return { stages };
+    return { chains };
 }
 
 // valueFlags: optional array of single-char flags that consume the next
