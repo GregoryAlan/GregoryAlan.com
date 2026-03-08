@@ -22,7 +22,8 @@ aws s3 sync "/Users/greg/Projects/GregoryAlan.com/" s3://gregoryalan.com \
     --exclude "deploy.sh" --exclude "build-curl.js" \
     --exclude ".git/*" --exclude ".gitignore" \
     --exclude ".claude/*" --exclude "*/.claude/*" \
-    --exclude "*.md" \
+    --exclude "*.md" --exclude "LICENSE" \
+    --exclude ".env" \
     --exclude "curl-out/*" --exclude "node_modules/*" \
     --exclude "lore/*" --exclude "drafts/*" \
     --exclude "dev/*" --exclude "etc/*" --exclude "home/*" \
