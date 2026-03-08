@@ -9,7 +9,7 @@
 
         "contact.txt": "greg@gregoryalan.com",
 
-        "about.txt": "Gregory Alan\nDeveloper. Builds games, tools, and systems.\n\nThis machine runs GregOS \u2014 a custom kernel and terminal.\nProjects live in games/ and drafts/. Everything here is\neither shipped or half-finished. Explore at your own pace."
+        "about.txt": "Gregory Alan\nDeveloper. Builds games, tools, and systems.\n\nThis machine runs GregOS \u2014 a custom kernel and terminal.\nProjects live in games/ and drafts/. Everything here is\neither shipped or half-finished. Explore at your own pace.\n\nsource: github.com/GregoryAlan/GregoryAlan.com"
     },
 
     "hiddenFiles": {
