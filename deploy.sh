@@ -1,6 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
+# Load project env vars
+if [ -f .env ]; then
+  set -a; source .env; set +a
+fi
+: "${CLOUDFRONT_DISTRIBUTION_ID:?Set CLOUDFRONT_DISTRIBUTION_ID in .env}"
+
 # Build the curl-accessible filesystem
 node build-curl.js
 
@@ -41,4 +47,4 @@ aws s3 sync "curl-out/" s3://gregoryalan.com/ \
     --exclude "*" --include "*.json"
 
 # Invalidate CloudFront
-aws cloudfront create-invalidation --distribution-id E1TSLTPSW9N88B --paths "/*"
+aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/*"
