@@ -25,7 +25,7 @@ aws s3 sync "/Users/greg/Projects/GregoryAlan.com/" s3://gregoryalan.com \
     --exclude "*.md" --exclude "LICENSE" \
     --exclude ".env" \
     --exclude "curl-out/*" --exclude "node_modules/*" \
-    --exclude "lore/*" --exclude "drafts/*" \
+    --exclude "lore/*" \
     --exclude "dev/*" --exclude "etc/*" --exclude "home/*" \
     --exclude "man/*" --exclude "pkg/*" --exclude "proc/*" \
     --exclude "rom/*" --exclude "sys/*" --exclude "var/*" \
