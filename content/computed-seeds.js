@@ -73,13 +73,21 @@ const computedNarrativeSeeds = {
                 + 'NOTE: clustering detected \u2014 see /home/greg/bin/exec --analyze';
         }
 
+        // Append ambient log entries that accumulated over time
+        if (typeof Ambient !== 'undefined' && Ambient._daemonLogBuffer) {
+            for (const entry of Ambient._daemonLogBuffer) {
+                out += '\n' + entry;
+            }
+        }
+
         return out.trimEnd();
     },
 
     // spec: NARRATIVE-SEEDS.md > Thread 2 > /proc/entropy_avail
     '/proc/entropy_avail': (state) => {
+        const drift = (typeof Ambient !== 'undefined') ? (Ambient._entropyDrift || 0) : 0;
         const jitter = Math.floor(Math.random() * 13) - 6;
-        const pool = 3847 + jitter;
+        const pool = 3847 + jitter - Math.floor(drift);
         let out = 'entropy pool: ' + pool + '\n'
             + 'source: rf0 (hw)\n'
             + 'refill rate: 847.0 bytes/sec\n'
@@ -114,6 +122,14 @@ const computedNarrativeSeeds = {
                 + '[  847.000007] rf0: <span style="color:#f55">connection from 0.0.0.0</span>\n'
                 + '[  847.000009] PID 0: <span style="color:#f55">fork() from swapper \u2014 illegal in user context</span>';
         }
+
+        // Append ambient escalation entries
+        if (typeof Ambient !== 'undefined' && Ambient._kernLogEntries) {
+            for (const entry of Ambient._kernLogEntries) {
+                out += '\n' + entry;
+            }
+        }
+
         return out;
     },
 };

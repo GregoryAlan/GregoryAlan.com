@@ -20,6 +20,9 @@ const Ambient = {
     _suspended: false,
     _suspendTimer: null,
     _daemonTicks: 0,
+    _daemonLogBuffer: [],
+    _entropyDrift: 0,
+    _kernLogEntries: [],
 
     register(def) {
         this._behaviors.push(def);
@@ -50,6 +53,9 @@ const Ambient = {
         this._startTime = null;
         this._suspended = false;
         this._daemonTicks = 0;
+        this._daemonLogBuffer = [];
+        this._entropyDrift = 0;
+        this._kernLogEntries = [];
         this.start();
     },
 
@@ -73,6 +79,12 @@ const Ambient = {
         const now = Date.now();
         const version = Kernel.driver.getVersion();
         const hasContact = !!Kernel.driver.flags.contact;
+
+        EventBus.emit('ambient:tick', {
+            elapsed: now - this._startTime,
+            version,
+            hasContact,
+        });
 
         for (const b of this._behaviors) {
             // Apply jitter: effective interval varies ±jitter fraction
@@ -196,11 +208,101 @@ const Ambient = {
         });
 
         this.register({
-            id: 'daemon-tick',
+            id: 'daemon-log-growth',
             interval: 60000,
             jitter: 0.1,
+            gate: (ver) => ver >= 2.0,
+            action: () => {
+                const hasContact = !!Kernel.driver.flags.contact;
+                const epoch = new Date('2025-10-15T00:00:00Z').getTime();
+                const baseCycles = Math.floor((Date.now() - epoch) / 60000) + this._daemonTicks;
+                const cycle = baseCycles + this._daemonLogBuffer.length;
+
+                const pids = [847, 847, 847, 848, 849, 850];
+                const pid = pids[Math.floor(Math.random() * pids.length)];
+                const chains = {
+                    847: 'rf0|shift|remap|align|exec',
+                    848: 'rf0|shift|remap|exec      ',
+                    849: 'rf0|remap|align|exec      ',
+                    850: 'rf0|shift|align           ',
+                };
+                const sizes = { 847: 847, 848: 512, 849: 847, 850: 256 };
+
+                let exitCode = 0;
+                if (hasContact && pid === 847) {
+                    exitCode = Math.random() < 0.35 ? 847 : 0;
+                }
+
+                const entry = '[gregd:' + pid + '] cycle ' + cycle
+                    + ' | ' + chains[pid]
+                    + ' | exit ' + exitCode + ' | ' + sizes[pid] + ' bytes';
+
+                this._daemonLogBuffer.push(entry);
+                if (this._daemonLogBuffer.length > 50) {
+                    this._daemonLogBuffer.shift();
+                }
+                this._daemonTicks++;
+            },
+        });
+
+        // v2.0 post-contact: entropy pool drift — slow decrease, never depletes
+        this.register({
+            id: 'entropy-drift',
+            interval: 90000,
+            jitter: 0.3,
             gate: postContact,
-            action: () => { this._daemonTicks++; },
+            action: () => {
+                this._entropyDrift += Math.random() * 3 + 1;
+                if (this._entropyDrift > 800) this._entropyDrift = 800;
+            },
+        });
+
+        // v2.0 post-contact: kern.log escalation — warnings appear over time
+        this.register({
+            id: 'kern-escalation',
+            interval: 120000,
+            jitter: 0.3,
+            gate: postContact,
+            action: () => {
+                const signalState = Kernel.driver.getState('the-signal');
+                const elapsed = Date.now() - this._startTime;
+                const minutes = elapsed / 60000;
+                const ts = (847 + Math.floor(minutes)).toFixed(6);
+
+                const candidates = [];
+
+                if (signalState === 'contact' || signalState === 'investigating') {
+                    candidates.push(
+                        '[  ' + ts + '] rf0: rx buffer checksum drift (' + Math.floor(Math.random() * 8 + 1) + ' bytes)',
+                        '[  ' + ts + '] audit: pid=0 context switch count: ' + (847 + this._kernLogEntries.length),
+                    );
+                }
+
+                if (signalState === 'investigating' && minutes > 5) {
+                    candidates.push(
+                        '[  ' + ts + '] rf0: entropy consumption rate exceeds generation',
+                        '[  ' + ts + '] sched: pid=0 runnable for ' + Math.floor(minutes) + ' ticks (no preempt)',
+                    );
+                }
+
+                if (candidates.length > 0) {
+                    this._kernLogEntries.push(candidates[Math.floor(Math.random() * candidates.length)]);
+                    if (this._kernLogEntries.length > 20) this._kernLogEntries.shift();
+                }
+            },
+        });
+
+        // v2.0 post-contact: phantom process — briefly visible in ps aux
+        this.register({
+            id: 'phantom-process',
+            interval: 180000,
+            jitter: 0.5,
+            gate: postContact,
+            action: () => {
+                const proc = Kernel.proc.spawn('/dev/rf0', '--listen', { background: true });
+                const lifetime = 5000 + Math.random() * 10000;
+                setTimeout(() => { proc.exit(847); }, lifetime);
+            },
         });
     },
 };
